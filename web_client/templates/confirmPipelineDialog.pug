@@ -1,0 +1,45 @@
+- var widthModal = pipeline.parameters.length * 14 + "%";
+
+.modal-dialog(style="width:"+widthModal)
+  .modal-content
+    form.creatis-launch-pipeline-form.modal-form(role="form")
+      .modal-header
+        a.close(data-dismiss="modal", aria-hidden="true") &times;
+        h4.modal-title!= pipeline.name + "  <small>Version " + pipeline.version + "</small>"
+        .g-dialog-subtitle
+          i.icon-doc-inv
+          span= file.name
+      .modal-body
+        ul.nav.nav-tabs
+          li.active
+            a(data-toggle="tab", href="#general") General
+          each param in pipeline.parameters
+            if !(param.type == "File" && !param.defaultValue) && !param.defaultValue
+              li
+                a(data-toggle="tab", href="#param1")= param.name
+
+        .tab-content
+          #general.tab-pane.fade.active.in
+            .form-group
+              label(for="name-execution") Name of execution
+              input.form-control#name-execution(type="text", required= "true")
+
+            .form-group
+              label(for="selectFolderDestination") Result directory
+              select.form-control#selectFolderDestination(required= "true")
+                option(selected='true', disabled='true') Folder
+                each folder in folders
+                  option(value=folder._id)!= folder.indentText + folder.name
+
+            .form-check
+              input.form-check-input#sendEmail(type="checkbox")
+              label.form-check-label(for="sendEmail") Send email
+
+          #param1.tab-pane.fade
+            span Test
+
+      .modal-footer
+        a.btn.btn-small.btn-default.btn-close-pipeline(data-dismiss="modal") Close
+        button.btn.btn-success.test(type="submit")
+          i.icon-play
+          |  Execute

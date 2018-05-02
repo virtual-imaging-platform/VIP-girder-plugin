@@ -1,0 +1,24 @@
+.creatis-list-pipelines-header
+  .g-body-title Applications
+  .g-body-subtitle= file.name
+
+- var i = 0
+
+table.table.table-hover
+  tbody
+    thead
+      tr
+        th #
+        th Application
+        th Description
+        th Version
+        th Execution
+    each pipeline in pipelines
+      if pipeline.canExecute
+        tr
+          td= i++
+          td= pipeline.name
+          td= pipeline.description
+          td= pipeline.version
+          td
+            button.btn.btn-small.btn-primary.confirm-pipeline(value=pipeline.identifier) Run it
