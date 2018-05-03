@@ -22,7 +22,7 @@ var ListPipelines = View.extend({
     this.user = getCurrentUser();
     this.file = settings.file.responseJSON;
     this.foldersCollection = [];
-    this.carmin = new CarminClient(constants.carminURL, "jnvp6d45h5un3dhb8v73jivhhb");
+    this.carmin = new CarminClient(constants.carminURL, constants.carminApiKey);
 
     // Get file data
     restRequest({

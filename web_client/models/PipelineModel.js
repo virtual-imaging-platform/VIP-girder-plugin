@@ -1,7 +1,7 @@
 import Model from 'girder/models/Model';
 
 var PipelineModel = Model.extend({
-    resourceName: "pipeline"
+    resourceName: "pipeline_execution"
 });
 
 export default PipelineModel;

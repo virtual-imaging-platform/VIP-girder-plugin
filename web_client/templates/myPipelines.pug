@@ -1,0 +1,28 @@
+- var i = 1;
+
+.creatis-list-pipelines-header
+  .g-body-title My pipelines
+  .g-body-subtitle Pipelines history
+  p= d
+
+table.table.table-hover
+  tbody
+    thead
+      tr
+        th #
+        th Name
+        th Application
+        th Status
+        th Start
+          small    MM/JJ/YYYY
+        th Actions
+    each pipeline in pipelines
+      - var date = new Date(pipeline.get('timestampCreation') * 1000);
+      tr
+        td= i++
+        td= pipeline.name()
+        td= pipeline.get('pipelineName')
+        td= pipeline.get('status')
+        td= date.getMonth()+1 + "/" + date.getDate() + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
+        td
+          i.icon-remove
