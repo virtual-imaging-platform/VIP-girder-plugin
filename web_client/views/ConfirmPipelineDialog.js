@@ -38,14 +38,6 @@ var ConfirmPipelineDialog = View.extend({
     this.filesInput = [this.file._id];
     this.parameters = {};
 
-    _.each(this.currentPipeline.parameters, function(param) {
-      if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) {
-        console.log(param.name+": get input");
-      } else {
-        console.log("get defaultValue");
-      }
-    });
-
     // Trie le tableau foldersCollection en fonction de "path"
     this.foldersCollection.sort(function(a, b){
       return a.path.localeCompare(b.path)
@@ -117,24 +109,18 @@ var ConfirmPipelineDialog = View.extend({
     var sendMail = this.form[2].checked;
     var pathFileVIP = folderPath + "/" + this.file.name;
 
-    // TODO
-    // parcourir this.currentPipeline.parameters et pour chaque parametre
-    // remplir this.parameters["nameParameter"] avec
-    // la valeur par defaut s'il y en a une
-    // sinon mettre la valeur de input[name['nameParameter']]
+    // Fill paramaters
+    _.each(this.currentPipeline.parameters, function(param) {
+      if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) {
+        this.parameters[param.name] = "FromInput";
+      } else if (param.type == 'File' && !param.defaultValue) {
+        this.parameters[param.name] = folderPath + "/" + this.file.name;
+      } else {
+        this.parameters[param.name] = param.defaultValue;
+      }
+    }.bind(this));
 
-
-
-    inputs = {
-      'results-directory': folderPath,
-      'T1_file': '/vip/Home/Girder/process-1524229750/control1_3DT1.nii',
-      'out_folder': 'results',
-      'reference_image': '/grid/biomed/creatis/vip/data/groups/CAD_Neuro/data/image_ID.nii',
-      'smoothing_option': false,
-      'FWHM_number': 8
-    };
-
-    this.carmin.initAndStart(nameExecution, this.currentPipeline.identifier, inputs, function (data) {
+    this.carmin.initAndStart(nameExecution, this.currentPipeline.identifier, this.parameters, function (data) {
       console.log(data);
       if (!checkError(data)) {
         var filesInput = $.extend({}, this.filesInput);
@@ -157,12 +143,6 @@ var ConfirmPipelineDialog = View.extend({
           events.trigger('g:alert', {
             text: "The execution is launched correctly",
             type: "success",
-            duration: 3000
-          });
-        }).fail(function (resp){
-          events.trigger('g:alert', {
-            text: resp.message,
-            type: "danger",
             duration: 3000
           });
         });

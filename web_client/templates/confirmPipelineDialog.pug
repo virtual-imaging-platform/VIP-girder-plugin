@@ -1,4 +1,5 @@
 - var widthModal = pipeline.parameters.length * 14 + "%";
+- var i = 0;
 
 .modal-dialog(style="width:"+widthModal)
   .modal-content
@@ -16,7 +17,7 @@
           each param in pipeline.parameters
             if !(param.type == "File" && !param.defaultValue) && !param.defaultValue
               li
-                a(data-toggle="tab", href="#param1")= param.name
+                a(data-toggle="tab", href="#param" + i++)= param.name
 
         .tab-content
           #general.tab-pane.fade.active.in
@@ -35,8 +36,17 @@
               input.form-check-input#sendEmail(type="checkbox")
               label.form-check-label(for="sendEmail") Send email
 
-          #param1.tab-pane.fade
-            span Test
+          - i = 0;
+          each param in pipeline.parameters
+            if !(param.type == "File" && !param.defaultValue) && !param.defaultValue
+              .tab-pane.fade(id="param" + i++)
+                .form-group
+                  label Description
+                  p= param.description
+                  
+                .form-group
+                  label(for=param.name)= param.name
+                  input.form-control(id=param.name, type="text", required= "true")
 
       .modal-footer
         a.btn.btn-small.btn-default.btn-close-pipeline(data-dismiss="modal") Close

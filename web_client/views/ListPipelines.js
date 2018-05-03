@@ -76,9 +76,10 @@ var ListPipelines = View.extend({
   * If the request to get details of pipeline has success
   * Create new instance of ConfirmPipelineDialog to
   * configure the launch of pipeline :
-  *     - parameters
-  *     - destination path (stack results)
+  *     - name of execution
+  *     - result directory (stack results in girder)
   *     - checkbox to choose to send an email when the process is done
+  *     - parameters of pipeline
   */
   confirmPipeline: function (e) {
     var pipelineIdentifier = $(e.currentTarget)[0].value;
@@ -106,11 +107,11 @@ var ListPipelines = View.extend({
   /**
   * Get all folders from the current collection OR from the current user
   * To get the folder tree of a collection
-  *   - Replace 'user' to 'collection'
+  *   - Replace 'user' to 'collection' line 118
   *   - Uncommented line 59
   *   - Commented line 62
   * Conversely, to get the folder tree of the user
-  *   - Replace 'collection' to 'user'
+  *   - Replace 'collection' to 'user' line 118
   *   - Uncommented line 62
   *   - Commented line 59
   */
