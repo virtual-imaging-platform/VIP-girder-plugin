@@ -6,7 +6,7 @@ import events from 'girder/events';
 import FileModel from 'girder/models/FileModel';
 import PipelineModel from './models/PipelineModel'
 
-// Import about Views
+// Import Views
 import ListPipelines from './views/ListPipelines';
 import MyPipelines from './views/MyPipelines';
 
@@ -27,12 +27,5 @@ router.route('file/:id/#pipelines', 'filePipelines', function(id) {
 
 // New route #my-pipelines
 router.route('my-pipelines', 'myPipelines', function() {
-
   events.trigger('g:navigateTo', MyPipelines);
-
-  /*var pipelines = new PipelineModel({}).once('g:fetched', function() {
-    events.trigger('g:navigateTo', MyPipelines);
-  }).once('g:error', function() {
-    router.navigate('collections', {trigger: true});
-  }).fetch();*/
 })

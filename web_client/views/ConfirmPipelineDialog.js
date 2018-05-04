@@ -112,7 +112,7 @@ var ConfirmPipelineDialog = View.extend({
     // Fill paramaters
     _.each(this.currentPipeline.parameters, function(param) {
       if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) {
-        this.parameters[param.name] = "FromInput";
+        this.parameters[param.name] = $('#'+param.name).val();
       } else if (param.type == 'File' && !param.defaultValue) {
         this.parameters[param.name] = folderPath + "/" + this.file.name;
       } else {
@@ -121,12 +121,12 @@ var ConfirmPipelineDialog = View.extend({
     }.bind(this));
 
     this.carmin.initAndStart(nameExecution, this.currentPipeline.identifier, this.parameters, function (data) {
-      console.log(data);
       if (!checkError(data)) {
         var filesInput = $.extend({}, this.filesInput);
         var params = {
           name: data.name,
           fileId: JSON.stringify(filesInput),
+          pipelineName: this.currentPipeline.name,
           vipExecutionId: data.identifier,
           status: data.status,
           pathResultGirder: folderGirderDestination,
