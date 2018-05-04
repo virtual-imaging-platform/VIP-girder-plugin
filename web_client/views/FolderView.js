@@ -20,7 +20,6 @@ wrap(ItemListWidget, 'render', function(render) {
 
   // For each entry of item
   var selector = 'li.g-item-list-entry';
-  console.log(this);
   _.each(this.$(selector), function (el) {
     var itemCid = $(el).find('.g-list-checkbox').attr('g-item-cid');
     var itemId = this.collection.get(itemCid).id;

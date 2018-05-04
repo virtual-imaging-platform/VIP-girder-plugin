@@ -3,11 +3,12 @@ import _ from 'underscore';
 import 'girder/utilities/jquery/girderModal';
 import { restRequest } from 'girder/rest';
 import events from 'girder/events';
+import { Status } from '../constants';
 
 // Import views
 import View from 'girder/views/View';
 
-// Import about Creatis
+// Import templates
 import ConfirmPipelineDialogTemplate from '../templates/confirmPipelineDialog.pug';
 
 function getTimestamp () {
@@ -128,7 +129,7 @@ var ConfirmPipelineDialog = View.extend({
           fileId: JSON.stringify(filesInput),
           pipelineName: this.currentPipeline.name,
           vipExecutionId: data.identifier,
-          status: data.status,
+          status: Status[data.status.toUpperCase()],
           pathResultGirder: folderGirderDestination,
           sendMail: sendMail,
           listFileResult: '{}',

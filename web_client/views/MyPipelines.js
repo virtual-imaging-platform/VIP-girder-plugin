@@ -1,5 +1,6 @@
 // Import utilities
 import { cancelRestRequests } from 'girder/rest';
+import { Status } from '../constants';
 
 // Import views
 import View from 'girder/views/View';
