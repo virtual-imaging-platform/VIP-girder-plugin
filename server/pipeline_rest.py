@@ -43,6 +43,7 @@ class PipelineExecution(Resource):
     Description("Insert new execution of pipeline")
     .param('name', 'Name of execution', strip=True)
     .jsonParam('fileId', 'IDs of the files that are processed', requireObject=True)
+    .param('pipelineName', 'Name of pipeline launched', strip=True)
     .param('vipExecutionId', 'ID of the exection on VIP')
     .param('pathResultGirder', 'The path where the results are stored')
     .param('status', 'Status of execution', default='null')

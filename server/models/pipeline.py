@@ -9,7 +9,7 @@ from girder.exceptions import ValidationException
 class PipelineExecution(Model):
     def initialize(self):
         self.name = 'pipeline_execution'
-        self.ensureIndices(('name', 'fileId', 'userId', 'vipExecutionId', 'pathResultGirder',
+        self.ensureIndices(('name', 'fileId', 'userId', 'pipelineName', 'vipExecutionId', 'pathResultGirder',
         'status', 'sendMail', 'listFileResult', 'timestampCreation', 'timestampFin'))
 
         '''
@@ -37,6 +37,7 @@ class PipelineExecution(Model):
             'name': params['name'],
             'fileId': params['fileId'],
             'userId': user['_id'],
+            'pipelineName': params['pipelineName'],
             'vipExecutionId': params['vipExecutionId'],
             'pathResultGirder': params['pathResultGirder'],
             'status': params['status'],
