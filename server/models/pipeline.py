@@ -12,16 +12,6 @@ class PipelineExecution(Model):
         self.ensureIndices(('name', 'fileId', 'userId', 'pipelineName', 'vipExecutionId', 'pathResultGirder',
         'status', 'sendMail', 'listFileResult', 'timestampCreation', 'timestampFin'))
 
-        '''
-        self.ensureTextIndex({
-        'name': 10,
-        })
-
-        self.exposeFields(level=AccessType.READ, fields={
-        '_id', 'name'
-        })
-        '''
-
     def validate(self, PipelineExecution):
         return PipelineExecution
 
@@ -48,6 +38,11 @@ class PipelineExecution(Model):
         }
 
         return self.save(pipeline)
+
+    def setStatus(self, pipeline, status):
+        pipeline['status'] = status
+        self.save(pipeline)
+
 
     def remove(self, doc):
         super(PipelineExecution, self).remove(doc)

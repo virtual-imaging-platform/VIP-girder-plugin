@@ -5,6 +5,7 @@ from . import pipeline_rest
 from . import user_rest
 
 def load(info):
+    # Model PipelineExecution
     info['apiRoot'].pipeline_execution = pipeline_rest.PipelineExecution()
 
     # Model User

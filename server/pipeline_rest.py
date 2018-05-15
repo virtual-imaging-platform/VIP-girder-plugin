@@ -15,6 +15,7 @@ class PipelineExecution(Resource):
         self.route('GET', (), self.get)
         self.route('GET', (':id',), self.getById)
         self.route('POST', (), self.createProcess)
+        self.route('PUT', (':id', 'status'), self.setStatus)
         self.route('DELETE', (':id',), self.deleteProcess)
 
     @access.public
@@ -53,6 +54,16 @@ class PipelineExecution(Resource):
     )
     def createProcess(self, params):
         return self.model.createProcess(params, self.getCurrentUser())
+
+    @access.public
+    @autoDescribeRoute(
+       Description("Set status of exection")
+       .modelParam('id', 'The ID of the execution', model=PipelineExecutionModel, destName='pipelineExecution')
+       .param('status', 'The new status')
+    )
+    def setStatus(self, pipelineExecution, status):
+        self.model.setStatus(pipelineExecution, status)
+        return {'message': 'Status was changed'}
 
     # Ajouter dans modelParam un argument level=AccessType.ADMIN
     # Pour controller les acces, etendre le model a AccessControlledModel
