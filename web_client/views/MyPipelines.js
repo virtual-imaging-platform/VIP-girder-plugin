@@ -1,6 +1,9 @@
 // Import utilities
-import { cancelRestRequests } from 'girder/rest';
-import { Status } from '../constants';
+import { cancelRestRequests, restRequest } from 'girder/rest';
+import _ from 'underscore';
+import * as constants from '../constants';
+import { getCurrentApiKeyVip } from '../utilities';
+import CarminClient from '../vendor/carmin/carmin-client';
 
 // Import views
 import View from 'girder/views/View';
@@ -18,22 +21,59 @@ var MyPipelines = View.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
-    this.collection = new PipelineCollection;
-    const promiseArray = [];
-    promiseArray.push(this.collection.fetch());
+    var apiKeyVip = getCurrentApiKeyVip();
+    if (apiKeyVip == null) {
+      return ;
+    }
 
-    $.when(...promiseArray).done(() => {
-      this.listenTo(this.collection, 'g:changed', this.render);
-      this.render();
+    this.carmin = new CarminClient(constants.carminURL, apiKeyVip);
+    this.collection = new PipelineCollection;
+
+    // Get all pipeline executions
+    restRequest({
+      method: 'GET',
+      url: 'pipeline_execution'
+    }).then((resp) => {
+      this.updateStatus(resp).then(function (){
+        const promiseArray = [];
+        setTimeout(function() {
+            promiseArray.push(this.collection.fetch());
+          $.when(...promiseArray).done(() => {
+            this.listenTo(this.collection, 'g:changed', this.render);
+            this.render();
+          });
+        }.bind(this), 1000);
+      }.bind(this));
     });
   },
 
   render: function () {
     this.$el.html(MyPipelinesTempalte({
-      pipelines: this.collection.toArray()
+      pipelines: this.collection.toArray(),
+      status: constants.Status
     }));
 
     return this;
+  },
+
+  updateStatus: function (pipeline_executions) {
+    return new Promise(function (resolve) {
+      _.each(pipeline_executions, function(execution) {
+        this.carmin.getExecution(execution.vipExecutionId, function (workflow) {
+          if (execution.status != workflow.status.toUpperCase()) {
+            restRequest({
+              method: 'PUT',
+              url: 'pipeline_execution/' + execution._id + "/status",
+              data: {
+                'status': workflow.status.toUpperCase()
+              }
+            });
+          }
+        });
+      }.bind(this));
+      resolve();
+    }.bind(this));
+
   }
 
 });

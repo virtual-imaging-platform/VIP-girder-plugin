@@ -6,23 +6,30 @@ import { getCurrentUser } from 'girder/auth';
 import events from 'girder/events';
 import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
+import { getCurrentApiKeyVip } from '../utilities';
 
 // Import views
 import View from 'girder/views/View';
-
-// Import about creatis
+import FrontPageView from 'girder/views/body/FrontPageView';
 import ConfirmPipelineDialog from './ConfirmPipelineDialog';
 
+// Import templates
 import ListPipelinesTemplate from '../templates/listPipelines.pug';
 
 // List of pipelines allowed by the user
 var ListPipelines = View.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
+
+    var apiKeyVip = getCurrentApiKeyVip();
+    if (apiKeyVip == null) {
+      return ;
+    }
+
     this.user = getCurrentUser();
     this.file = settings.file.responseJSON;
     this.foldersCollection = [];
-    this.carmin = new CarminClient(constants.carminURL, constants.carminApiKey);
+    this.carmin = new CarminClient(constants.carminURL, apiKeyVip);
 
     // Get file data
     restRequest({

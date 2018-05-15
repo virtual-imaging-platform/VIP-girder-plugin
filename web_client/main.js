@@ -5,3 +5,4 @@ import './routes';
 import './views/FolderView';
 import './views/ItemView';
 import './views/HeaderUserView';
+import './views/UserAccountView';
