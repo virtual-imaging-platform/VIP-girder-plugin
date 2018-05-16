@@ -35,6 +35,8 @@ var MyPipelines = View.extend({
       url: 'pipeline_execution'
     }).then((resp) => {
       this.updateStatus(resp).then(function (){
+
+        // When the PipelineCollection is update, get the content of this collection and call the render
         const promiseArray = [];
         setTimeout(function() {
             promiseArray.push(this.collection.fetch());
@@ -60,6 +62,7 @@ var MyPipelines = View.extend({
     return new Promise(function (resolve) {
       _.each(pipeline_executions, function(execution) {
         this.carmin.getExecution(execution.vipExecutionId, function (workflow) {
+
           if (execution.status != workflow.status.toUpperCase()) {
             restRequest({
               method: 'PUT',
@@ -69,11 +72,24 @@ var MyPipelines = View.extend({
               }
             });
           }
-        });
+
+          // If the status is 'Finished', get results of pipeline (async)
+          if (workflow.status == constants.Status.FINISHED)
+            this.getResults(workflow, execution);
+
+        }.bind(this));
       }.bind(this));
       resolve();
     }.bind(this));
+  },
 
+  getResults: function (workflow, execution) {
+    this.carmin.getExecutionResults(workflow.identifier, function (data) {
+      _.each(data, function (result) {
+        console.log(result);
+        console.log(execution);
+      })
+    });
   }
 
 });

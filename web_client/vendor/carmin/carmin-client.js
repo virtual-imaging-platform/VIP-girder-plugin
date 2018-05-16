@@ -13,6 +13,7 @@ function isJson(data) {
     return true;
 }
 
+// Global function to send the request
 CarminClient.prototype.doRequest = function(path, method, callback, opts) {
     opts = opts || {};
     var xmlHttp = new XMLHttpRequest();
@@ -49,30 +50,35 @@ CarminClient.prototype.doRequest = function(path, method, callback, opts) {
     }
 }
 
+// Request with a body
 CarminClient.prototype.doRequestBody = function(path, method, content, callback, opts) {
   var opts = opts || {};
   opts.postContent = content;
   this.doRequest(path, method, callback, opts);
 }
 
+// Get platform properties
 CarminClient.prototype.getPlatformProperties = function(callback) {
   var opts = {};
   opts.contentType = "application/json";
   this.doRequest("platform", "GET", callback, opts);
 }
 
+// Get the pipelines allowed for the user
 CarminClient.prototype.listPipelines = function(callback) {
   var opts = {};
   opts.contentType = "application/json";
   this.doRequest("pipelines", "GET", callback, opts);
 }
 
+// Get the description of a pipeline
 CarminClient.prototype.describePipeline = function(pipelineIdentifier, callback) {
   var opts = {};
   opts.contentType = "application/json";
   this.doRequest("pipelines/" + pipelineIdentifier, "GET", callback, opts);
 }
 
+// initialize an execution of a pipeline
 CarminClient.prototype.initAndStart = function(executionName, pipelineIdentifier, inputValues, callback) {
   var content = {"name" : executionName,"pipelineIdentifier" : pipelineIdentifier, "inputValues" : inputValues};
   var opts = {};
@@ -81,10 +87,18 @@ CarminClient.prototype.initAndStart = function(executionName, pipelineIdentifier
   this.doRequestBody("executions", "POST", content, callback, opts);
 }
 
+// Get the details of an execution
 CarminClient.prototype.getExecution = function(executionIdentifier, callback) {
   var opts = {};
   opts.contentType = "application/json";
   this.doRequest("executions/" + executionIdentifier, "GET", callback, opts);
+}
+
+// Get the results paths of an finished execution
+CarminClient.prototype.getExecutionResults = function(executionIdentifier, callback) {
+  var opts = {};
+  opts.contentType = "application/json";
+  this.doRequest("executions/" + executionIdentifier + '/results', "GET", callback, opts);
 }
 
 // A CHANGER
@@ -92,12 +106,21 @@ CarminClient.prototype.getExecution = function(executionIdentifier, callback) {
   this.doRequest("path/download?uri=vip://vip.creatis.insa-lyon.fr" + filePath, "GET", callback, {"noJson":true});
 }*/
 
+// Get a file's content
+CarminClient.prototype.downloadFile = function(filePath, callback) {
+  var opts = {};
+  opts.contentType = "application/json";
+  this.doRequest("path/" + filePath + "?action=content", "GET", callback, opts);
+}
+
+// Create a folder in a path given
 CarminClient.prototype.createFolder = function(completePath, callback) {
   var opts = {};
   opts.contentType = "application/json";
   this.doRequest("path/" + completePath, "PUT", callback, opts);
 }
 
+// Senf a file's content
 CarminClient.prototype.uploadData = function(completePath, fileData, callback) {
   var content = fileData;
   var opts = {};
@@ -107,6 +130,7 @@ CarminClient.prototype.uploadData = function(completePath, fileData, callback) {
   this.doRequestBody("path/" + completePath, "PUT", content, callback, opts);
 }
 
+// Check if a file or a path exists
 CarminClient.prototype.fileExists = function(completePath, callback) {
   var opts = {};
   opts.contentType = "application/json";
