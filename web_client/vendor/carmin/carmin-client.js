@@ -31,7 +31,7 @@ CarminClient.prototype.doRequest = function(path, method, callback, opts) {
       }
     };
     //console.log("'"+method+"': "+ this.baseUrl+"/"+path);
-    xmlHttp.open(method, this.baseUrl + "/" + path, true);
+    xmlHttp.open(method, this.baseUrl + "/" + path, opts.async);
     if (!opts.noApiKey) {
       if (this.opts.useAuthorizationHeader) {
         xmlHttp.setRequestHeader("Authorization", "apikey" + " " + this.apiKey);
@@ -60,6 +60,7 @@ CarminClient.prototype.doRequestBody = function(path, method, content, callback,
 // Get platform properties
 CarminClient.prototype.getPlatformProperties = function(callback) {
   var opts = {};
+  opts.async = true;
   opts.contentType = "application/json";
   this.doRequest("platform", "GET", callback, opts);
 }
@@ -68,6 +69,7 @@ CarminClient.prototype.getPlatformProperties = function(callback) {
 CarminClient.prototype.listPipelines = function(callback) {
   var opts = {};
   opts.contentType = "application/json";
+  opts.async = true;
   this.doRequest("pipelines", "GET", callback, opts);
 }
 
@@ -75,6 +77,7 @@ CarminClient.prototype.listPipelines = function(callback) {
 CarminClient.prototype.describePipeline = function(pipelineIdentifier, callback) {
   var opts = {};
   opts.contentType = "application/json";
+  opts.async = true;
   this.doRequest("pipelines/" + pipelineIdentifier, "GET", callback, opts);
 }
 
@@ -84,6 +87,7 @@ CarminClient.prototype.initAndStart = function(executionName, pipelineIdentifier
   var opts = {};
 
   opts.contentType = "application/json";
+  opts.async = true;
   this.doRequestBody("executions", "POST", content, callback, opts);
 }
 
@@ -91,6 +95,7 @@ CarminClient.prototype.initAndStart = function(executionName, pipelineIdentifier
 CarminClient.prototype.getExecution = function(executionIdentifier, callback) {
   var opts = {};
   opts.contentType = "application/json";
+  opts.async = true;
   this.doRequest("executions/" + executionIdentifier, "GET", callback, opts);
 }
 
@@ -98,6 +103,7 @@ CarminClient.prototype.getExecution = function(executionIdentifier, callback) {
 CarminClient.prototype.getExecutionResults = function(executionIdentifier, callback) {
   var opts = {};
   opts.contentType = "application/json";
+  opts.async = true;
   this.doRequest("executions/" + executionIdentifier + '/results', "GET", callback, opts);
 }
 
@@ -106,17 +112,12 @@ CarminClient.prototype.getExecutionResults = function(executionIdentifier, callb
   this.doRequest("path/download?uri=vip://vip.creatis.insa-lyon.fr" + filePath, "GET", callback, {"noJson":true});
 }*/
 
-// Get a file's content
-CarminClient.prototype.downloadFile = function(filePath, callback) {
-  var opts = {};
-  opts.contentType = "application/json";
-  this.doRequest("path/" + filePath + "?action=content", "GET", callback, opts);
-}
 
 // Create a folder in a path given
 CarminClient.prototype.createFolder = function(completePath, callback) {
   var opts = {};
   opts.contentType = "application/json";
+  opts.async = true;
   this.doRequest("path/" + completePath, "PUT", callback, opts);
 }
 
@@ -127,13 +128,31 @@ CarminClient.prototype.uploadData = function(completePath, fileData, callback) {
 
   opts.contentType = "application/octet-stream";
   opts.requestNoJSON = true;
+  opts.async = true;
   this.doRequestBody("path/" + completePath, "PUT", content, callback, opts);
+}
+
+// Get a file's content
+CarminClient.prototype.downloadFile = function(filePath, callback) {
+  var opts = {};
+  opts.contentType = "application/json";
+  opts.async = false;
+  this.doRequest("path" + filePath + "?action=content", "GET", callback, opts);
+}
+
+// Get a file's content
+CarminClient.prototype.getFolderDetails = function(folderPath, callback) {
+  var opts = {};
+  opts.contentType = "application/json";
+  opts.async = true;
+  this.doRequest("path/" + folderPath + "?action=list", "GET", callback, opts);
 }
 
 // Check if a file or a path exists
 CarminClient.prototype.fileExists = function(completePath, callback) {
   var opts = {};
   opts.contentType = "application/json";
+  opts.async = true;
   this.doRequest("path/" + completePath + "?action=exists", "GET", callback, opts);
 }
 

@@ -1,4 +1,5 @@
 //Import utilities
+import _ from 'underscore';
 import { restRequest } from 'girder/rest';
 import { cancelRestRequests } from 'girder/rest';
 import { confirm } from 'girder/dialog';
@@ -52,7 +53,22 @@ var ListPipelines = View.extend({
 
     // Get pipelines of user
     this.carmin.listPipelines(function (data) {
-      this.pipelines = data;
+
+      /*var tmp = data.reduce(function (obj, item) {
+        obj[item.name] = obj[item.name] || [];
+        obj[item.name].push(item);
+        return obj;
+      }, {});
+
+      var pipelines = Object.keys(tmp).map(function (key) {
+        return {name: key, version: tmp[key]};
+      });*/
+
+      var pipelines = _.groupBy(data, 'name');
+
+      console.log(pipelines);
+
+      this.pipelines = pipelines;
       this.render();
     }.bind(this));
   },

@@ -2,7 +2,7 @@
 import { cancelRestRequests, restRequest } from 'girder/rest';
 import _ from 'underscore';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip } from '../utilities';
+import { getCurrentApiKeyVip, getStatusKeys } from '../utilities';
 import CarminClient from '../vendor/carmin/carmin-client';
 
 // Import views
@@ -28,6 +28,7 @@ var MyPipelines = View.extend({
 
     this.carmin = new CarminClient(constants.carminURL, apiKeyVip);
     this.collection = new PipelineCollection;
+    this.statusKeys = getStatusKeys();
 
     // Get all pipeline executions
     restRequest({
@@ -39,13 +40,15 @@ var MyPipelines = View.extend({
         // When the PipelineCollection is update, get the content of this collection and call the render
         const promiseArray = [];
         setTimeout(function() {
-            promiseArray.push(this.collection.fetch());
+          promiseArray.push(this.collection.fetch());
           $.when(...promiseArray).done(() => {
             this.listenTo(this.collection, 'g:changed', this.render);
             this.render();
+            this.getResults(this.collection.toArray());
           });
         }.bind(this), 1000);
       }.bind(this));
+
     });
   },
 
@@ -61,35 +64,86 @@ var MyPipelines = View.extend({
   updateStatus: function (pipeline_executions) {
     return new Promise(function (resolve) {
       _.each(pipeline_executions, function(execution) {
-        this.carmin.getExecution(execution.vipExecutionId, function (workflow) {
-
-          if (execution.status != workflow.status.toUpperCase()) {
-            restRequest({
-              method: 'PUT',
-              url: 'pipeline_execution/' + execution._id + "/status",
-              data: {
-                'status': workflow.status.toUpperCase()
-              }
-            });
-          }
-
-          // If the status is 'Finished', get results of pipeline (async)
-          if (workflow.status == constants.Status.FINISHED)
-            this.getResults(workflow, execution);
-
-        }.bind(this));
+        if (execution.status != this.statusKeys[4] && execution.status != this.statusKeys[5]) {
+          this.carmin.getExecution(execution.vipExecutionId, function (workflow) {
+            // Update the status
+            if (execution.status != workflow.status.toUpperCase()) {
+              restRequest({
+                method: 'PUT',
+                url: 'pipeline_execution/' + execution._id + "/status",
+                data: {
+                  'status': workflow.status.toUpperCase()
+                }
+              });
+            }
+          }.bind(this));
+        }
       }.bind(this));
       resolve();
     }.bind(this));
   },
 
-  getResults: function (workflow, execution) {
-    this.carmin.getExecutionResults(workflow.identifier, function (data) {
+  getResults: function (pipeline_executions) {
+    _.each(pipeline_executions, function (execution) {
+      if (execution.status != this.statusKeys[4] && execution.status != this.statusKeys[5]) {
+        this.carmin.getExecutionResults(execution.get('vipExecutionId'), function (results) {
+          _.each(results, function (result) {
+
+            // SCRIPT AVANT CHANGEMENT DE L'API VIP
+            result = result.replace('/output.txt', '');
+            result = result.replace('content', 'list');
+            result = result.replace('?action=list', '');
+            result = result.replace('http://vip.creatis.insa-lyon.fr/rest/path/', '');
+
+            this.carmin.getFolderDetails(result, function (data) {
+              _.each(data, function (res) {
+                this.carmin.downloadFile(res.path, function (content) {
+                  var fileName = res.path.substring(res.path.lastIndexOf('/') + 1);
+                  console.log(execution);
+                  console.log(res);
+                  console.log(content)
+                  restRequest({
+                    method: 'POST',
+                    url: 'file?parentType=folder&parentId=' + execution.get('pathResultGirder') + '&name=' + fileName
+                    + '&size=' + res.size,
+                    data: "aaa"
+                  }).done((resp) => {
+                    //console.log(resp);
+                  });
+                });
+              }.bind(this));
+            }.bind(this));
+
+            // SCRIPT APRES CHANGEMENT DE L'API VIP
+
+
+          }.bind(this));
+        }.bind(this));
+      }
+    }.bind(this));
+
+    /*this.carmin.getExecutionResults(workflow.identifier, function (data) {
       _.each(data, function (result) {
-        console.log(result);
-        console.log(execution);
-      })
-    });
+
+        // SCRIPT AVANT LE CHANGEMENT DE L'API VIP
+        result = result.replace('/output.txt', '');
+        result = result.replace('content', 'list');
+        result = result.replace('?action=list', '');
+        result = result.replace('http://vip.creatis.insa-lyon.fr/rest/path/', '');
+
+
+        this.carmin.getFolderDetails(result, function (data) {
+          _.each(data, function (res) {
+            this.carmin.downloadFile(res.path, function (content) {
+              console.log(content);
+            });
+          }.bind(this));
+        }.bind(this));
+
+        // SCRIPT NON TESTE APRES LE CHANGEMENT DE L'API VIP
+
+      }.bind(this));
+    }.bind(this));*/
   }
 
 });

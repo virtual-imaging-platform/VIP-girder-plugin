@@ -2,7 +2,7 @@
   .g-body-title Applications
   .g-body-subtitle= file.name
 
-- var i = 0
+- var i = 1
 
 table.table.table-hover
   tbody
@@ -13,12 +13,21 @@ table.table.table-hover
         th Description
         th Version
         th Execution
-    each pipeline in pipelines
-      if pipeline.canExecute
-        tr
-          td= i++
-          td= pipeline.name
-          td= pipeline.description
-          td= pipeline.version
-          td
-            button.btn.btn-small.btn-primary.confirm-pipeline(value=pipeline.identifier) Run it
+    each pipeline, name in pipelines
+      tr
+        td= i
+        td= name
+        td
+        td
+          select.form-control.select-version-pipeline(data-id=i)
+            option(selected, disabled) Choose a version
+            each version in pipeline
+              option(value=version.identifier)= version.version
+        td
+          button.btn.btn-small.btn-primary.confirm-pipeline(id="confirm-pipeline" + i++) Run it
+
+script.
+  $('.select-version-pipeline').change(function (){;
+    var id = $(this).attr('data-id');
+    $('#confirm-pipeline' + id).val($(this).val());
+  });

@@ -3,6 +3,7 @@ import { getCurrentUser } from 'girder/auth';
 import { restRequest, cancelRestRequests } from 'girder/rest';
 import router from 'girder/router';
 import events from 'girder/events';
+import { Status } from './constants';
 
 // Import views
 import FrontPageView from 'girder/views/body/FrontPageView';
@@ -22,6 +23,11 @@ function getCurrentApiKeyVip() {
   return (getCurrentUser().get('apiKeyVip') ? getCurrentUser().get('apiKeyVip') : null);
 }
 
+function getStatusKeys() {
+  return Object.keys(Status);
+}
+
 export {
-  getCurrentApiKeyVip
+  getCurrentApiKeyVip,
+  getStatusKeys
 };
