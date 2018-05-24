@@ -30,6 +30,12 @@ var MyPipelines = View.extend({
     this.collection = new PipelineCollection;
     this.statusKeys = getStatusKeys();
 
+    this.carmin.listPipelines().then(function (data) {
+      console.log(data);
+    });
+
+    return ;
+
     // Get all pipeline executions
     restRequest({
       method: 'GET',
@@ -97,20 +103,34 @@ var MyPipelines = View.extend({
 
             this.carmin.getFolderDetails(result, function (data) {
               _.each(data, function (res) {
-                this.carmin.downloadFile(res.path, function (content) {
+
+
+                /*this.carmin.downloadFile(res.path, function (content) {
                   var fileName = res.path.substring(res.path.lastIndexOf('/') + 1);
-                  console.log(execution);
-                  console.log(res);
-                  console.log(content)
+                  var data = content;
+                  var myFile = new File([data], fileName, {type:"application/octet-stream"});
+                  var size = myFile.size;
+
+                  console.log(data);
+                  console.log(myFile);
+                  console.log(size);
+
+
                   restRequest({
                     method: 'POST',
                     url: 'file?parentType=folder&parentId=' + execution.get('pathResultGirder') + '&name=' + fileName
-                    + '&size=' + res.size,
-                    data: "aaa"
+                    + '&size=' + size,
+                    data: myFile,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    encoding: null
                   }).done((resp) => {
                     //console.log(resp);
                   });
-                });
+
+                });*/
+
               }.bind(this));
             }.bind(this));
 

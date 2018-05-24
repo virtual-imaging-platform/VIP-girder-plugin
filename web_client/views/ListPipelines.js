@@ -40,6 +40,7 @@ var ListPipelines = View.extend({
         responseType: "arraybuffer"
       }
     }).then((resp) => {
+      console.log(resp);
       this.file.data = new Uint8Array(resp);
     });
 
@@ -53,22 +54,7 @@ var ListPipelines = View.extend({
 
     // Get pipelines of user
     this.carmin.listPipelines(function (data) {
-
-      /*var tmp = data.reduce(function (obj, item) {
-        obj[item.name] = obj[item.name] || [];
-        obj[item.name].push(item);
-        return obj;
-      }, {});
-
-      var pipelines = Object.keys(tmp).map(function (key) {
-        return {name: key, version: tmp[key]};
-      });*/
-
-      var pipelines = _.groupBy(data, 'name');
-
-      console.log(pipelines);
-
-      this.pipelines = pipelines;
+      this.pipelines = _.groupBy(data, 'name');;
       this.render();
     }.bind(this));
   },
