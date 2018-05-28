@@ -3,7 +3,6 @@
 .creatis-list-pipelines-header
   .g-body-title My executions
   .g-body-subtitle Executions history
-  p= d
 
 table.table.table-hover
   tbody
@@ -18,12 +17,14 @@ table.table.table-hover
         th Actions
     each pipeline in pipelines
       - var date = new Date(pipeline.get('timestampCreation') * 1000);
-      tr
+      tr.pipeline
         td= i++
         td= pipeline.name()
         td= pipeline.get('pipelineName')
         td= status[pipeline.get('status')]
         td= date.getMonth()+1 + "/" + date.getDate() + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
-        td
+        td#pipeline-action
           a(href="#user/" + user.id + "/folder/" + pipeline.get('childFolderResult'), target='_blank')
             button.btn.btn-small.btn-primary Results
+
+          button.btn.btn-small.btn-danger.deletePipeline(value=pipeline.id) Delete

@@ -18,6 +18,9 @@ import PipelineModel from '../models/PipelineModel';
 // Import templates
 import MyPipelinesTempalte from '../templates/myPipelines.pug';
 
+// Import stylesheets
+import '../stylesheets/myPipelines.styl';
+
 var MyPipelines = View.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
@@ -52,6 +55,10 @@ var MyPipelines = View.extend({
       }.bind(this));
 
     });
+  },
+
+  events: {
+    'click .deletePipeline' : 'deletePipeline'
   },
 
   render: function () {
@@ -181,6 +188,23 @@ var MyPipelines = View.extend({
     var folderName = "Results - " + execution.get('name') + ' - ' + date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate();
 
     return folderName;
+  },
+
+  deletePipeline: function (e) {
+    var id = $(e)[0].currentTarget.value;
+
+    if (id) {
+      restRequest({
+        method: 'DELETE',
+        url: 'pipeline_execution/' + id
+      }).done(() => {
+        var pipeline = $(e)[0].currentTarget.parentElement.parentElement;
+
+        $(pipeline).addClass('removed-pipeline').one('webkitAnimationEnd oanimationend msAnimationEnd animationend', function (e) {
+          $(pipeline).remove();
+        });
+      });
+    }
   }
 
 });
