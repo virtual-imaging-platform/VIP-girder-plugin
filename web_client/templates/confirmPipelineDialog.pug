@@ -28,7 +28,7 @@
             .form-group
               label(for="selectFolderDestination") Result directory
               select.form-control#selectFolderDestination(required= "true")
-                option(selected='true', disabled='true') Folder
+                option(selected, disabled, hidden)
                 each folder in folders
                   option(value=folder._id)!= folder.indentText + folder.name
 
@@ -43,7 +43,7 @@
                 .form-group
                   label Description
                   p= param.description
-                  
+
                 .form-group
                   label(for=param.name)= param.name
                   input.form-control(id=param.name, type="text", required= "true")

@@ -16,6 +16,7 @@ class PipelineExecution(Resource):
         self.route('GET', (':id',), self.getById)
         self.route('POST', (), self.createProcess)
         self.route('PUT', (':id', 'status'), self.setStatus)
+        self.route('PUT', (':id', 'idChildFolderResult'), self.setChildFolderResult)
         self.route('DELETE', (':id',), self.deleteProcess)
 
     @access.public
@@ -64,6 +65,16 @@ class PipelineExecution(Resource):
     def setStatus(self, pipelineExecution, status):
         self.model.setStatus(pipelineExecution, status)
         return {'message': 'Status was changed'}
+
+    @access.public
+    @autoDescribeRoute(
+       Description("Set id of the child folder of exection results")
+       .modelParam('id', 'The ID of the execution', model=PipelineExecutionModel, destName='pipelineExecution')
+       .param('idChild', 'The ID of the child folder')
+    )
+    def setChildFolderResult(self, pipelineExecution, idChild):
+        self.model.setChildFolderResult(pipelineExecution, idChild)
+        return {'message': 'childFolderResult was changed'}
 
     # Ajouter dans modelParam un argument level=AccessType.ADMIN
     # Pour controller les acces, etendre le model a AccessControlledModel

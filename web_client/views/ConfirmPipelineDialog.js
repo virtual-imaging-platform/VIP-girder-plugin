@@ -63,16 +63,17 @@ var ConfirmPipelineDialog = View.extend({
 
   initPipeline: function (e) {
     e.preventDefault();
+
     $('#g-dialog-container').find('a.close').click();
     var folderPath = this.pathVIP + "process-" + getTimestamp();
 
     console.log("Check folder Girder");
     // Check if Girder folder exists
-    this.carmin.fileExists(this.pathVIP, function (data) {
+    this.carmin.fileExists(this.pathVIP).then(function (data) {
       if (!data.exists) {
         console.log("Doesn't exist");
         console.log("Create folder Girder/");
-        this.carmin.createFolder(this.pathVIP, function (data) {
+        this.carmin.createFolder(this.pathVIP).then(function (data) {
           if (!checkError(data)) {
             console.log("OK");
             this.sendFile(folderPath);
@@ -88,12 +89,12 @@ var ConfirmPipelineDialog = View.extend({
   sendFile: function (folderPath) {
     // Create folder to this process
     console.log("Create folder process-xxxxxx/");
-    this.carmin.createFolder(folderPath, function (data) {
+    this.carmin.createFolder(folderPath).then(function (data) {
       if (!checkError(data)) {
         console.log("OK");
         // Send file into folder
         console.log("Send file");
-        this.carmin.uploadData(folderPath + "/" + this.file.name, this.file.data, function (data) {
+        this.carmin.uploadData(folderPath + "/" + this.file.name, this.file.data).then(function (data) {
           if (!checkError(data)) {
             console.log("OK");
             this.launchPipeline(folderPath);
@@ -104,7 +105,6 @@ var ConfirmPipelineDialog = View.extend({
   },
 
   launchPipeline: function (folderPath) {
-    this.form = this.$el[0].firstChild.firstChild.firstChild;
     var nameExecution = this.form[0].value;
     var folderGirderDestination = this.form[1].value;
     var sendMail = this.form[2].checked;
@@ -121,7 +121,7 @@ var ConfirmPipelineDialog = View.extend({
       }
     }.bind(this));
 
-    this.carmin.initAndStart(nameExecution, this.currentPipeline.identifier, this.parameters, function (data) {
+    this.carmin.initAndStart(nameExecution, this.currentPipeline.identifier, this.parameters).then(function (data) {
       if (!checkError(data)) {
         var filesInput = $.extend({}, this.filesInput);
         var params = {
@@ -131,6 +131,7 @@ var ConfirmPipelineDialog = View.extend({
           vipExecutionId: data.identifier,
           status: Status[data.status.toUpperCase()],
           pathResultGirder: folderGirderDestination,
+          childFolderResult: '',
           sendMail: sendMail,
           listFileResult: '{}',
           timestampFin: null

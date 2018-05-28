@@ -46,7 +46,8 @@ wrap(UserAccountView, 'render', function(render) {
       errorMessage.empty();
 
       // Test API key on VIP
-      carmin.listPipelines(function (data) {
+      carmin.listPipelines().then((data) => {
+        // Wrong API
         if (data.errorCode == '40101') {
           errorMessage.text("This API key is wrong");
           return ;
@@ -77,6 +78,7 @@ wrap(UserAccountView, 'render', function(render) {
           });
         });
       });
+
     }.bind(this));
 
   });

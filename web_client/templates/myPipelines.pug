@@ -22,7 +22,8 @@ table.table.table-hover
         td= i++
         td= pipeline.name()
         td= pipeline.get('pipelineName')
-        td= pipeline.get('status')
+        td= status[pipeline.get('status')]
         td= date.getMonth()+1 + "/" + date.getDate() + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
         td
-          i.icon-remove
+          a(href="#user/" + user.id + "/folder/" + pipeline.get('childFolderResult'), target='_blank')
+            button.btn.btn-small.btn-primary Results

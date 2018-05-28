@@ -40,7 +40,6 @@ var ListPipelines = View.extend({
         responseType: "arraybuffer"
       }
     }).then((resp) => {
-      console.log(resp);
       this.file.data = new Uint8Array(resp);
     });
 
@@ -53,10 +52,11 @@ var ListPipelines = View.extend({
     });
 
     // Get pipelines of user
-    this.carmin.listPipelines(function (data) {
+    this.carmin.listPipelines().then(function (data) {
       this.pipelines = _.groupBy(data, 'name');;
       this.render();
     }.bind(this));
+
   },
 
   events: {
@@ -92,7 +92,8 @@ var ListPipelines = View.extend({
   */
   confirmPipeline: function (e) {
     var pipelineIdentifier = $(e.currentTarget)[0].value;
-    this.carmin.describePipeline(pipelineIdentifier, function (data) {
+
+    this.carmin.describePipeline(pipelineIdentifier).then(function (data) {
       if (typeof data.errorCode !== 'undefined') {
         events.trigger('g:alert', {
           text: "Unable to retrieve application informations for this version",
@@ -111,6 +112,7 @@ var ListPipelines = View.extend({
         });
       }
     }.bind(this));
+
   },
 
   /**
