@@ -14,20 +14,20 @@ table.table.table-hover
         th Version
         th Execution
     each pipeline, name in pipelines
+      - var firstVersion = pipeline[0].identifier
       tr
         td= i
         td= name
         td
         td
           select.form-control.select-version-pipeline(data-id=i)
-            option(selected, disabled) Choose a version
             each version in pipeline
               option(value=version.identifier)= version.version
         td
-          button.btn.btn-small.btn-primary.confirm-pipeline(id="confirm-pipeline" + i++) Run it
+          button.btn.btn-small.btn-primary.confirm-pipeline(id="confirm-pipeline" + i++, value=firstVersion) Run it
 
 script.
-  $('.select-version-pipeline').change(function (){;
+  $('.select-version-pipeline').change(function (){
     var id = $(this).attr('data-id');
     $('#confirm-pipeline' + id).val($(this).val());
   });

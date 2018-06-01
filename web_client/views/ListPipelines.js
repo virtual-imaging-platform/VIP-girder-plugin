@@ -7,7 +7,7 @@ import { getCurrentUser } from 'girder/auth';
 import events from 'girder/events';
 import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip } from '../utilities';
+import { getCurrentApiKeyVip, triPipelines } from '../utilities';
 
 // Import views
 import View from 'girder/views/View';
@@ -39,7 +39,7 @@ var ListPipelines = View.extend({
       xhrFields: {
         responseType: "arraybuffer"
       }
-    }).then((resp) => {
+    }).done((resp) => {
       this.file.data = new Uint8Array(resp);
     });
 
@@ -53,7 +53,7 @@ var ListPipelines = View.extend({
 
     // Get pipelines of user
     this.carmin.listPipelines().then(function (data) {
-      this.pipelines = _.groupBy(data, 'name');;
+      this.pipelines = triPipelines(data);
       this.render();
     }.bind(this));
 

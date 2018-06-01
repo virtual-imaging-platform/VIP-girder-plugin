@@ -4,28 +4,14 @@ import 'girder/utilities/jquery/girderModal';
 import { restRequest } from 'girder/rest';
 import events from 'girder/events';
 import { Status } from '../constants';
+import { checkRequestError, messageGirder, getTimestamp } from '../utilities';
+import 'bootstrap/js/button';
 
 // Import views
 import View from 'girder/views/View';
 
 // Import templates
 import ConfirmPipelineDialogTemplate from '../templates/confirmPipelineDialog.pug';
-
-function getTimestamp () {
-  return (Math.round((new Date()).getTime() / 1000));
-}
-
-function checkError (data) {
-  if (typeof data.errorCode !== 'undefined' && data.errorCode != null) {
-    events.trigger('g:alert', {
-      text: data.errorMessage,
-      type: "danger",
-      duration: 3000
-    });
-    return 1;
-  }
-  return 0;
-}
 
 // Liste les applications de VIP accessibles par l'utilisateur
 var ConfirmPipelineDialog = View.extend({
@@ -58,13 +44,35 @@ var ConfirmPipelineDialog = View.extend({
       folders: this.foldersCollection
     })).girderModal(this);
 
+    $('a[data-toggle="tab"]').click(function () {
+      $(this).css('background-color', 'transparent');
+    });
+
     return this;
   },
 
   initPipeline: function (e) {
     e.preventDefault();
 
-    $('#g-dialog-container').find('a.close').click();
+    var nameExecution = $('#name-execution');
+    var folderGirderDestination = $('#selectFolderDestination');
+
+    if (!nameExecution.val() || !folderGirderDestination.val())
+      $('#tab-general').css('background-color', '#e2181852');
+    else
+      $('#tab-general').css('background-color', 'transparent');
+
+    _.each(this.currentPipeline.parameters, function(param) {
+      var e = $('#' + param.name)
+      if (e.length > 0 && !e.val()) // If the parameter exists in the DOM but is empty
+        $('#tab-' + param.name).css('background-color', '#e2181852');
+      else if (e.length > 0 && e.val())
+        $('#tab-' + param.name).css('background-color', 'transparent');
+    }.bind(this));
+
+
+    $('#run-pipeline').button('loading');
+
     var folderPath = this.pathVIP + "process-" + getTimestamp();
 
     console.log("Check folder Girder");
@@ -74,7 +82,7 @@ var ConfirmPipelineDialog = View.extend({
         console.log("Doesn't exist");
         console.log("Create folder Girder/");
         this.carmin.createFolder(this.pathVIP).then(function (data) {
-          if (!checkError(data)) {
+          if (!checkRequestError(data)) {
             console.log("OK");
             this.sendFile(folderPath);
           }
@@ -90,29 +98,33 @@ var ConfirmPipelineDialog = View.extend({
     // Create folder to this process
     console.log("Create folder process-xxxxxx/");
     this.carmin.createFolder(folderPath).then(function (data) {
-      if (!checkError(data)) {
+      if (!checkRequestError(data)) {
         console.log("OK");
         // Send file into folder
         console.log("Send file");
         this.carmin.uploadData(folderPath + "/" + this.file.name, this.file.data).then(function (data) {
-          if (!checkError(data)) {
+          if (!checkRequestError(data)) {
             console.log("OK");
             this.launchPipeline(folderPath);
           }
         }.bind(this));
       }
-    }.bind(this));
+    }.bind(this), function (data){
+      console.log("erreur: " + data);
+    });
   },
 
   launchPipeline: function (folderPath) {
-    var nameExecution = this.form[0].value;
-    var folderGirderDestination = this.form[1].value;
-    var sendMail = this.form[2].checked;
+    var nameExecution = $('#name-execution').val();
+    var folderGirderDestination = $('#selectFolderDestination').val();
+    var sendMail = $('#send-email').is(':checked');
     var pathFileVIP = folderPath + "/" + this.file.name;
 
     // Fill paramaters
     _.each(this.currentPipeline.parameters, function(param) {
-      if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) {
+      if (param.name == "results-directory") {
+        this.parameters[param.name] = '/' + folderPath;
+      } else if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) { // condition bizarre à revoir
         this.parameters[param.name] = $('#'+param.name).val();
       } else if (param.type == 'File' && !param.defaultValue) {
         this.parameters[param.name] = folderPath + "/" + this.file.name;
@@ -121,8 +133,11 @@ var ConfirmPipelineDialog = View.extend({
       }
     }.bind(this));
 
+    //console.log(this.parameter);
+    //return;
+
     this.carmin.initAndStart(nameExecution, this.currentPipeline.identifier, this.parameters).then(function (data) {
-      if (!checkError(data)) {
+      if (!checkRequestError(data)) {
         var filesInput = $.extend({}, this.filesInput);
         var params = {
           name: data.name,
@@ -141,12 +156,10 @@ var ConfirmPipelineDialog = View.extend({
           method: 'POST',
           url: 'pipeline_execution',
           data: params
-        }).done(function (resp){
-          events.trigger('g:alert', {
-            text: "The execution is launched correctly",
-            type: "success",
-            duration: 3000
-          });
+        }).done(function (){
+          $('#run-pipeline').button('reset');
+          $('#g-dialog-container').find('a.close').click();
+          messageGirder("success", "The execution is launched correctly", 3000);
         });
       }
 

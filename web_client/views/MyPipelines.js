@@ -65,6 +65,7 @@ var MyPipelines = View.extend({
     this.$el.html(MyPipelinesTempalte({
       pipelines: this.collection.toArray(),
       status: constants.Status,
+      statusKeys: this.statusKeys,
       user: getCurrentUser()
     }));
 
@@ -157,19 +158,31 @@ var MyPipelines = View.extend({
         cache: false,
         contentType: false,
         processData: false,
-      }).done(() => {
+      }).done((data) => {
         count.nbSuccess++;
 
         if (count.nbSuccess == results.length) {
+          // Status set to FETCHED
+
           restRequest({
             method: 'PUT',
             url: 'pipeline_execution/' + execution.id + '/status',
             data: {status: this.statusKeys[4]}
           });
+
+          // Set metadata
+          restRequest({
+            method: 'PUT',
+            url: 'item/' + data.itemId + '/metadata',
+            contentType: 'application/json',
+            data: JSON.stringify({
+              workflow: execution.get('vipExecutionId')
+            })
+          });
+
         }
       }).fail(() => {
         // TODO Supprimer le dossier parent (celui avec le timestamp)
-
         restRequest({
           method: 'PUT',
           url: 'pipeline_execution/' + execution.id + '/status',
@@ -185,7 +198,9 @@ var MyPipelines = View.extend({
 
   getResultFolderName: function (execution) {
     var date = new Date(execution.get('timestampCreation') * 1000);
-    var folderName = "Results - " + execution.get('name') + ' - ' + date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate();
+    var folderName = "Results - " + execution.get('name') + ' - ' + date.getFullYear() + '/'
+    + (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + date.getMinutes()
+    + ':' + date.getSeconds();
 
     return folderName;
   },

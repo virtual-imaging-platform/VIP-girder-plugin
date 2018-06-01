@@ -15,23 +15,27 @@ function isJson(data) {
 
 // Global function to send the request
 CarminClient.prototype.doRequest = function(path, method, opts) {
-  var promiseObject = new Promise(function (resolve) {
+  var promiseObject = new Promise(function (resolve, reject) {
     opts = opts || {};
     var xmlHttp = new XMLHttpRequest();
 
     xmlHttp.onreadystatechange = function() {
-      if (xmlHttp.readyState == 4) {
+      if (xmlHttp.readyState == XMLHttpRequest.DONE) {
 
-        if (opts.noJson)
-          var response = xmlHttp.responseText;
-        else if (opts.responseTypeBuffer)
-          var response = xmlHttp.response;
-        else if (isJson(xmlHttp.responseText))
-          var response = JSON.parse(xmlHttp.responseText);
+        if (xmlHttp.status == 200 || xmlHttp.status == 201) {
+          if (opts.noJson)
+            var response = xmlHttp.responseText;
+          else if (opts.responseTypeBuffer)
+            var response = xmlHttp.response;
+          else if (isJson(xmlHttp.responseText))
+            var response = JSON.parse(xmlHttp.responseText);
+          else
+            var response = xmlHttp.responseText;
+
+          resolve(response);
+        }
         else
-          var response = xmlHttp.responseText;
-
-        resolve(response);
+          reject(response);
       }
     };
 
