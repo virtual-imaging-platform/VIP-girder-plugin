@@ -7,7 +7,7 @@ import { getCurrentUser } from 'girder/auth';
 import events from 'girder/events';
 import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip, triPipelines } from '../utilities';
+import { getCurrentApiKeyVip, sortPipelines } from '../utilities';
 
 // Import views
 import View from 'girder/views/View';
@@ -51,9 +51,11 @@ var ListPipelines = View.extend({
       this.collectionId = resp.baseParentId;
     });
 
+
     // Get pipelines of user
     this.carmin.listPipelines().then(function (data) {
-      this.pipelines = triPipelines(data);
+
+      this.pipelines = sortPipelines(data);
       this.render();
     }.bind(this));
 

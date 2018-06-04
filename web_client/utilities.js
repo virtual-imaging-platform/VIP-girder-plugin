@@ -2,6 +2,7 @@
 import _ from 'underscore';
 import { getCurrentUser } from 'girder/auth';
 import { restRequest, cancelRestRequests } from 'girder/rest';
+import compareVersions from 'compare-versions';
 import router from 'girder/router';
 import events from 'girder/events';
 import { Status } from './constants';
@@ -45,7 +46,7 @@ function getStatusKeys () {
   return Object.keys(Status);
 }
 
-function triPipelines(allPipelines) {
+function sortPipelines(allPipelines) {
   // Regroupe toutes les pipelines par leur nom
   var pipelinesByName = _.groupBy(allPipelines, 'name');
 
@@ -59,36 +60,32 @@ function triPipelines(allPipelines) {
     });
   });
 
-  // Remplace la valeur de 'versionClean' par une valeur decimale pour qu'on puisse faire la comparaison
-  // cad: 0.1.2 -> 0.12
-  // TODO: faire cette étape dans le regexp au dessus. Si on enleve tous les points on devrait arriver au même résultats
-  pipelinesClean.forEach(function (pipeline){
-    pipeline.forEach(function (e){
-      var checkDot = 0;
-      var tmp = "";
-      for (var i = 0; i < e['versionClean'].length; i++) {
-        if (e['versionClean'][i] == '.' && !checkDot) {
-          checkDot = 1;
-          tmp += e['versionClean'][i];
-        }
-        else if (e['versionClean'][i] != '.')
-          tmp += e['versionClean'][i];
-      }
-      e['versionClean'] = tmp;
-    });
-  });
-
-  // Tri le tableau (desc)
+  // Tri les éléments du tableau par rapport aux valeurs de 'versionClean'
   var pipelines = _.map(pipelinesClean, function (e) {
-    var tmp = _.sortBy(e, 'versionClean');
-    return tmp.reverse();
+    return e.sort(function (a, b){
+      if (!a.versionClean && b.versionClean)
+        return -1;
+
+      if (a.versionClean && !b.versionClean)
+        return 1;
+
+      if (a.versionClean && b.versionClean)
+        return compareVersions(a.versionClean, b.versionClean);
+    }).reverse();
   });
 
-  var keys = Object.keys(pipelinesByName);
-  var tmp = {};
+
+  // // Tri le tableau (desc)
+  // var pipelines = _.map(pipelinesClean, function (e) {
+  //   var tmp = _.sortBy(e, 'versionClean');
+  //   return tmp.reverse();
+  // });
 
   // Créer un objet en remplacant les clés par l'id du pipeline
   // cad: au lieu d'avoir array[0], on a array['Id_Of_Pipeline']
+  var keys = Object.keys(pipelinesByName);
+  var tmp = {};
+
   pipelines.forEach(function (e, k) {
     tmp[keys[k]] = e;
   })
@@ -102,5 +99,5 @@ export {
   checkRequestError,
   getCurrentApiKeyVip,
   getStatusKeys,
-  triPipelines
+  sortPipelines
 };
