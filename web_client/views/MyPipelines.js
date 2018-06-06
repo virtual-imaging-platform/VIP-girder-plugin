@@ -45,21 +45,18 @@ var MyPipelines = View.extend({
       method: 'GET',
       url: 'pipeline_execution'
     }).then((resp) => {
-      this.updateStatus(resp).then(function (){
-
-        // When the PipelineCollection is update, get the content of this collection and call the render
-        const promiseArray = [];
-        setTimeout(function() {
-          promiseArray.push(this.collection.fetch());
-          $.when(...promiseArray).done(() => {
-            this.listenTo(this.collection, 'g:changed', this.render);
-            this.render();
-            this.getResults(this.collection.toArray());
-          });
-        }.bind(this), 1000);
-      }.bind(this));
-
+      return this.updateStatus(resp);
+    }).then(() => {
+      // When the PipelineCollection is update, get the content of this collection and call the render
+      const promiseArray = [];
+      promiseArray.push(this.collection.fetch());
+      $.when(...promiseArray).done(() => {
+        this.listenTo(this.collection, 'g:changed', this.render);
+        this.render();
+        this.getResults(this.collection.toArray());
+      });
     });
+
   },
 
   events: {
@@ -79,22 +76,25 @@ var MyPipelines = View.extend({
 
   updateStatus: function (pipeline_executions) {
     return new Promise(function (resolve) {
+      const promiseArray = [];
       _.each(pipeline_executions, function(execution) {
         if (execution.status != this.statusKeys[4] && execution.status != this.statusKeys[5]) {
-          this.carmin.getExecution(execution.vipExecutionId).then(function (workflow) {
-
+          var promiseCarmin = this.carmin.getExecution(execution.vipExecutionId).then(function (workflow) {
             if (execution.status != workflow.status.toUpperCase()) {
-              restRequest({
+              var promise = restRequest({
                 method: 'PUT',
                 url: 'pipeline_execution/' + execution._id + "/status",
                 data: { 'status': workflow.status.toUpperCase() }
               });
+              promiseArray.push(promise);
             }
-
           });
+          promiseArray.push(promiseCarmin);
         }
       }.bind(this));
-      resolve();
+      $.when(...promiseArray).done(() => {
+        resolve();
+      });
     }.bind(this));
   },
 
@@ -148,7 +148,6 @@ var MyPipelines = View.extend({
     }.bind(this));
   },
 
-  // TODO: REFAIRE TOUTE LA FONCTION AU PROPRE
   // getResults: function (pipeline_executions) {
   //   var chain = Promise.resolve();
   //   _.each(pipeline_executions, function (execution) {
@@ -238,9 +237,9 @@ var MyPipelines = View.extend({
             $('.deletePipeline[value="'+ execution.id +'"]').closest('tr.pipeline').find('td.status').html(constants.Status['FETCHED']);
 
             // Delete folder process-timestamp in VIP
-            // this.carmin.deletePath(execution.get('folderNameProcessVip')).then(function(){}, function (){
-            //   console.log('Error: Folder process-timestamp could not be deleted');
-            // });
+            this.carmin.deletePath(execution.get('folderNameProcessVip')).then(function(){}, function (){
+              console.log('Error: Folder process-timestamp could not be deleted');
+            });
 
             resolve();
           }
@@ -281,15 +280,15 @@ var MyPipelines = View.extend({
   },
 
   deletePipeline: function (e) {
-    var id = $(e)[0].currentTarget.value;
+    var buttonDelete = $(e.currentTarget);
+    var id = buttonDelete.val();
 
     if (id) {
       restRequest({
         method: 'DELETE',
         url: 'pipeline_execution/' + id
       }).done(() => {
-        // TODO: get by DOM, not parentElement -> closest('tr.pipeline')
-        var pipeline = $(e)[0].currentTarget.parentElement.parentElement;
+        var pipeline = buttonDelete.closest('tr.pipeline');
 
         $(pipeline).addClass('removed-pipeline').one('webkitAnimationEnd oanimationend msAnimationEnd animationend', function (e) {
           $(pipeline).remove();
