@@ -56,61 +56,61 @@ var ConfirmPipelineDialog = View.extend({
 
     var nameExecution = $('#name-execution');
     var folderGirderDestination = $('#selectFolderDestination');
+    var checkArg = 1;
 
-    if (!nameExecution.val() || !folderGirderDestination.val())
+    if (!nameExecution.val() || !folderGirderDestination.val()) {
       $('#tab-general').css('background-color', '#e2181852');
+      checkArg = 0;
+    }
     else
       $('#tab-general').css('background-color', 'transparent');
 
     _.each(this.currentPipeline.parameters, function(param) {
       var e = $('#' + param.name)
-      if (e.length > 0 && !e.val()) // If the parameter exists in the DOM but is empty
+      if (e.length > 0 && !e.val()) {// If the parameter exists in the DOM but is empty
         $('#tab-' + param.name).css('background-color', '#e2181852');
+        checkArg = 0
+      }
       else if (e.length > 0 && e.val())
         $('#tab-' + param.name).css('background-color', 'transparent');
     }.bind(this));
 
+    if (!checkArg)
+      return ;
 
     $('#run-pipeline').button('loading');
 
     var folderPath = this.pathVIP + "process-" + getTimestamp();
 
-    console.log("Check folder Girder");
+    // TODO Promise composition
     // Check if Girder folder exists
     this.carmin.fileExists(this.pathVIP).then(function (data) {
       if (!data.exists) {
-        console.log("Doesn't exist");
-        console.log("Create folder Girder/");
         this.carmin.createFolder(this.pathVIP).then(function (data) {
           if (!checkRequestError(data)) {
-            console.log("OK");
             this.sendFile(folderPath);
           }
         }.bind(this));
       } else {
-        console.log("Exist");
         this.sendFile(folderPath);
       }
     }.bind(this));
   },
 
+  // TODO Promise composition
   sendFile: function (folderPath) {
     // Create folder to this process
-    console.log("Create folder process-xxxxxx/");
     this.carmin.createFolder(folderPath).then(function (data) {
       if (!checkRequestError(data)) {
-        console.log("OK");
         // Send file into folder
-        console.log("Send file");
         this.carmin.uploadData(folderPath + "/" + this.file.name, this.file.data).then(function (data) {
           if (!checkRequestError(data)) {
-            console.log("OK");
             this.launchPipeline(folderPath);
           }
         }.bind(this));
       }
     }.bind(this), function (data){
-      console.log("erreur: " + data);
+      console.log("Erreur: " + data);
     });
   },
 
@@ -144,12 +144,13 @@ var ConfirmPipelineDialog = View.extend({
           fileId: JSON.stringify(filesInput),
           pipelineName: this.currentPipeline.name,
           vipExecutionId: data.identifier,
-          status: Status[data.status.toUpperCase()],
+          status: data.status.toUpperCase(),
           pathResultGirder: folderGirderDestination,
           childFolderResult: '',
           sendMail: sendMail,
           listFileResult: '{}',
-          timestampFin: null
+          timestampFin: null,
+          folderNameProcessVip: folderPath
         };
 
         restRequest({

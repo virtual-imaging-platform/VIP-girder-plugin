@@ -22,7 +22,7 @@ table.table.table-hover
         td= i++
         td= pipeline.name()
         td= pipeline.get('pipelineName')
-        td= status[pipeline.get('status')]
+        td.status= status[pipeline.get('status')]
         td= date.getMonth()+1 + "/" + date.getDate() + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
         td#pipeline-action
           a(href="#user/" + user.id + "/folder/" + pipeline.get('childFolderResult'), target='_blank', style="visibility:" + hideResult)

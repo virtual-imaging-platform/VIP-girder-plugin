@@ -10,7 +10,8 @@ class PipelineExecution(Model):
     def initialize(self):
         self.name = 'pipeline_execution'
         self.ensureIndices(('name', 'fileId', 'userId', 'pipelineName', 'vipExecutionId', 'pathResultGirder',
-        'childFolderResult', 'status', 'sendMail', 'listFileResult', 'timestampCreation', 'timestampFin'))
+        'childFolderResult', 'status', 'sendMail', 'listFileResult', 'timestampCreation', 'timestampFin',
+        'folderNameProcessVip'))
 
     def validate(self, PipelineExecution):
         return PipelineExecution
@@ -34,7 +35,8 @@ class PipelineExecution(Model):
             'sendMail': params['sendMail'],
             'listFileResult': params['listFileResult'],
             'timestampCreation': time.time(),
-            'timestampFin': params['timestampFin']
+            'timestampFin': params['timestampFin'],
+            'folderNameProcessVip': params['folderNameProcessVip']
         }
 
         return self.save(pipeline)

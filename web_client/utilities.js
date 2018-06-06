@@ -23,7 +23,6 @@ function messageGirder (type, text, duration) {
 }
 
 function checkRequestError (data) {
-  console.log(data);
   if (typeof data.errorCode !== 'undefined' && data.errorCode != null) {
     messageGirder("danger", data.errorMessage, 3000);
     return 1;
@@ -60,7 +59,7 @@ function sortPipelines(allPipelines) {
     });
   });
 
-  // Tri les éléments du tableau par rapport aux valeurs de 'versionClean'
+  // Tri les éléments du tableau par rapport aux valeurs de 'versionClean' (desc)
   var pipelines = _.map(pipelinesClean, function (e) {
     return e.sort(function (a, b){
       if (!a.versionClean && b.versionClean)
@@ -73,13 +72,6 @@ function sortPipelines(allPipelines) {
         return compareVersions(a.versionClean, b.versionClean);
     }).reverse();
   });
-
-
-  // // Tri le tableau (desc)
-  // var pipelines = _.map(pipelinesClean, function (e) {
-  //   var tmp = _.sortBy(e, 'versionClean');
-  //   return tmp.reverse();
-  // });
 
   // Créer un objet en remplacant les clés par l'id du pipeline
   // cad: au lieu d'avoir array[0], on a array['Id_Of_Pipeline']

@@ -2,6 +2,7 @@ function CarminClient(baseUrl, apiKey, opts) {
   this.apiKey = apiKey;
   this.baseUrl = baseUrl;
   this.opts = opts || {};
+  this.statusOK = [200, 201, 202, 203, 204];
 }
 
 function isJson(data) {
@@ -21,8 +22,7 @@ CarminClient.prototype.doRequest = function(path, method, opts) {
 
     xmlHttp.onreadystatechange = function() {
       if (xmlHttp.readyState == XMLHttpRequest.DONE) {
-
-        if (xmlHttp.status == 200 || xmlHttp.status == 201) {
+        if (this.statusOK.indexOf(xmlHttp.status) != -1) {
           if (opts.noJson)
             var response = xmlHttp.responseText;
           else if (opts.responseTypeBuffer)
@@ -37,7 +37,7 @@ CarminClient.prototype.doRequest = function(path, method, opts) {
         else
           reject(response);
       }
-    };
+    }.bind(this);
 
     xmlHttp.open(method, this.baseUrl + "/" + path, opts.async);
 
@@ -147,6 +147,14 @@ CarminClient.prototype.downloadFile = function(filePath) {
   opts.responseTypeBuffer = true;
   opts.async = true;
   return this.doRequest("path" + filePath + "?action=content", "GET", opts);
+}
+
+// Delete a path and transitively delete all its content if it is a directory
+CarminClient.prototype.deletePath = function(path) {
+  var opts = {};
+  opts.contentType = "application/json";
+  opts.async = true;
+  return this.doRequest("path/" + path, "DELETE", opts);
 }
 
 // Get a folder's content

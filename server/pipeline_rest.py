@@ -52,6 +52,7 @@ class PipelineExecution(Resource):
     .param('sendMail', 'Send an email when the execution has finished', dataType='boolean', default=False)
     .jsonParam('listFileResult', 'List of the files of result', requireObject=True)
     .param('timestampFin', 'Date of end of pipeline', required=False)
+    .param('folderNameProcessVip', 'Folder name in VIP as process-timestamp')
     )
     def createProcess(self, params):
         return self.model.createProcess(params, self.getCurrentUser())
