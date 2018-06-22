@@ -1,5 +1,6 @@
 //Import utilities
 import _ from 'underscore';
+import router from 'girder/router';
 import { restRequest } from 'girder/rest';
 import { cancelRestRequests } from 'girder/rest';
 import { confirm } from 'girder/dialog';
@@ -7,55 +8,70 @@ import { getCurrentUser } from 'girder/auth';
 import events from 'girder/events';
 import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip, sortPipelines } from '../utilities';
+import { getCurrentApiKeyVip, sortPipelines, messageGirder } from '../utilities';
+
+// Import Model
+import FileModel from 'girder/models/FileModel';
 
 // Import views
 import View from 'girder/views/View';
+import HierarchyWidget from 'girder/views/widgets/HierarchyWidget';
 import FrontPageView from 'girder/views/body/FrontPageView';
-import ConfirmPipelineDialog from './ConfirmPipelineDialog';
+import ConfirmPipelineDialogMultiFiles from './ConfirmPipelineDialogMultiFiles';
 
 // Import templates
-import ListPipelinesTemplate from '../templates/listPipelines.pug';
+import ListPipelinesMultiFilesTemplate from '../templates/listPipelinesMultiFiles.pug';
 
 // List of pipelines allowed by the user
 var ListPipelines = View.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
-    var apiKeyVip = getCurrentApiKeyVip();
-    if (apiKeyVip == null) {
+    if (typeof settings.items == 'undefined' || settings.items == null) {
+      messageGirder('danger', 'Checked files not found. Retry and don\'t reload the page', 3000);
+      router.navigate('', {trigger: true});
       return ;
     }
 
+    var promiseFiles = this.getFilesFromCheckedItems(settings.items);
+    var apiKeyVip = getCurrentApiKeyVip();
+
+    if (apiKeyVip == null)
+      return ;
+
     this.user = getCurrentUser();
-    this.file = settings.file.responseJSON;
     this.foldersCollection = [];
     this.carmin = new CarminClient(constants.carminURL, apiKeyVip);
 
-    // Get file data
-    restRequest({
-      method: "GET",
-      url: "file/" + this.file._id + "/download",
-      xhrFields: {
-        responseType: "arraybuffer"
+    promiseFiles.then(function (resp) {
+      this.files = resp;
+      if (!this.files) {
+        messageGirder('danger', 'Checked files not found. Retry and don\'t reload the page', 3000);
+        router.navigate('', {trigger: true});
+        return ;
       }
-    }).done((resp) => {
-      this.file.data = new Uint8Array(resp);
-    });
 
-    // Get collection id
-    restRequest({
-      method: 'GET',
-      url: 'item/' + this.file.itemId
-    }).done((resp) => {
-      this.collectionId = resp.baseParentId;
-    });
+      // Fill this.files with file's data
+      _.each(this.files, function (file, i) {
+        restRequest({
+          method: 'GET',
+          url: 'file/' + file._id + '/download',
+          xhrFields: {
+            responseType: "arraybuffer"
+          }
+        }).done((resp) => {
+          console.log(resp);
+          this.files[i].data = new Uint8Array(resp);
+        }).fail((error) => {
+          console.log("Error:" + error);
+        });
+      }.bind(this));
 
-
-    // Get pipelines of user
-    this.carmin.listPipelines().then(function (data) {
-      this.pipelines = sortPipelines(data);
-      this.render();
+      // Get pipelines of user
+      this.carmin.listPipelines().then(function (data) {
+        this.pipelines = sortPipelines(data);
+        this.render();
+      }.bind(this));
     }.bind(this));
 
   },
@@ -71,9 +87,9 @@ var ListPipelines = View.extend({
     // Get folders of the user
     this.getFolderRecursively(this.user.id, 0, "");
 
-    this.$el.html(ListPipelinesTemplate({
-      file: this.file,
+    this.$el.html(ListPipelinesMultiFilesTemplate({
       pipelines: this.pipelines,
+      filesCount: Object.keys(this.files).length
     }));
 
     // User's view goes back up on top
@@ -103,8 +119,9 @@ var ListPipelines = View.extend({
         });
       }
       else {
-        new ConfirmPipelineDialog({
-          file: this.file,
+        new ConfirmPipelineDialogMultiFiles({
+          files: this.files,
+          filesCount: Object.keys(this.files).length,
           pipeline: data,
           foldersCollection: this.foldersCollection,
           carmin: this.carmin,
@@ -148,6 +165,32 @@ var ListPipelines = View.extend({
         this.foldersCollection.push(e);
         this.getFolderRecursively(e._id, i, e.path);
       }.bind(this));
+    });
+  },
+
+  getFilesFromCheckedItems: function (items) {
+    return new Promise(function (resolve){
+      var obj = {};
+      var len = Object.keys(items).length - 1;
+
+      _.each(items, function (item, i) {
+        restRequest({
+          method: 'GET',
+          url: 'item/' + item.id + '/files',
+          data: {
+            limit: 1
+          }
+        }).done((resp) => {
+          return restRequest({
+            method: 'GET',
+            url: 'file/' + resp[0]._id
+          });
+        }).done((resp) => {
+          obj[i] = resp[0];
+          if (len == i)
+            resolve(obj);
+        });
+      });
     });
   }
 

@@ -35,7 +35,7 @@ CarminClient.prototype.doRequest = function(path, method, opts) {
           resolve(response);
         }
         else
-          reject(response);
+          reject(xmlHttp.status);
       }
     }.bind(this);
 
@@ -126,7 +126,7 @@ CarminClient.prototype.createFolder = function(completePath) {
   var opts = {};
   opts.contentType = "application/json";
   opts.async = true;
-  return this.doRequest("path/" + completePath, "PUT", opts);
+  return this.doRequest("path" + completePath, "PUT", opts);
 }
 
 // Senf a file's content
@@ -137,7 +137,7 @@ CarminClient.prototype.uploadData = function(completePath, fileData) {
   opts.contentType = "application/octet-stream";
   opts.requestNoJSON = true;
   opts.async = true;
-  return this.doRequestBody("path/" + completePath, "PUT", content, opts);
+  return this.doRequestBody("path" + completePath, "PUT", content, opts);
 }
 
 // Get a file's content
@@ -154,7 +154,7 @@ CarminClient.prototype.deletePath = function(path) {
   var opts = {};
   opts.contentType = "application/json";
   opts.async = true;
-  return this.doRequest("path/" + path, "DELETE", opts);
+  return this.doRequest("path" + path, "DELETE", opts);
 }
 
 // Get a folder's content
@@ -162,7 +162,7 @@ CarminClient.prototype.getFolderDetails = function(folderPath) {
   var opts = {};
   opts.contentType = "application/json";
   opts.async = true;
-  return this.doRequest("path/" + folderPath + "?action=list", "GET", opts);
+  return this.doRequest("path" + folderPath + "?action=list", "GET", opts);
 }
 
 // Check if a file or a path exists
@@ -170,7 +170,7 @@ CarminClient.prototype.fileExists = function(completePath) {
   var opts = {};
   opts.contentType = "application/json";
   opts.async = true;
-  return this.doRequest("path/" + completePath + "?action=exists", "GET", opts);
+  return this.doRequest("path" + completePath + "?action=exists", "GET", opts);
 }
 
 export default CarminClient;

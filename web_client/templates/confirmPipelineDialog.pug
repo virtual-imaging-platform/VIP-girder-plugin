@@ -9,9 +9,15 @@ link(href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-aw
       .modal-header
         a.close(data-dismiss="modal", aria-hidden="true") &times;
         h4.modal-title!= pipeline.name + "  <small>Version " + pipeline.version + "</small>"
-        .g-dialog-subtitle
-          i.icon-doc-inv
-          span= file.name
+        if file && file.name
+          .g-dialog-subtitle
+            i.icon-doc-inv
+            span= file.name
+
+        if filesCount && filesCount > 0
+          .g-dialog-subtitle
+            i.icon-doc-inv
+            span= filesCount + " selected files"
       .modal-body
         ul.nav.nav-tabs
           li.active
@@ -25,7 +31,7 @@ link(href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-aw
           #general.tab-pane.fade.active.in
             .form-group
               label(for="name-execution") Name of execution
-              input.form-control#name-execution(type="text")
+              input.form-control#name-execution(type="text", autocomplete="off")
 
             .form-group
               label(for="selectFolderDestination") Result directory

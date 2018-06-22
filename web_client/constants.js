@@ -1,4 +1,5 @@
-const carminURL = "http://vip.creatis.insa-lyon.fr/rest";
+//const carminURL = "http://vip.creatis.insa-lyon.fr/rest";
+const carminURL = "http://vip.creatis.insa-lyon.fr:4040/rest";
 //const carminURL = "http://newk.grid.creatis.insa-lyon.fr:4040/cors/rest";
 //const carminURL = "http://newk.grid.creatis.insa-lyon.fr:4040/rest";
 
@@ -15,7 +16,10 @@ const Status = {
   KILLED: "Killed"
 };
 
+const ChunkSize = 10000000;
+
 export {
   carminURL,
-  Status
+  Status,
+  ChunkSize
 };

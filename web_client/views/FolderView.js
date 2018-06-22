@@ -2,7 +2,7 @@
 import _ from 'underscore';
 import { wrap } from 'girder/utilities/PluginUtils';
 import events from 'girder/events';
-import { restRequest } from 'girder/rest'
+import { restRequest } from 'girder/rest';
 
 // Import views
 import ItemListWidget from 'girder/views/widgets/ItemListWidget';

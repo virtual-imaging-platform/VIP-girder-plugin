@@ -47,12 +47,6 @@ wrap(UserAccountView, 'render', function(render) {
 
       // Test API key on VIP
       carmin.listPipelines().then((data) => {
-        // Wrong API
-        if (data.errorCode == '40101') {
-          errorMessage.text("This API key is wrong");
-          return ;
-        }
-
         // Update User table
         restRequest({
           method: 'PUT',
@@ -77,6 +71,12 @@ wrap(UserAccountView, 'render', function(render) {
             duration: 3000
           });
         });
+      }, (data) => {
+        // Wrong API
+        if (data == 401) {
+          errorMessage.text("This API key is wrong");
+          return ;
+        }
       });
 
     }.bind(this));
