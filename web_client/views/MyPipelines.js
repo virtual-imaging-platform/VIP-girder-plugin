@@ -71,6 +71,7 @@ var MyPipelines = View.extend({
   updateStatus: function (pipeline_executions) {
     return new Promise(function (resolve) {
       const promiseArray = [];
+      
       _.each(pipeline_executions, function(execution) {
         if (execution.status != this.statusKeys[4] && execution.status != this.statusKeys[5]) {
           var promiseCarmin = this.carmin.getExecution(execution.vipExecutionId).then(function (workflow) {
@@ -86,9 +87,11 @@ var MyPipelines = View.extend({
           promiseArray.push(promiseCarmin);
         }
       }.bind(this));
+
       $.when(...promiseArray).done(() => {
         resolve();
       });
+
     }.bind(this));
   },
 
@@ -180,9 +183,9 @@ var MyPipelines = View.extend({
               $('.deletePipeline[value="'+ execution.id +'"]').closest('tr.pipeline').find('td.status').html(constants.Status['FETCHED']);
 
               // Delete folder process-timestamp in VIP
-              // this.carmin.deletePath(execution.get('folderNameProcessVip')).then(function(){}, function (){
-              //   console.log('Error: Folder process-timestamp could not be deleted');
-              // });
+              this.carmin.deletePath(execution.get('folderNameProcessVip')).then(function(){}, function (){
+                console.log('Error: Folder process-timestamp could not be deleted');
+              });
 
               resolve();
             }

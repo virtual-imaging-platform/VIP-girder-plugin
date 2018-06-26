@@ -102,11 +102,15 @@ var ConfirmPipelineDialog = View.extend({
     this.carmin.createFolder(folderPath).then(function (data) {
       if (!checkRequestError(data)) {
         // Send file into folder
+        // TODO : fail function
         this.carmin.uploadData(folderPath + "/" + this.file.name, this.file.data).then(function (data) {
           if (!checkRequestError(data)) {
             this.launchPipeline(folderPath);
           }
-        }.bind(this));
+        }.bind(this), function (error){
+          console.log("Error: " + error);
+          return;
+        });
       }
     }.bind(this), function (data){
       console.log("Erreur: " + data);

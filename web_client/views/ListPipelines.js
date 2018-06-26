@@ -1,6 +1,6 @@
 //Import utilities
 import _ from 'underscore';
-import { restRequest } from 'girder/rest';
+import { restRequest, getApiRoot } from 'girder/rest';
 import { cancelRestRequests } from 'girder/rest';
 import { confirm } from 'girder/dialog';
 import { getCurrentUser } from 'girder/auth';
@@ -26,6 +26,7 @@ var ListPipelines = View.extend({
     if (apiKeyVip == null) {
       return ;
     }
+    console.log(getApiRoot());
 
     this.user = getCurrentUser();
     this.file = settings.file.responseJSON;

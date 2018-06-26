@@ -33,9 +33,10 @@ var ListPipelines = View.extend({
       return ;
     }
 
-    var promiseFiles = this.getFilesFromCheckedItems(settings.items);
-    var apiKeyVip = getCurrentApiKeyVip();
+    // Get checked files
+    this.files = this.getFilesFromCheckedItems(settings.items);
 
+    var apiKeyVip = getCurrentApiKeyVip();
     if (apiKeyVip == null)
       return ;
 
@@ -43,35 +44,32 @@ var ListPipelines = View.extend({
     this.foldersCollection = [];
     this.carmin = new CarminClient(constants.carminURL, apiKeyVip);
 
-    promiseFiles.then(function (resp) {
-      this.files = resp;
-      if (!this.files) {
-        messageGirder('danger', 'Checked files not found. Retry and don\'t reload the page', 3000);
-        router.navigate('', {trigger: true});
-        return ;
-      }
+    if (!this.files) {
+      messageGirder('danger', 'Checked files not found. Retry and don\'t reload the page', 3000);
+      router.navigate('', {trigger: true});
+      return ;
+    }
 
-      // Fill this.files with file's data
-      _.each(this.files, function (file, i) {
-        restRequest({
-          method: 'GET',
-          url: 'file/' + file._id + '/download',
-          xhrFields: {
-            responseType: "arraybuffer"
-          }
-        }).done((resp) => {
-          console.log(resp);
-          this.files[i].data = new Uint8Array(resp);
-        }).fail((error) => {
-          console.log("Error:" + error);
-        });
-      }.bind(this));
+    // Fill this.files with file's data
+    _.each(this.files, function (file, i) {
+      restRequest({
+        method: 'GET',
+        url: 'file/' + file._id + '/download',
+        xhrFields: {
+          responseType: "arraybuffer"
+        }
+      }).done((resp) => {
+        console.log(resp);
+        this.files[i].data = new Uint8Array(resp);
+      }).fail((error) => {
+        console.log("Error:" + error);
+      });
+    }.bind(this));
 
-      // Get pipelines of user
-      this.carmin.listPipelines().then(function (data) {
-        this.pipelines = sortPipelines(data);
-        this.render();
-      }.bind(this));
+    // Get pipelines of user
+    this.carmin.listPipelines().then(function (data) {
+      this.pipelines = sortPipelines(data);
+      this.render();
     }.bind(this));
 
   },
@@ -169,29 +167,28 @@ var ListPipelines = View.extend({
   },
 
   getFilesFromCheckedItems: function (items) {
-    return new Promise(function (resolve){
-      var obj = {};
-      var len = Object.keys(items).length - 1;
+    var obj = {};
+    var len = Object.keys(items).length - 1;
 
-      _.each(items, function (item, i) {
-        restRequest({
+    _.each(items, function (item, i) {
+      restRequest({
+        method: 'GET',
+        url: 'item/' + item.id + '/files',
+        async: false,
+        data: {
+          limit: 1
+        }
+      }).done((resp) => {
+        return restRequest({
           method: 'GET',
-          url: 'item/' + item.id + '/files',
-          data: {
-            limit: 1
-          }
-        }).done((resp) => {
-          return restRequest({
-            method: 'GET',
-            url: 'file/' + resp[0]._id
-          });
-        }).done((resp) => {
-          obj[i] = resp[0];
-          if (len == i)
-            resolve(obj);
+          url: 'file/' + resp[0]._id
         });
+      }).done((resp) => {
+        obj[i] = resp[0];
       });
     });
+
+    return obj;
   }
 
 });
