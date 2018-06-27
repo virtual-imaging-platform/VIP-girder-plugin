@@ -1,5 +1,6 @@
 - var widthModal = pipeline.parameters.length * 14 + "%";
 - var i = 0;
+- var advancedArg = 0;
 
 link(href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css', rel='stylesheet')
 
@@ -26,12 +27,18 @@ link(href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-aw
             if param.name != "results-directory" && !(param.type == "File" && !param.defaultValue) && !param.defaultValue
               li
                 a(data-toggle="tab", id="tab-" + param.name, href="#param" + i++)= param.name
+            else
+              - advancedArg = 1;
+
+          if advancedArg
+            li
+              a(data-toggle="tab", id="tab-advanced", href="#advanced") Advanced
 
         .tab-content
           #general.tab-pane.fade.active.in
             .form-group
               label(for="name-execution") Name of execution
-              input.form-control#name-execution(type="text", autocomplete="off")
+              input.form-control#name-execution(type="text")
 
             .form-group
               label(for="selectFolderDestination") Result directory
@@ -55,6 +62,14 @@ link(href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-aw
                 .form-group
                   label(for=param.name)= param.name
                   input.form-control(id=param.name, type="text")
+
+          #advanced.tab-pane.fade
+            each param in pipeline.parameters
+              if !(param.name != "results-directory" && !param.defaultValue)
+                .form-group
+                  label(for=param.name)= param.name
+                  p !{param.description}
+                  input.form-control(id="advanced-"+param.name, type="text", placeholder="Default : " + param.defaultValue)
 
       .modal-footer
         a.btn.btn-small.btn-default.btn-close-pipeline(data-dismiss="modal") Close

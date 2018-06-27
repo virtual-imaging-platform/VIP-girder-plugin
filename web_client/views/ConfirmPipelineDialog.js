@@ -57,40 +57,47 @@ var ConfirmPipelineDialog = View.extend({
     var folderGirderDestination = $('#selectFolderDestination');
     var checkArg = 1;
 
+    // General paramaters
     if (!nameExecution.val() || !folderGirderDestination.val()) {
       $('#tab-general').css('background-color', '#e2181852');
       checkArg = 0;
     }
-    else
+    else {
       $('#tab-general').css('background-color', 'transparent');
+    }
 
+    // Required parameters
     _.each(this.currentPipeline.parameters, function(param) {
-      var e = $('#' + param.name)
-      if (e.length > 0 && !e.val()) {// If the parameter exists in the DOM but is empty
+      var e = $('#' + param.name);
+      if (e.length > 0 && !e.val()) { // If the parameter exists in the DOM but is empty
         $('#tab-' + param.name).css('background-color', '#e2181852');
-        checkArg = 0
+        checkArg = 0;
       }
-      else if (e.length > 0 && e.val())
+      else if (e.length > 0 && e.val()) {
         $('#tab-' + param.name).css('background-color', 'transparent');
+      }
     }.bind(this));
 
-    if (!checkArg)
+    // If the required parameters are not fill
+    if (!checkArg) {
       return ;
+    }
 
+    // Loading animation on the button
     $('#run-pipeline').button('loading');
 
+    // Path of folder process-timestamp
     var folderPath = this.pathVIP + "process-" + getTimestamp();
 
-    // TODO Promise composition
-    // Check if Girder folder exists
+    // Check if the folder name "Girder" exists on VIP
     this.carmin.fileExists(this.pathVIP).then(function (data) {
       if (!data.exists) {
-        this.carmin.createFolder(this.pathVIP).then(function (data) {
-          if (!checkRequestError(data)) {
-            this.sendFile(folderPath);
-          }
-        }.bind(this));
+        return this.carmin.createFolder(this.pathVIP);
       } else {
+        return Promise.resolve();
+      }
+    }.bind(this)).then(function (data) {
+      if (!checkRequestError(data)) {
         this.sendFile(folderPath);
       }
     }.bind(this));
@@ -102,19 +109,18 @@ var ConfirmPipelineDialog = View.extend({
     this.carmin.createFolder(folderPath).then(function (data) {
       if (!checkRequestError(data)) {
         // Send file into folder
-        // TODO : fail function
         this.carmin.uploadData(folderPath + "/" + this.file.name, this.file.data).then(function (data) {
           if (!checkRequestError(data)) {
             this.launchPipeline(folderPath);
           }
         }.bind(this), function (error){
-          console.log("Error: " + error);
+          this.messageDialog("danger", "There was a problem uploading the file to VIP");
           return;
-        });
+        }.bind(this));
       }
     }.bind(this), function (data){
-      console.log("Erreur: " + data);
-    });
+      this.messageDialog("danger", "The folder named 'Girder' could not be created");
+    }.bind(this));
   },
 
   launchPipeline: function (folderPath) {
@@ -123,6 +129,7 @@ var ConfirmPipelineDialog = View.extend({
     var sendMail = $('#send-email').is(':checked');
     var pathFileVIP = folderPath + "/" + this.file.name;
 
+    // TODO : Améliorer les conditions pour éviter la foret de if
     // Fill paramaters
     _.each(this.currentPipeline.parameters, function(param) {
       if (param.name == "results-directory") {
@@ -131,10 +138,16 @@ var ConfirmPipelineDialog = View.extend({
         this.parameters[param.name] = $('#'+param.name).val();
       } else if (param.type == 'File' && !param.defaultValue) {
         this.parameters[param.name] = folderPath + "/" + this.file.name;
+      } else if ($('#advanced-' + param.name).val() && param.defaultValue){
+        this.parameters[param.name] = $('#advanced-' + param.name).val();
       } else {
         this.parameters[param.name] = param.defaultValue;
       }
     }.bind(this));
+
+    // Pour montrer à Sorina
+    console.log(this);
+    return;
 
     this.carmin.initAndStart(nameExecution, this.currentPipeline.identifier, this.parameters).then(function (data) {
       if (!checkRequestError(data)) {
@@ -157,14 +170,22 @@ var ConfirmPipelineDialog = View.extend({
           method: 'POST',
           url: 'pipeline_execution',
           data: params
-        }).done(function (){
-          $('#run-pipeline').button('reset');
-          $('#g-dialog-container').find('a.close').click();
-          messageGirder("success", "The execution is launched correctly", 3000);
-        });
+        }).then(function (){
+          this.messageDialog("success", "The execution is launched correctly");
+        }.bind(this), function () {
+          this.messageDialog("danger", "The execution is launched on VIP but we encounter a problem to fetch the informations about this execution");
+        }.bind(this));
       }
 
+    }.bind(this), function () {
+      this.messageDialog("danger", "There was a problem launching the application");
     }.bind(this));
+  },
+
+  messageDialog: function(type, message) {
+    $('#run-pipeline').button('reset');
+    $('#g-dialog-container').find('a.close').click();
+    messageGirder(type, message, 3000);
   }
 
 });

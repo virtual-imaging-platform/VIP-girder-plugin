@@ -23,7 +23,7 @@ function messageGirder (type, text, duration) {
 }
 
 function checkRequestError (data) {
-  if (typeof data.errorCode !== 'undefined' && data.errorCode != null) {
+  if (typeof data !== 'undefined' && typeof data.errorCode !== 'undefined' && data.errorCode != null) {
     messageGirder("danger", data.errorMessage, 3000);
     return 1;
   }
