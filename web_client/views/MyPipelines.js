@@ -2,7 +2,7 @@
 import _ from 'underscore';
 import { cancelRestRequests, restRequest } from 'girder/rest';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip, getStatusKeys } from '../utilities';
+import { getCurrentApiKeyVip, getStatusKeys, messageGirder } from '../utilities';
 import { getCurrentUser } from 'girder/auth';
 import CarminClient from '../vendor/carmin/carmin-client';
 
@@ -71,7 +71,7 @@ var MyPipelines = View.extend({
   updateStatus: function (pipeline_executions) {
     return new Promise(function (resolve) {
       const promiseArray = [];
-      
+
       _.each(pipeline_executions, function(execution) {
         if (execution.status != this.statusKeys[4] && execution.status != this.statusKeys[5]) {
           var promiseCarmin = this.carmin.getExecution(execution.vipExecutionId).then(function (workflow) {
@@ -96,8 +96,8 @@ var MyPipelines = View.extend({
   },
 
   getResults: function (pipeline_executions) {
-    var chain = Promise.resolve();
     _.each(pipeline_executions, function (execution) {
+      var chain = Promise.resolve();
       if (execution.get('status') == this.statusKeys[3]) {
         // Create the child folder (with date)
         restRequest({
@@ -118,42 +118,28 @@ var MyPipelines = View.extend({
         }).then(() => {
           return this.carmin.getExecutionResults(execution.get('vipExecutionId'));
         }).then(function (results) {
-          _.each(results, function (result) {
+          _.each(results, function (path) {
             // SCRIPT AVANT CHANGEMENT DE L'API VIP
-            result = result.replace('/results.tar.gz', '');
-            result = result.replace('content', 'list');
-            result = result.replace('?action=list', '');
-            result = result.replace('http://vip.creatis.insa-lyon.fr:4040/rest/path', '');
+            path = path.replace('?action=content', '');
+            path = path.replace('http://vip.creatis.insa-lyon.fr/rest/path', '');
 
-            this.carmin.getFolderDetails(result).then(function (data) {
-              var count = {i: 0, nbSuccess: 0};
-
-              chain = chain.then(function (){
-                return this.downloadFileFromVip(execution, data, count);
-              }.bind(this));
-
+            chain = chain.then(function (){
+              return this.downloadFileFromVip(execution, results, path);
             }.bind(this));
-
-            // SCRIPT APRES CHANGEMENT DE L'API VIP
-            // appeller directement la fonction this.downloadFileFromVip(execution, result, i)
 
           }.bind(this));
         }.bind(this)).catch((e) => {
-          console.log('Error: ' + e);
+          console.log(e);
+          this.deleteResultFolder(execution);
         });
       }
     }.bind(this));
   },
 
-  downloadFileFromVip: function (execution, results, count) {
+  downloadFileFromVip: function (execution, results, path) {
     return new Promise(function(resolve) {
-      if (count.i == results.length)
-        return Promise.resolve();
-
-      var res = results[count.i].path;
-
-      this.carmin.downloadFile(res).then(function (content) {
-        var fileName = res.substring(res.lastIndexOf('/') + 1);
+      this.carmin.downloadFile(path).then(function (content) {
+        var fileName = path.substring(path.lastIndexOf('/') + 1);
         var myFile = new File([content], fileName, {type:"application/octet-stream"});
         var size = myFile.size;
 
@@ -165,32 +151,29 @@ var MyPipelines = View.extend({
           + '&size=' + size
         }).then(function (data) {
           this.uploadChunk(data._id, content, 0, function (data) {
-            count.nbSuccess++;
 
-            if (count.nbSuccess == results.length) {
-              // Status set to FETCHED
-              restRequest({
-                method: 'PUT',
-                url: 'pipeline_execution/' + execution.id + '/status',
-                data: {status: this.statusKeys[4]}
-              });
+            // Status set to FETCHED
+            restRequest({
+              method: 'PUT',
+              url: 'pipeline_execution/' + execution.id + '/status',
+              data: {status: this.statusKeys[4]}
+            });
 
-              // Display button 'Results'
-              var resultPath = "#user/" + getCurrentUser().id + "/folder/" + execution.childFolderResult;
-              $('.deletePipeline[value="'+ execution.id +'"]').prev().css('visibility', '').attr('href', resultPath);
+            // Display button 'Results'
+            var resultPath = "#user/" + getCurrentUser().id + "/folder/" + execution.childFolderResult;
+            $('.deletePipeline[value="'+ execution.id +'"]').prev().css('visibility', '').attr('href', resultPath);
 
-              // Change the status
-              $('.deletePipeline[value="'+ execution.id +'"]').closest('tr.pipeline').find('td.status').html(constants.Status['FETCHED']);
+            // Change the status
+            $('.deletePipeline[value="'+ execution.id +'"]').closest('tr.pipeline').find('td.status').html(constants.Status['FETCHED']);
 
-              // Delete folder process-timestamp in VIP
-              this.carmin.deletePath(execution.get('folderNameProcessVip')).then(function(){}, function (){
-                console.log('Error: Folder process-timestamp could not be deleted');
-              });
+            // Delete folder process-timestamp in VIP
+            this.carmin.deletePath(execution.get('folderNameProcessVip')).then(function(){}, function (){
+              console.log('Error: Folder process-timestamp could not be deleted');
+            });
 
-              resolve();
-            }
+            resolve();
 
-            // Set metadata
+            // Set metadata as workflow
             restRequest({
               method: 'PUT',
               url: 'item/' + data.itemId + '/metadata',
@@ -201,28 +184,15 @@ var MyPipelines = View.extend({
             });
 
           }.bind(this));
-        }.bind(this));
+        }.bind(this), function () {
+          messageGirder("danger", "There was a problem uploading results of executon " + execution.get('name'));
+          this.deleteResultFolder(execution);
+        });
 
-
-        count.i++;
-        this.downloadFileFromVip(execution, results, count);
-
-
-        // TODO Implement fail function in uploadChunk
-        //
-        // .fail(() => {
-        //   // TODO Supprimer le dossier parent (celui avec le timestamp)
-        //   restRequest({
-        //     method: 'PUT',
-        //     url: 'pipeline_execution/' + execution.id + '/status',
-        //     data: {status: this.statusKeys[5]},
-        //   });
-        // });
-        //
-        // count.i++;
-        // this.downloadFileFromVip(execution, results, count);
-
-      }.bind(this));
+      }.bind(this), function () {
+        messageGirder("danger", "There was a problem downloading results of executon " + execution.get('name'));
+        this.deleteResultFolder(execution);
+      });
     }.bind(this));
   },
 
@@ -241,7 +211,8 @@ var MyPipelines = View.extend({
       }
       callback(resp);
     }.bind(this), function (){
-      // fail function (regarder la fonction fail l.210
+      messageGirder("danger", "There was a problem uploading results of executon " + execution.get('name'));
+      this.deleteResultFolder(execution);
     });
   },
 
@@ -270,6 +241,21 @@ var MyPipelines = View.extend({
         });
       });
     }
+  },
+
+  deleteResultFolder: function (execution) {
+    // Update status to 'NOTFETCHED'
+    restRequest({
+        method: 'PUT',
+        url: 'pipeline_execution/' + execution.id + '/status',
+        data: {status: this.statusKeys[5]},
+      });
+
+    // Delete the result folder
+    restRequest({
+      method: "DELETE",
+      url: "folder/" + execution.childFolderResult
+    });
   }
 
 });

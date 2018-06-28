@@ -24,6 +24,8 @@ var ConfirmPipelineDialog = View.extend({
     this.filesInput = [this.file._id];
     this.parameters = {};
 
+    console.log(this);
+
     // Trie le tableau foldersCollection en fonction de "path"
     this.foldersCollection.sort(function(a, b){
       return a.path.localeCompare(b.path)
@@ -40,7 +42,8 @@ var ConfirmPipelineDialog = View.extend({
     $('#g-dialog-container').html(ConfirmPipelineDialogTemplate({
       pipeline: this.currentPipeline,
       file: this.file,
-      folders: this.foldersCollection
+      folders: this.foldersCollection,
+      authorizedForVersionOne: this.checkParametersForVersionOne(this.currentPipeline.parameters)
     })).girderModal(this);
 
     $('a[data-toggle="tab"]').click(function () {
@@ -113,12 +116,12 @@ var ConfirmPipelineDialog = View.extend({
           if (!checkRequestError(data)) {
             this.launchPipeline(folderPath);
           }
-        }.bind(this), function (error){
+        }.bind(this), function (){
           this.messageDialog("danger", "There was a problem uploading the file to VIP");
           return;
         }.bind(this));
       }
-    }.bind(this), function (data){
+    }.bind(this), function (){
       this.messageDialog("danger", "The folder named 'Girder' could not be created");
     }.bind(this));
   },
@@ -129,7 +132,7 @@ var ConfirmPipelineDialog = View.extend({
     var sendMail = $('#send-email').is(':checked');
     var pathFileVIP = folderPath + "/" + this.file.name;
 
-    // TODO : Améliorer les conditions pour éviter la foret de if
+    // TODO : Améliorer les conditions pour éviter la forêt de if
     // Fill paramaters
     _.each(this.currentPipeline.parameters, function(param) {
       if (param.name == "results-directory") {
@@ -144,10 +147,6 @@ var ConfirmPipelineDialog = View.extend({
         this.parameters[param.name] = param.defaultValue;
       }
     }.bind(this));
-
-    // Pour montrer à Sorina
-    console.log(this);
-    return;
 
     this.carmin.initAndStart(nameExecution, this.currentPipeline.identifier, this.parameters).then(function (data) {
       if (!checkRequestError(data)) {
@@ -186,6 +185,16 @@ var ConfirmPipelineDialog = View.extend({
     $('#run-pipeline').button('reset');
     $('#g-dialog-container').find('a.close').click();
     messageGirder(type, message, 3000);
+  },
+
+  checkParametersForVersionOne: function (parameters) {
+    var requiredFile = 0;
+    _.each(parameters, function (param) {
+      if (param.type == "File" && !param.defaultValue)
+        requiredFile++;
+    });
+
+    return (requiredFile <= 1) ? 1 : 0;
   }
 
 });
