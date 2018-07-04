@@ -1,10 +1,11 @@
 // Import utilities
 import _ from 'underscore';
 import 'girder/utilities/jquery/girderModal';
-import { restRequest } from 'girder/rest';
+import { restRequest, getApiRoot } from 'girder/rest';
 import events from 'girder/events';
 import { Status } from '../constants';
-import { checkRequestError, messageGirder, getTimestamp } from '../utilities';
+import { getCurrentUser, getCurrentToken } from 'girder/auth';
+import { checkRequestError, messageGirder, getTimestamp, createNewToken } from '../utilities';
 import 'bootstrap/js/button';
 
 // Import views
@@ -24,12 +25,17 @@ var ConfirmPipelineDialog = View.extend({
     this.filesInput = [this.file._id];
     this.parameters = {};
 
-    console.log(this);
-
     // Trie le tableau foldersCollection en fonction de "path"
     this.foldersCollection.sort(function(a, b){
       return a.path.localeCompare(b.path)
     });
+
+    // Get the current token
+    if (!(this.currentToken = getCurrentToken())) {
+      createNewToken(getCurrentUser()).then(function (resp) {
+        this.currentToken = resp;
+      }.bind(this));
+    }
 
     this.render();
   },
@@ -46,6 +52,7 @@ var ConfirmPipelineDialog = View.extend({
       authorizedForVersionOne: this.checkParametersForVersionOne(this.currentPipeline.parameters)
     })).girderModal(this);
 
+    // Tab of parameters
     $('a[data-toggle="tab"]').click(function () {
       $(this).css('background-color', 'transparent');
     });
@@ -60,7 +67,15 @@ var ConfirmPipelineDialog = View.extend({
     var folderGirderDestination = $('#selectFolderDestination');
     var checkArg = 1;
 
-    // General paramaters
+    if (!this.currentToken && !getApiRoot()) {
+      this.messageDialog("danger", "A problem with your session has occurred");
+    }
+
+    /*********************************/
+    /* Check the required parameters */
+    /*********************************/
+
+    // Check General paramaters
     if (!nameExecution.val() || !folderGirderDestination.val()) {
       $('#tab-general').css('background-color', '#e2181852');
       checkArg = 0;
@@ -69,7 +84,7 @@ var ConfirmPipelineDialog = View.extend({
       $('#tab-general').css('background-color', 'transparent');
     }
 
-    // Required parameters
+    // Check pipeline parameters
     _.each(this.currentPipeline.parameters, function(param) {
       var e = $('#' + param.name);
       if (e.length > 0 && !e.val()) { // If the parameter exists in the DOM but is empty
@@ -83,72 +98,59 @@ var ConfirmPipelineDialog = View.extend({
 
     // If the required parameters are not fill
     if (!checkArg) {
+      messageGirder("danger", "Please fill in the form in each tab", 2000);
       return ;
     }
 
     // Loading animation on the button
+    messageGirder("info", "Loading...", 2000);
     $('#run-pipeline').button('loading');
 
-    // Path of folder process-timestamp
-    var folderPath = this.pathVIP + "process-" + getTimestamp();
-
-    // Check if the folder name "Girder" exists on VIP
-    this.carmin.fileExists(this.pathVIP).then(function (data) {
-      if (!data.exists) {
-        return this.carmin.createFolder(this.pathVIP);
-      } else {
-        return Promise.resolve();
-      }
-    }.bind(this)).then(function (data) {
-      if (!checkRequestError(data)) {
-        this.sendFile(folderPath);
-      }
-    }.bind(this));
+    this.launchPipeline();
   },
 
-  // TODO Promise composition
-  sendFile: function (folderPath) {
-    // Create folder to this process
-    this.carmin.createFolder(folderPath).then(function (data) {
-      if (!checkRequestError(data)) {
-        // Send file into folder
-        this.carmin.uploadData(folderPath + "/" + this.file.name, this.file.data).then(function (data) {
-          if (!checkRequestError(data)) {
-            this.launchPipeline(folderPath);
-          }
-        }.bind(this), function (){
-          this.messageDialog("danger", "There was a problem uploading the file to VIP");
-          return;
-        }.bind(this));
-      }
-    }.bind(this), function (){
-      this.messageDialog("danger", "The folder named 'Girder' could not be created");
-    }.bind(this));
-  },
-
-  launchPipeline: function (folderPath) {
+  // Get the parameters and launch the execution
+  launchPipeline: function () {
     var nameExecution = $('#name-execution').val();
     var folderGirderDestination = $('#selectFolderDestination').val();
     var sendMail = $('#send-email').is(':checked');
-    var pathFileVIP = folderPath + "/" + this.file.name;
+    var baseURI = "girder:" + this.currentToken + "@" + location.host + "/" + getApiRoot();
 
-    // TODO : Améliorer les conditions pour éviter la forêt de if
-    // Fill paramaters
-    _.each(this.currentPipeline.parameters, function(param) {
-      if (param.name == "results-directory") {
-        this.parameters[param.name] = folderPath;
-      } else if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) { // condition bizarre à revoir
-        this.parameters[param.name] = $('#'+param.name).val();
-      } else if (param.type == 'File' && !param.defaultValue) {
-        this.parameters[param.name] = folderPath + "/" + this.file.name;
-      } else if ($('#advanced-' + param.name).val() && param.defaultValue){
-        this.parameters[param.name] = $('#advanced-' + param.name).val();
-      } else {
-        this.parameters[param.name] = param.defaultValue;
-      }
-    }.bind(this));
+    // Get the server URL and protocol
+    var url = window.location.href;
+    var protocol = url.split("://");
+    protocol = protocol[0];
 
-    this.carmin.initAndStart(nameExecution, this.currentPipeline.identifier, this.parameters).then(function (data) {
+    // Create result folder
+    var promiseNewFolder = this.createResultFolder(nameExecution, folderGirderDestination);
+
+    var promiseInitExecution = promiseNewFolder.then(function (folderResultId) {
+      this.folderResultId = folderResultId;
+
+      // Map input with application parameters
+      _.each(this.currentPipeline.parameters, function (param) {
+        if (param.name == "results-directory") {
+          this.parameters[param.name] = baseURI + "?folderId=" + folderResultId + "&protocol=" + protocol;
+        } else if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) {
+          this.parameters[param.name] = $('#'+param.name).val();
+        } else if (param.type == "File" && !param.defaultValue) {
+          this.parameters[param.name] = baseURI + "?fileId=" + this.filesInput[0] + "&protocol=" + protocol;
+        } else if ($('#advanced-' + param.name).val() && param.defaultValue) {
+          this.parameters[param.name] = $('#advanced-' + param.name).val();
+        } else {
+          this.parameters[param.name] = param.defaultValue;
+        }
+      }.bind(this));
+
+      // Launch the execution
+      return this.carmin.initAndStart(nameExecution, this.currentPipeline.identifier, this.parameters);
+
+    }.bind(this), function () {
+      this.messageDialog("danger", "There was a problem launching the application");
+    });
+
+    // Promise after init and start execution
+    promiseInitExecution.then(function (data) {
       if (!checkRequestError(data)) {
         var filesInput = $.extend({}, this.filesInput);
         var params = {
@@ -157,36 +159,28 @@ var ConfirmPipelineDialog = View.extend({
           pipelineName: this.currentPipeline.name,
           vipExecutionId: data.identifier,
           status: data.status.toUpperCase(),
-          pathResultGirder: folderGirderDestination,
-          childFolderResult: '',
+          idFolderResult: this.folderResultId,
           sendMail: sendMail,
           listFileResult: '{}',
-          timestampFin: null,
-          folderNameProcessVip: folderPath
+          timestampFin: null
         };
 
-        restRequest({
+        // Add this execution on Girder db
+        return restRequest({
           method: 'POST',
           url: 'pipeline_execution',
           data: params
-        }).then(function (){
-          this.messageDialog("success", "The execution is launched correctly");
-        }.bind(this), function () {
-          this.messageDialog("danger", "The execution is launched on VIP but we encounter a problem to fetch the informations about this execution");
-        }.bind(this));
+        });
       }
-
+    }.bind(this)).then(function (){
+      this.messageDialog("success", "The execution is launched correctly");
     }.bind(this), function () {
-      this.messageDialog("danger", "There was a problem launching the application");
+      this.messageDialog("danger", "The execution is launched on VIP but we encounter a problem to fetch the informations about this execution");
     }.bind(this));
   },
 
-  messageDialog: function(type, message) {
-    $('#run-pipeline').button('reset');
-    $('#g-dialog-container').find('a.close').click();
-    messageGirder(type, message, 3000);
-  },
-
+  // Check the number of required parameters
+  // If there is only one, the application can be started
   checkParametersForVersionOne: function (parameters) {
     var requiredFile = 0;
     _.each(parameters, function (param) {
@@ -195,7 +189,42 @@ var ConfirmPipelineDialog = View.extend({
     });
 
     return (requiredFile <= 1) ? 1 : 0;
-  }
+  },
+
+  // Create the result folder before send the parameters and init the pipeline
+  createResultFolder: function (nameExecution, idParentFolder) {
+    return new Promise(function (resolve, reject) {
+      restRequest({
+        method: 'POST',
+        url: 'folder',
+        data: {
+          parentType: 'folder',
+          parentId: idParentFolder,
+          name: this.getResultFolderName(nameExecution)
+        }
+      }).then(function (resp) {
+        resolve(resp._id);
+      }, function () {
+        reject();
+      });
+    }.bind(this));
+  },
+
+  getResultFolderName: function (nameExecution) {
+    var date = new Date();
+    var folderName = "Results - " + nameExecution + ' - ' + date.getFullYear() + '/'
+    + (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + date.getMinutes()
+    + ':' + date.getSeconds();
+
+    return folderName;
+  },
+
+  // For each error
+  messageDialog: function(type, message) {
+    $('#run-pipeline').button('reset');
+    $('#g-dialog-container').find('a.close').click();
+    messageGirder(type, message, 3000);
+  },
 
 });
 

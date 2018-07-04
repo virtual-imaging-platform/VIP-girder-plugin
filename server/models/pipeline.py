@@ -30,13 +30,12 @@ class PipelineExecution(Model):
             'userId': user['_id'],
             'pipelineName': params['pipelineName'],
             'vipExecutionId': params['vipExecutionId'],
-            'pathResultGirder': params['pathResultGirder'],
+            'idFolderResult': params['idFolderResult'],
             'status': params['status'],
             'sendMail': params['sendMail'],
             'listFileResult': params['listFileResult'],
             'timestampCreation': time.time(),
-            'timestampFin': params['timestampFin'],
-            'folderNameProcessVip': params['folderNameProcessVip']
+            'timestampFin': params['timestampFin']
         }
 
         return self.save(pipeline)
@@ -44,11 +43,6 @@ class PipelineExecution(Model):
     def setStatus(self, pipeline, status):
         pipeline['status'] = status
         self.save(pipeline)
-
-    def setChildFolderResult(self, pipeline, idChild):
-        pipeline['childFolderResult'] = idChild
-        self.save(pipeline)
-
 
     def remove(self, doc):
         super(PipelineExecution, self).remove(doc)
