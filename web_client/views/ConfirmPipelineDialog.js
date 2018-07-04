@@ -103,7 +103,7 @@ var ConfirmPipelineDialog = View.extend({
     }
 
     // Loading animation on the button
-    messageGirder("info", "Loading...", 2000);
+    messageGirder("info", "Loading...", 1000);
     $('#run-pipeline').button('loading');
 
     this.launchPipeline();
@@ -114,7 +114,7 @@ var ConfirmPipelineDialog = View.extend({
     var nameExecution = $('#name-execution').val();
     var folderGirderDestination = $('#selectFolderDestination').val();
     var sendMail = $('#send-email').is(':checked');
-    var baseURI = "girder:" + this.currentToken + "@" + location.host + "/" + getApiRoot();
+    var baseURI = "girder://" + this.currentToken + "@" + location.host + "/" + getApiRoot();
 
     // Get the server URL and protocol
     var url = window.location.href;
@@ -149,7 +149,7 @@ var ConfirmPipelineDialog = View.extend({
       this.messageDialog("danger", "There was a problem launching the application");
     });
 
-    // Promise after init and start execution
+    // If the execution is launched correctly VIP side, add this execution on Girder db
     promiseInitExecution.then(function (data) {
       if (!checkRequestError(data)) {
         var filesInput = $.extend({}, this.filesInput);

@@ -7,7 +7,7 @@ import { restRequest } from 'girder/rest';
 // Import views
 import ItemListWidget from 'girder/views/widgets/ItemListWidget';
 
-// Import about Creatis
+// Import Templates
 import ButtonListPipeline from '../templates/buttonListPipeline.pug';
 import SelectImage from '../templates/selectImage.pug';
 import CollapseImage from '../templates/collapseImage.pug'

@@ -32,17 +32,6 @@ var ListPipelines = View.extend({
     this.foldersCollection = [];
     this.carmin = new CarminClient(constants.carminURL, apiKeyVip);
 
-    // Get file data
-    restRequest({
-      method: "GET",
-      url: "file/" + this.file._id + "/download",
-      xhrFields: {
-        responseType: "arraybuffer"
-      }
-    }).done((resp) => {
-      this.file.data = new Uint8Array(resp);
-    });
-
     // Get collection id
     restRequest({
       method: 'GET',
@@ -122,7 +111,7 @@ var ListPipelines = View.extend({
   *   - Replace 'user' to 'collection' line 118
   *   - Uncommented line 59
   *   - Commented line 62
-  * Conversely, to get the folder tree of the user
+  * Conversely, to get the folder tree of the user (default)
   *   - Replace 'collection' to 'user' line 118
   *   - Uncommented line 62
   *   - Commented line 59
@@ -138,8 +127,9 @@ var ListPipelines = View.extend({
         parentId: parentId
       },
     }).done((resp) => {
-      if (resp.length == 0)
-      return;
+      if (resp.length == 0) {
+        return;
+      }
 
       _.each(resp, function(e) {
         e.path = path.concat("/"+e.name);
