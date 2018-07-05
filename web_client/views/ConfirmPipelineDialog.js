@@ -121,6 +121,8 @@ var ConfirmPipelineDialog = View.extend({
     var protocol = url.split("://");
     protocol = protocol[0];
 
+    console.log(baseURI + "?fileId=" + this.filesInput[0] + "&hostProto=" + protocol + "&fileName=/" + this.file.name);
+    return;
     // Create result folder
     var promiseNewFolder = this.createResultFolder(nameExecution, folderGirderDestination);
 
@@ -130,11 +132,11 @@ var ConfirmPipelineDialog = View.extend({
       // Map input with application parameters
       _.each(this.currentPipeline.parameters, function (param) {
         if (param.name == "results-directory") {
-          this.parameters[param.name] = baseURI + "?folderId=" + folderResultId + "&protocol=" + protocol;
+          this.parameters[param.name] = baseURI + "?folderId=" + folderResultId + "&hostProto=" + protocol;
         } else if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) {
           this.parameters[param.name] = $('#'+param.name).val();
         } else if (param.type == "File" && !param.defaultValue) {
-          this.parameters[param.name] = baseURI + "?fileId=" + this.filesInput[0] + "&protocol=" + protocol;
+          this.parameters[param.name] = baseURI + "?fileId=" + this.filesInput[0] + "&hostProto=" + protocol + "&fileName=/" + this.file.name;
         } else if ($('#advanced-' + param.name).val() && param.defaultValue) {
           this.parameters[param.name] = $('#advanced-' + param.name).val();
         } else {

@@ -9,8 +9,7 @@ import LayoutGlobalNavTemplate from '../templates/globalNav.pug';
 
 // Add new element to navbar (menu)
 wrap(LayoutGlobalNav, 'render', function(render) {
-  console.log("nav");
-  $(".g-global-nav").after(LayoutGlobalNavTemplate());
+  //$(".g-global-nav").after(LayoutGlobalNavTemplate());
   this.once('g:rendered', () => {
     console.log("nav");
     //$(".g-global-nav").append(LayoutGlobalNavTemplate());
