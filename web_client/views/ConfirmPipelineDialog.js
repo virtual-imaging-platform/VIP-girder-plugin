@@ -122,7 +122,7 @@ var ConfirmPipelineDialog = View.extend({
     protocol = protocol[0];
 
     console.log(baseURI + "?fileId=" + this.filesInput[0] + "&hostProto=" + protocol + "&fileName=/" + this.file.name);
-    return;
+    
     // Create result folder
     var promiseNewFolder = this.createResultFolder(nameExecution, folderGirderDestination);
 
