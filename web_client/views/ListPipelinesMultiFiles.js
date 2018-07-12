@@ -15,8 +15,6 @@ import FileModel from 'girder/models/FileModel';
 
 // Import views
 import View from 'girder/views/View';
-import HierarchyWidget from 'girder/views/widgets/HierarchyWidget';
-import FrontPageView from 'girder/views/body/FrontPageView';
 import ConfirmPipelineDialogMultiFiles from './ConfirmPipelineDialogMultiFiles';
 
 // Import templates

@@ -2,6 +2,6 @@
     "name": "creatis-plugin",
     "version": "0.1.0",
     "dependencies": {
-	"compare-versions": "3.2.1"
+      "compare-versions": "3.2.1"
     }
 }

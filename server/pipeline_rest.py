@@ -9,7 +9,7 @@ import json
 class PipelineExecution(Resource):
     def __init__(self):
         super(PipelineExecution, self).__init__()
-        self.resourceName = 'pipeline_execution'
+        self.resourceName = 'pipeline_execution' # Name of the collection in the bdd
         self.model = PipelineExecutionModel()
 
         self.route('GET', (), self.get)

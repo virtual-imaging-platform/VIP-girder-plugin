@@ -12,9 +12,6 @@ import View from 'girder/views/View';
 // Import collections
 import PipelineCollection from '../collections/PipelineCollection';
 
-// Import models
-import PipelineModel from '../models/PipelineModel';
-
 // Import templates
 import MyPipelinesTempalte from '../templates/myPipelines.pug';
 

@@ -11,7 +11,6 @@ import { getCurrentApiKeyVip, sortPipelines } from '../utilities';
 
 // Import views
 import View from 'girder/views/View';
-import FrontPageView from 'girder/views/body/FrontPageView';
 import ConfirmPipelineDialog from './ConfirmPipelineDialog';
 
 // Import templates

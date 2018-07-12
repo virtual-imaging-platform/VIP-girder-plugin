@@ -4,12 +4,12 @@ import events from 'girder/events';
 
 // Import Model
 import FileModel from 'girder/models/FileModel';
-import PipelineModel from './models/PipelineModel'
 
 // Import Views
 import ListPipelines from './views/ListPipelines';
 import MyPipelines from './views/MyPipelines';
 import ListPipelinesMultiFiles from './views/ListPipelinesMultiFiles';
+import Hello from './views/Hello';
 
 // New route #pipelines
 router.route('file/:id/#pipelines', 'filePipelines', function(id) {
@@ -33,4 +33,9 @@ router.route('pipelines-multi-files', 'pipelinesMultiFiles', function(params) {
 // New route #my-pipelines
 router.route('my-pipelines', 'myPipelines', function() {
   events.trigger('g:navigateTo', MyPipelines);
+})
+
+// Tuto
+router.route('hello', 'hello', function() {
+  events.trigger('g:navigateTo', Hello);
 })
