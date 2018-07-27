@@ -34,8 +34,3 @@ router.route('pipelines-multi-files', 'pipelinesMultiFiles', function(params) {
 router.route('my-pipelines', 'myPipelines', function() {
   events.trigger('g:navigateTo', MyPipelines);
 })
-
-// Tuto
-router.route('hello', 'hello', function() {
-  events.trigger('g:navigateTo', Hello);
-})

@@ -1,6 +1,6 @@
 {
-    "name": "creatis-plugin",
-    "version": "0.1.0",
+    "name": "vip-plugin",
+    "version": "0.1.5",
     "dependencies": {
       "compare-versions": "3.2.1"
     }
