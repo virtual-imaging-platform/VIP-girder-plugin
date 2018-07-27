@@ -118,7 +118,7 @@ var MyPipelines = View.extend({
           _.each(results, function (path) {
             // SCRIPT AVANT CHANGEMENT DE L'API VIP
             path = path.replace('?action=content', '');
-            path = path.replace('http://vip.creatis.insa-lyon.fr/rest/path', '');
+            path = path.replace(constants.carminURL + '/path', '');
 
             chain = chain.then(function (){
               return this.downloadFileFromVip(execution, results, path);
