@@ -9,7 +9,6 @@ import FileModel from 'girder/models/FileModel';
 import ListPipelines from './views/ListPipelines';
 import MyPipelines from './views/MyPipelines';
 import ListPipelinesMultiFiles from './views/ListPipelinesMultiFiles';
-import Hello from './views/Hello';
 
 // New route #pipelines
 router.route('file/:id/#pipelines', 'filePipelines', function(id) {

@@ -57,7 +57,6 @@ var ListPipelines = View.extend({
           responseType: "arraybuffer"
         }
       }).done((resp) => {
-        console.log(resp);
         this.files[i].data = new Uint8Array(resp);
       }).fail((error) => {
         console.log("Error:" + error);
