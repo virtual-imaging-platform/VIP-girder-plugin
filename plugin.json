@@ -1,7 +1,7 @@
 {
-    "name": "CREATIS",
+    "name": "VIP",
     "description": "Use VIP's applications",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "npm": {
 	"file": "package.json",
 	"fields": ["dependencies"],
