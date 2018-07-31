@@ -8,13 +8,14 @@ def load(info):
     # Model PipelineExecution
     info['apiRoot'].pipeline_execution = pipeline_rest.PipelineExecution()
 
-    # Model User
+    # Model User - extend user/
     UserModel().exposeFields(level=AccessType.READ, fields={'apiKeyVip'})
     user = user_rest.UserExtend()
     info['apiRoot'].user.route('GET', (':id', 'apiKeyVip'), user.getApiKeyVip)
     info['apiRoot'].user.route('PUT', (':id', 'apiKeyVip'), user.setApiKeyVip)
 
     # Customizing the swagger page
+    # Don't change this part
     baseTemplateFilename = info['apiRoot'].templateFilename
     info['apiRoot'].updateHtmlVars({
 	'baseTemplateFilename': baseTemplateFilename

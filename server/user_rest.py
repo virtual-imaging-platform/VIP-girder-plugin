@@ -6,6 +6,7 @@ from girder.api import access
 
 VIP_FIELD = 'apiKeyVip'
 
+# Extend User's routes
 class UserExtend(Resource):
 
     @access.user

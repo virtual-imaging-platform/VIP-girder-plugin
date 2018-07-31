@@ -14,6 +14,7 @@ import View from 'girder/views/View';
 // Import templates
 import ConfirmPipelineDialogTemplate from '../templates/confirmPipelineDialog.pug';
 
+// Modal to fill parameters and launch the pipeline
 var ConfirmPipelineDialog = View.extend({
 
   initialize: function (settings) {
@@ -25,12 +26,12 @@ var ConfirmPipelineDialog = View.extend({
     this.filesInput = [this.file._id];
     this.parameters = {};
 
-    // Trie le tableau foldersCollection en fonction de "path"
+    // Sort the foldersCollection array according to "path" (parameter "resultDirectory")
     this.foldersCollection.sort(function(a, b){
       return a.path.localeCompare(b.path)
     });
 
-    // Get the current token
+    // Get the current user's token
     if (!(this.currentToken = getCurrentToken())) {
       createNewToken(getCurrentUser()).then(function (resp) {
         this.currentToken = resp;
@@ -45,6 +46,7 @@ var ConfirmPipelineDialog = View.extend({
   },
 
   render: function () {
+    // Display the modal with the parameter of the pipeline selectionned
     $('#g-dialog-container').html(ConfirmPipelineDialogTemplate({
       pipeline: this.currentPipeline,
       file: this.file,
@@ -61,7 +63,9 @@ var ConfirmPipelineDialog = View.extend({
   },
 
   initPipeline: function (e) {
+    // Cancel the button's action
     e.preventDefault();
+
 
     var nameExecution = $('#name-execution');
     var folderGirderDestination = $('#selectFolderDestination');
@@ -106,6 +110,7 @@ var ConfirmPipelineDialog = View.extend({
     messageGirder("info", "Loading...", 1000);
     $('#run-pipeline').button('loading');
 
+    // If there aren't problems with the parameters
     this.launchPipeline();
   },
 
@@ -121,11 +126,10 @@ var ConfirmPipelineDialog = View.extend({
     var protocol = url.split("://");
     protocol = protocol[0];
 
-    console.log(baseURI + "?fileId=" + this.filesInput[0] + "&Foobar=" + protocol + "&fileName=/" + this.file.name);
-
     // Create result folder
     var promiseNewFolder = this.createResultFolder(nameExecution, folderGirderDestination);
 
+    // Init execution when the result directory is created
     var promiseInitExecution = promiseNewFolder.then(function (folderResultId) {
       this.folderResultId = folderResultId;
 

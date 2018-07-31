@@ -6,6 +6,7 @@ from girder.constants import AccessType
 from .models.pipeline import PipelineExecution as PipelineExecutionModel
 import json
 
+# Create new route pipeline_execution
 class PipelineExecution(Resource):
     def __init__(self):
         super(PipelineExecution, self).__init__()

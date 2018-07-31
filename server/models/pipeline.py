@@ -6,6 +6,7 @@ from girder.models.model_base import Model
 from girder.constants import AccessType
 from girder.exceptions import ValidationException
 
+# Create new db and interactions api/db
 class PipelineExecution(Model):
     def initialize(self):
         self.name = 'pipeline_execution'
@@ -38,6 +39,7 @@ class PipelineExecution(Model):
             'timestampFin': params['timestampFin']
         }
 
+        # Save in the db
         return self.save(pipeline)
 
     def setStatus(self, pipeline, status):

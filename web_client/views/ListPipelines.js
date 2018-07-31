@@ -21,6 +21,7 @@ var ListPipelines = View.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
+    // Get api key of VIP
     var apiKeyVip = getCurrentApiKeyVip();
     if (apiKeyVip == null) {
       return ;
