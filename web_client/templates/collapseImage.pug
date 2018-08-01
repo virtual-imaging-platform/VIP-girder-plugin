@@ -1,0 +1,10 @@
+a(data-toggle="collapse", href="#item1")
+  i.icon-angle-down
+
+.panel-collapse.collapse#item1
+  each file in files
+    - var url = "#file/" + file._id + "/#pipelines"
+
+    .panel-body.creatis-collapse-image= file.name
+      a.creatis-list-pipeline(title=test, href=url)
+        i.icon-rocket

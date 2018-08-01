@@ -1,0 +1,10 @@
+{
+    "name": "VIP",
+    "description": "Use VIP's applications",
+    "version": "2.0.1",
+    "npm": {
+	"file": "package.json",
+	"fields": ["dependencies"],
+	"localNodeModules": true
+    }
+}
