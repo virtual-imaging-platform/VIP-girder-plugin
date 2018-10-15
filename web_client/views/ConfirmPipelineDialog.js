@@ -186,7 +186,7 @@ var ConfirmPipelineDialog = View.extend({
     protocol = protocol[0];
 
     // create the base uri
-    var baseURI = "girder:" + filePath + "?"
+    return "girder:" + filePath + "?"
           + "apiurl=" + protocol + location.host + "/" + getApiRoot()
           + "&amp;token=" + this.currentToken
           + "&amp;fileId=" + fileId;
