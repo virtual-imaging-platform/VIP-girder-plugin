@@ -119,12 +119,6 @@ var ConfirmPipelineDialog = View.extend({
     var nameExecution = $('#name-execution').val();
     var folderGirderDestination = $('#selectFolderDestination').val();
     var sendMail = $('#send-email').is(':checked');
-    var baseURI = "girder://" + this.currentToken + "@" + location.host + "/" + getApiRoot();
-
-    // Get the server URL and protocol
-    var url = window.location.href;
-    var protocol = url.split("://");
-    protocol = protocol[0];
 
     // Create result folder
     var promiseNewFolder = this.createResultFolder(nameExecution, folderGirderDestination);
@@ -136,11 +130,11 @@ var ConfirmPipelineDialog = View.extend({
       // Map input with application parameters
       _.each(this.currentPipeline.parameters, function (param) {
         if (param.name == "results-directory") {
-          this.parameters[param.name] = baseURI + "?folderId=" + folderResultId + "&amp;hostProto=" + protocol;
+          this.parameters[param.name] = this.constructApiUri("/Currently/Unused", folderResultId);
         } else if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) {
           this.parameters[param.name] = $('#'+param.name).val();
         } else if (param.type == "File" && !param.defaultValue) {
-          this.parameters[param.name] = baseURI + "?fileId=" + this.filesInput[0] + "&amp;hostProto=" + protocol + "&amp;fileName=/" + this.file.name;
+          this.parameters[param.name] = this.constructApiUri("/" + this.file.name, this.filesInput[0]);
         } else if ($('#advanced-' + param.name).val() && param.defaultValue) {
           this.parameters[param.name] = $('#advanced-' + param.name).val();
         } else {
@@ -183,6 +177,19 @@ var ConfirmPipelineDialog = View.extend({
     }.bind(this), function () {
       this.messageDialog("danger", "The execution is launched on VIP but we encounter a problem to fetch the informations about this execution");
     }.bind(this));
+  },
+
+  constructApiUri: function(filePath, fileId) {
+    // Get the server URL and protocol
+    var url = window.location.href;
+    var protocol = url.split("://");
+    protocol = protocol[0];
+
+    // create the base uri
+    return "girder:" + filePath + "?"
+          + "apiurl=" + protocol + "://" + location.host + "/" + getApiRoot()
+          + "&amp;token=" + this.currentToken
+          + "&amp;fileId=" + fileId;
   },
 
   // Check the number of required parameters
