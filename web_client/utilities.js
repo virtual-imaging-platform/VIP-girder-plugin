@@ -5,7 +5,9 @@ import { restRequest, cancelRestRequests } from 'girder/rest';
 import compareVersions from 'compare-versions';
 import router from 'girder/router';
 import events from 'girder/events';
-import { Status } from './constants';
+import ApiKeyCollection from 'girder/collections/ApiKeyCollection.js'
+import ApiKeyModel from 'girder/models/ApiKeyModel.js'
+import { Status, GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP } from './constants';
 
 // Import views
 import FrontPageView from 'girder/views/body/FrontPageView';
@@ -84,7 +86,7 @@ function sortPipelines(allPipelines) {
 
   return tmp;
 }
-
+/*
 function createNewToken(user) {
   return new Promise(function (resolve) {
     var userId = user.get('_id');
@@ -128,6 +130,74 @@ function createNewToken(user) {
       resolve(resp.authToken.token);
     });
   });
+}*/
+
+function createNewToken(user) {
+  return createOrVerifyPluginApiKey(user)
+  .then( apikey => {
+    return restRequest({
+      method: 'POST',
+      url: 'api_key/token',
+      data: {
+        key: apikey.key
+      }
+    });
+  })
+  .then(resp => resp.authToken.token);
+}
+
+function createOrVerifyPluginApiKey(user) {
+  return new Promise((resolve, reject) => {
+    var allApiKeys = new ApiKeyCollection();
+    // filter apikey to only select the one searched
+    allApiKeys.filterFunc = function(apikey) {
+      return GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP === apikey.name;
+    };
+
+    allApiKeys.on('g:changed', () => {
+      if (allApiKeys.length > 1) {
+        reject("Too many apikeys returned");
+      } else {
+        resolve(allApiKeys.length ? allApiKeys.pop() : null);
+      }
+    })
+    .fetch({
+      userId: user.id
+    })
+  })
+  .then(apikey => {
+    if (apikey) {
+      return verifyPluginApiKey(apikey));
+    } else {
+      return createPluginApiKey());
+    }
+  });
+}
+
+function verifyPluginApiKey(apikey) {
+  if (!apikey.active) {
+    messageGirder("warning", "The girder API key to use the VIP plugin should \
+      be active")
+    return Promise.reject();
+  } else if (!apikey.tokenDuration || apikey.tokenDuration > 1) {
+    messageGirder("warning", "The girder API key to use the VIP plugin should \
+      have a token duration of one day")
+    return Promise.reject();
+  } else {
+    return Promise.resolve(apikey);
+  }
+}
+
+function createPluginApiKey() {
+  return new Promise(resolve => {
+    var apikey = new ApiKeyModel();
+    apikey.set({
+      name: GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP,
+      tokenDuration: 1
+    });
+    apikey.once('g:saved', () => resolve(apikey))
+    .save();
+  });
 }
 
 export {
@@ -137,5 +207,6 @@ export {
   getCurrentApiKeyVip,
   getStatusKeys,
   sortPipelines,
+  createOrVerifyPluginApiKey,
   createNewToken
 };

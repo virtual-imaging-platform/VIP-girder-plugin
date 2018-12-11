@@ -22,9 +22,12 @@ const ChunkSize = 10000000;
 // Set this variable to 'true' to access to multi files menu
 const EnabledMultiFiles = false;
 
+const GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP = "vipPluginApiKey";
+
 export {
   carminURL,
   Status,
   ChunkSize,
-  EnabledMultiFiles
+  EnabledMultiFiles,
+  GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP
 };
