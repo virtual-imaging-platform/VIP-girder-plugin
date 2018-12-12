@@ -86,51 +86,6 @@ function sortPipelines(allPipelines) {
 
   return tmp;
 }
-/*
-function createNewToken(user) {
-  return new Promise(function (resolve) {
-    var userId = user.get('_id');
-
-    var getApiKey = restRequest({
-      method: 'GET',
-      url: 'api_key',
-      data: {
-        userId: userId,
-        limit: 1
-      }
-    });
-
-    getApiKey.then(function (resp) {
-      if (resp.length == 0) {
-        return restRequest({
-          method: 'POST',
-          url: 'api_key',
-          data: {
-            name: "apikeyToUseVIP",
-            tokenDuration: 2
-          }
-        });
-      } else {
-        return Promise.resolve(resp);
-      }
-    }).then(function (resp) {
-      var apiKey = (resp[0]) ? resp[0].key : resp.key;
-
-      // Generate token
-      return restRequest({
-        method: 'POST',
-        url: 'api_key/token',
-        data: {
-          key: apiKey,
-          duration: 2
-        }
-      });
-
-    }).then(function (resp) {
-      resolve(resp.authToken.token);
-    });
-  });
-}*/
 
 function createNewToken(user) {
   return createOrVerifyPluginApiKey(user)
@@ -139,7 +94,7 @@ function createNewToken(user) {
       method: 'POST',
       url: 'api_key/token',
       data: {
-        key: apikey.key
+        key: apikey.get("key")
       }
     });
   })
@@ -167,19 +122,19 @@ function createOrVerifyPluginApiKey(user) {
   })
   .then(apikey => {
     if (apikey) {
-      return verifyPluginApiKey(apikey));
+      return verifyPluginApiKey(apikey);
     } else {
-      return createPluginApiKey());
+      return createPluginApiKey();
     }
   });
 }
 
 function verifyPluginApiKey(apikey) {
-  if (!apikey.active) {
+  if (!apikey.get("active")) {
     messageGirder("warning", "The girder API key to use the VIP plugin should \
       be active")
     return Promise.reject();
-  } else if (!apikey.tokenDuration || apikey.tokenDuration > 1) {
+  } else if (!apikey.has("tokenDuration") || apikey.get("tokenDuration") > 1) {
     messageGirder("warning", "The girder API key to use the VIP plugin should \
       have a token duration of one day")
     return Promise.reject();

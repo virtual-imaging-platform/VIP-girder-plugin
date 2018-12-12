@@ -33,11 +33,10 @@ var ConfirmPipelineDialog = View.extend({
     });
 
     // verify that the api key is OK
-    $('#run-pipeline').button('disable');
-    createOrVerifyPluginApiKey()
-    .then( () => $('#run-pipeline').button('enable') )
+    createOrVerifyPluginApiKey(getCurrentUser())
+    .then( () => $('#run-pipeline').prop("disabled", false) )
     .catch(e => {
-      console.log(e));
+      console.log(e);
       messageGirder("warning", "There is a problem with the Girder API key. \
         Please correct it and come back");
     });
@@ -122,21 +121,21 @@ var ConfirmPipelineDialog = View.extend({
   launchPipeline: function () {
     var nameExecution = $('#name-execution').val();
     var folderGirderDestination = $('#selectFolderDestination').val();
-    var sendMail = $('#send-email').is(':checked');
+    this.sendMail = $('#send-email').is(':checked');
 
     // begining of the promise chain
     // always use arrow functions to keep "this"
     // Create result folder
     this.createResultFolder(nameExecution, folderGirderDestination)
     .then( folder => this.folderResultId = folder._id)
-    .then( _() => createNewToken() )
+    .then( () => createNewToken(getCurrentUser()) )
     .then( token => {
       this.token = token;
 
       // Map input with application parameters
       _.each(this.currentPipeline.parameters, param => {
         if (param.name == "results-directory") {
-          this.parameters[param.name] = this.constructApiUri("/Currently/Unused", folderResultId);
+          this.parameters[param.name] = this.constructApiUri("/Currently/Unused", this.folderResultId);
         } else if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) {
           this.parameters[param.name] = $('#'+param.name).val();
         } else if (param.type == "File" && !param.defaultValue) {
@@ -162,13 +161,18 @@ var ConfirmPipelineDialog = View.extend({
       }
     })
     // if it's OK, save it on girder, else show en arror
-    .then(data => this.saveExecutionOnGirder(data)
+    .then(
+      // nested promise chain
+      data => { return Promise.resolve(data)
+        // need to initilize a promise chain, otherwise an error in
+        // saveExecutionOnGirder isnt' catch in this chain
+        .then(this.saveExecutionOnGirder(data))
         .then( () => this.messageDialog("success", "The execution is launched correctly"))
         .catch( e => {
           console.log(e);
           this.messageDialog("danger", "The execution is launched on VIP but we encounter a problem to fetch the informations about this execution");
-        })
-      , e => {
+        });
+      }, e => {
         console.log(e);
         this.messageDialog("danger", "There was a problem launching the application");
       }
@@ -185,7 +189,7 @@ var ConfirmPipelineDialog = View.extend({
       vipExecutionId: data.identifier,
       status: data.status.toUpperCase(),
       idFolderResult: this.folderResultId,
-      sendMail: sendMail,
+      sendMail: this.sendMail,
       listFileResult: '{}',
       timestampFin: null
     };
