@@ -160,7 +160,7 @@ var ConfirmPipelineDialog = View.extend({
         return data;
       }
     })
-    // if it's OK, save it on girder, else show en arror
+    // if it's OK, save it on girder, else show an error
     .then(
       // nested promise chain
       data => { return Promise.resolve(data)
