@@ -13,7 +13,7 @@ import View from 'girder/views/View';
 import PipelineCollection from '../collections/PipelineCollection';
 
 // Import templates
-import MyPipelinesTempalte from '../templates/myPipelines.pug';
+import MyPipelinesTemplate from '../templates/myPipelines.pug';
 
 // Import stylesheets
 import '../stylesheets/myPipelines.styl';
@@ -57,7 +57,7 @@ var MyPipelines = View.extend({
 
   render: function () {
     // Display the list of executions
-    this.$el.html(MyPipelinesTempalte({
+    this.$el.html(MyPipelinesTemplate({
       pipelines: this.collection.toArray(),
       status: constants.Status,
       statusKeys: this.statusKeys,
