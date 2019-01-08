@@ -15,17 +15,17 @@ table.table.table-hover
         th Start
           small    JJ/MM/YYYY
         th Actions
-    each pipeline in pipelines
-      - var date = new Date(pipeline.get('timestampCreation') * 1000);
-      - var hideResult = (pipeline.get('status') == statusKeys[4]) ? '' : 'hidden';
-      tr.pipeline
+    each execution in executions
+      - var date = new Date(execution.timestampCreation) * 1000);
+      - var hideResult = (execution.status == 'FINISHED') ? '' : 'hidden';
+      tr.execution
         td= i++
-        td= pipeline.name()
-        td= pipeline.get('pipelineName')
-        td.status= status[pipeline.get('status')]
+        td= execution.name
+        td= execution.pipelineName
+        td.status= status[execution.status].text
         td= date.getDate() + "/" + (date.getMonth()+1) + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
-        td#pipeline-action
-          a(href="#user/" + user.id + "/folder/" + pipeline.get('childFolderResult'), target='_blank', style="visibility:" + hideResult)
+        td
+          a(href="#user/" + user.id + "/folder/" + execution.idFolderResult, target='_blank', style="visibility:" + hideResult)
             button.btn.btn-small.btn-primary Results
 
-          button.btn.btn-small.btn-danger.deletePipeline(value=pipeline.id) Delete
+          button.btn.btn-small.btn-danger.deleteExecution(value=execution.id) Delete

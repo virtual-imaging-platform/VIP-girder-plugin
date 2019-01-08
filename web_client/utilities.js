@@ -43,10 +43,6 @@ function getCurrentApiKeyVip () {
   return (getCurrentUser().get('apiKeyVip') ? getCurrentUser().get('apiKeyVip') : null);
 }
 
-function getStatusKeys () {
-  return Object.keys(Status);
-}
-
 function sortPipelines(allPipelines) {
   // Regroupe toutes les pipelines par leur nom
   var pipelinesByName = _.groupBy(allPipelines, 'name');
@@ -160,7 +156,6 @@ export {
   messageGirder,
   checkRequestError,
   getCurrentApiKeyVip,
-  getStatusKeys,
   sortPipelines,
   createOrVerifyPluginApiKey,
   createNewToken

@@ -190,7 +190,6 @@ var ConfirmPipelineDialog = View.extend({
       status: data.status.toUpperCase(),
       idFolderResult: this.folderResultId,
       sendMail: this.sendMail,
-      listFileResult: '{}',
       timestampFin: null
     };
 

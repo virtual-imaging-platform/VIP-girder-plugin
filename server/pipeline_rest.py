@@ -50,7 +50,6 @@ class PipelineExecution(Resource):
     .param('idFolderResult', 'The folder id where the results are stored')
     .param('status', 'Status of execution', default='null')
     .param('sendMail', 'Send an email when the execution has finished', dataType='boolean', default=False)
-    .jsonParam('listFileResult', 'List of the files of result', requireObject=True)
     .param('timestampFin', 'Date of end of pipeline', required=False)
     )
     def createProcess(self, params):
