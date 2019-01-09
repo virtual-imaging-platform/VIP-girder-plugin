@@ -10,15 +10,15 @@ import CarminClient from '../vendor/carmin/carmin-client';
 import View from 'girder/views/View';
 
 // Import collections
-import PipelineCollection from '../collections/PipelineCollection';
+import ExecutionCollection from '../collections/ExecutionCollection';
 
 // Import templates
-import MyPipelinesTemplate from '../templates/myPipelines.pug';
+import MyExecutionsTemplate from '../templates/myExecutions.pug';
 
 // Import stylesheets
-import '../stylesheets/myPipelines.styl';
+import '../stylesheets/myExecutions.styl';
 
-var MyPipelines = View.extend({
+var MyExecutions = View.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
@@ -30,10 +30,10 @@ var MyPipelines = View.extend({
 
     this.carmin = new CarminClient(constants.carminURL, apiKeyVip);
 
-    // Get all pipeline executions
+    // Get all executions
     restRequest({
       method: 'GET',
-      url: 'pipeline_execution'
+      url: 'vip_execution'
     }).then(executions => {
       return this.updateStatus(executions);
     }).then(executions => {
@@ -47,11 +47,11 @@ var MyPipelines = View.extend({
   },
 
   render: function (executions) {
-    // use PipelineCollection to sort the executions
-    var sortedExecutions = new PipelineCollection(executions).toJSON();
+    // use ExecutionCollection to sort the executions
+    var sortedExecutions = new ExecutionCollection(executions).toJSON();
     // Display the list of executions
-    this.$el.html(MyPipelinesTemplate({
-      executions: new PipelineCollection(executions),
+    this.$el.html(MyExecutionsTemplate({
+      executions: sortedExecutions,
       status: constants.Status,
       user: getCurrentUser()
     }));
@@ -60,13 +60,13 @@ var MyPipelines = View.extend({
   },
 
   // Get the status of the executon VIP side. If the status is different from the girder side, update it.
-  updateStatus: function (pipelineExecutions) {
+  updateStatus: function (executions) {
     const promiseArray = [];
 
     // For each executions
-    for (let execution of pipelineExecutions) {
+    for (let execution of executions) {
       var executionStatus = execution.status;
-      if (! constants.Status[executionStatus])) {
+      if (! constants.Status[executionStatus]) {
         // the status is unknown, report an error
         messageGirder("warning", "Unkown status : " + executionStatus);
       } else if (constants.Status[executionStatus].order < 25) {
@@ -78,7 +78,7 @@ var MyPipelines = View.extend({
               execution.status = workflow.status.toUpperCase();
               return restRequest({
                 method: 'PUT',
-                url: 'pipeline_execution/' + execution._id + "/status",
+                url: 'vip_execution/' + execution._id + "/status",
                 data: { 'status': execution.status }
               })
               // the promise must return the updated execution
@@ -106,7 +106,7 @@ var MyPipelines = View.extend({
     if (id) {
       restRequest({
         method: 'DELETE',
-        url: 'pipeline_execution/' + id
+        url: 'vip_execution/' + id
       }).done(() => {
         var execution = buttonDelete.closest('tr.execution');
 
@@ -119,4 +119,4 @@ var MyPipelines = View.extend({
 
 });
 
-export default MyPipelines;
+export default MyExecutions;

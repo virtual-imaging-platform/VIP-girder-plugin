@@ -1,6 +1,6 @@
 - var i = 1;
 
-.creatis-list-pipelines-header
+.creatis-list-executions-header
   .g-body-title My executions
   .g-body-subtitle Executions history
 
@@ -16,7 +16,7 @@ table.table.table-hover
           small    JJ/MM/YYYY
         th Actions
     each execution in executions
-      - var date = new Date(execution.timestampCreation) * 1000);
+      - var date = new Date(execution.timestampCreation * 1000);
       - var hideResult = (execution.status == 'FINISHED') ? '' : 'hidden';
       tr.execution
         td= i++

@@ -13,10 +13,10 @@ import 'bootstrap/js/button';
 import View from 'girder/views/View';
 
 // Import templates
-import ConfirmPipelineDialogTemplate from '../templates/confirmPipelineDialog.pug';
+import ConfirmExecutionDialogTemplate from '../templates/confirmExecutionDialog.pug';
 
 // Modal to fill parameters and launch the pipeline
-var ConfirmPipelineDialog = View.extend({
+var ConfirmExecutionDialog = View.extend({
 
   initialize: function (settings) {
     this.file = settings.file;
@@ -34,7 +34,7 @@ var ConfirmPipelineDialog = View.extend({
 
     // verify that the api key is OK
     createOrVerifyPluginApiKey(getCurrentUser())
-    .then( () => $('#run-pipeline').prop("disabled", false) )
+    .then( () => $('#run-execution').prop("disabled", false) )
     .catch(e => {
       console.log(e);
       messageGirder("warning", "There is a problem with the Girder API key. \
@@ -45,12 +45,12 @@ var ConfirmPipelineDialog = View.extend({
   },
 
   events: {
-    'submit .creatis-launch-pipeline-form' : 'initPipeline'
+    'submit .creatis-launch-execution-form' : 'initExecution'
   },
 
   render: function () {
     // Display the modal with the parameter of the pipeline selectionned
-    $('#g-dialog-container').html(ConfirmPipelineDialogTemplate({
+    $('#g-dialog-container').html(ConfirmExecutionDialogTemplate({
       pipeline: this.currentPipeline,
       file: this.file,
       folders: this.foldersCollection,
@@ -65,7 +65,7 @@ var ConfirmPipelineDialog = View.extend({
     return this;
   },
 
-  initPipeline: function (e) {
+  initExecution: function (e) {
     // Cancel the button's action
     e.preventDefault();
 
@@ -111,14 +111,14 @@ var ConfirmPipelineDialog = View.extend({
 
     // Loading animation on the button
     messageGirder("info", "Loading...", 1000);
-    $('#run-pipeline').button('loading');
+    $('#run-execution').button('loading');
 
     // If there aren't problems with the parameters
-    this.launchPipeline();
+    this.launchExecution();
   },
 
   // Get the parameters and launch the execution
-  launchPipeline: function () {
+  launchExecution: function () {
     var nameExecution = $('#name-execution').val();
     var folderGirderDestination = $('#selectFolderDestination').val();
     this.sendMail = $('#send-email').is(':checked');
@@ -196,7 +196,7 @@ var ConfirmPipelineDialog = View.extend({
     // Add this execution on Girder db
     return restRequest({
       method: 'POST',
-      url: 'pipeline_execution',
+      url: 'vip_execution',
       data: params
     });
   },
@@ -226,7 +226,7 @@ var ConfirmPipelineDialog = View.extend({
     return (requiredFile <= 1) ? 1 : 0;
   },
 
-  // Create the result folder before send the parameters and init the pipeline
+  // Create the result folder
   createResultFolder: function (nameExecution, idParentFolder) {
     return restRequest({
       method: 'POST',
@@ -250,11 +250,11 @@ var ConfirmPipelineDialog = View.extend({
 
   // For each error
   messageDialog: function(type, message) {
-    $('#run-pipeline').button('reset');
+    $('#run-execution').button('reset');
     $('#g-dialog-container').find('a.close').click();
     messageGirder(type, message, 3000);
   },
 
 });
 
-export default ConfirmPipelineDialog;
+export default ConfirmExecutionDialog;

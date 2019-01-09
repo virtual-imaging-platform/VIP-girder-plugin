@@ -7,7 +7,7 @@ const carminURL = "http://vip.creatis.insa-lyon.fr/rest";
 const Status = {
   INITIALIZING: { order : 0, text: "Initializing"},
   READY:  { order : 10, text: "Ready"},
-  RUNNING:  { order : 20, text: "Running",
+  RUNNING:  { order : 20, text: "Running"},
   FINISHED:  { order : 30, text: "Completed, fetching results"},
   INITIALIZATIONFAILED:  { order : 40, text: "Initializing failed"},
   EXECUTIONFAILED:  { order : 50, text: "Execution failed"},

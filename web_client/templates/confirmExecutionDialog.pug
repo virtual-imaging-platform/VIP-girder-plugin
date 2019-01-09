@@ -11,7 +11,7 @@ link(href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-aw
     if !authorizedForVersionOne
       .alert.alert-danger(role="alert") This application can not be used in this version of Girder (More than one file)
 
-    form.creatis-launch-pipeline-form.modal-form(role="form")
+    form.creatis-launch-execution-form.modal-form(role="form")
       .modal-header
         a.close(data-dismiss="modal", aria-hidden="true") &times;
         h4.modal-title!= pipeline.name + "  <small>Version " + pipeline.version + "</small>"
@@ -80,7 +80,7 @@ link(href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-aw
                   input.form-control(id="advanced-"+param.name, type="text", placeholder="Default : " + param.defaultValue)
 
       .modal-footer
-        a.btn.btn-small.btn-default.btn-close-pipeline(data-dismiss="modal") Close
-        button.btn.btn-success#run-pipeline(disabled=true, type="submit", data-loading-text="<i class='fa fa-spinner fa-spin'></i> Execute")
+        a.btn.btn-small.btn-default.btn-close-execution(data-dismiss="modal") Close
+        button.btn.btn-success#run-execution(disabled=true, type="submit", data-loading-text="<i class='fa fa-spinner fa-spin'></i> Execute")
           i.icon-play
           |  Execute

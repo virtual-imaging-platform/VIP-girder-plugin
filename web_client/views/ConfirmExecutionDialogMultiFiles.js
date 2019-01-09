@@ -11,9 +11,9 @@ import 'bootstrap/js/button';
 import View from 'girder/views/View';
 
 // Import templates
-import ConfirmPipelineDialogTemplate from '../templates/confirmPipelineDialog.pug';
+import ConfirmExecutionDialogTemplate from '../templates/confirmExecutionDialog.pug';
 
-var ConfirmPipelineDialog = View.extend({
+var ConfirmExecutionDialog = View.extend({
 
   initialize: function (settings) {
     this.files = settings.files;
@@ -34,11 +34,11 @@ var ConfirmPipelineDialog = View.extend({
   },
 
   events: {
-    'submit .creatis-launch-pipeline-form' : 'initPipeline'
+    'submit .creatis-launch-execution-form' : 'initExecution'
   },
 
   render: function () {
-    $('#g-dialog-container').html(ConfirmPipelineDialogTemplate({
+    $('#g-dialog-container').html(ConfirmExecutionDialogTemplate({
       pipeline: this.currentPipeline,
       filesCount: this.filesCount,
       folders: this.foldersCollection
@@ -51,7 +51,7 @@ var ConfirmPipelineDialog = View.extend({
     return this;
   },
 
-  initPipeline: function (e) {
+  initExecution: function (e) {
     e.preventDefault();
 
     var nameExecution = $('#name-execution');
@@ -78,7 +78,7 @@ var ConfirmPipelineDialog = View.extend({
     if (!checkArg)
       return ;
 
-    $('#run-pipeline').button('loading');
+    $('#run-execution').button('loading');
 
     var folderPath = this.pathVIP + "process-" + getTimestamp();
 
@@ -130,4 +130,4 @@ var ConfirmPipelineDialog = View.extend({
 
 });
 
-export default ConfirmPipelineDialog;
+export default ConfirmExecutionDialog;

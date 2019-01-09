@@ -11,7 +11,7 @@ import { getCurrentApiKeyVip, sortPipelines } from '../utilities';
 
 // Import views
 import View from 'girder/views/View';
-import ConfirmPipelineDialog from './ConfirmPipelineDialog';
+import ConfirmExecutionDialog from './ConfirmExecutionDialog';
 
 // Import templates
 import ListPipelinesTemplate from '../templates/listPipelines.pug';
@@ -92,7 +92,7 @@ var ListPipelines = View.extend({
         });
       }
       else {
-        new ConfirmPipelineDialog({
+        new ConfirmExecutionDialog({
           file: this.file,
           pipeline: data,
           foldersCollection: this.foldersCollection,

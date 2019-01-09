@@ -15,7 +15,7 @@ import FileModel from 'girder/models/FileModel';
 
 // Import views
 import View from 'girder/views/View';
-import ConfirmPipelineDialogMultiFiles from './ConfirmPipelineDialogMultiFiles';
+import ConfirmExecutionDialogMultiFiles from './ConfirmExecutionDialogMultiFiles';
 
 // Import templates
 import ListPipelinesMultiFilesTemplate from '../templates/listPipelinesMultiFiles.pug';
@@ -114,7 +114,7 @@ var ListPipelines = View.extend({
         });
       }
       else {
-        new ConfirmPipelineDialogMultiFiles({
+        new ConfirmExecutionDialogMultiFiles({
           files: this.files,
           filesCount: Object.keys(this.files).length,
           pipeline: data,
