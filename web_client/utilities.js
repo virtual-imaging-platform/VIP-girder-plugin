@@ -37,9 +37,9 @@ function getCurrentApiKeyVip () {
     cancelRestRequests('fetch');
     router.navigate('', {trigger: true});
     messageGirder("danger", "You must configure your VIP API key in \
-        'My Account > VIP API key'. You must have an account on \
-        https://vip.creatis.insa-lyon.fr and create or get your \
-        VIP api key in 'My Account > API key'"
+        'My Account > VIP API key'. You must have an account on VIP \
+        (https://vip.creatis.insa-lyon.fr) where you can create or get \
+        an api key in 'My Account > API key'"
       , 30000);
     return null;
   }
