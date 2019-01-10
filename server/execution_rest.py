@@ -52,8 +52,8 @@ class Execution(Resource):
     .param('sendMail', 'Send an email when the execution has finished', dataType='boolean', default=False)
     .param('timestampFin', 'Date of end of the execution', required=False)
     )
-    def createProcess(self, params):
-        return self.model.createProcess(params, self.getCurrentUser())
+    def createExecution(self, params):
+        return self.model.createExecution(params, self.getCurrentUser())
 
     @access.public
     @autoDescribeRoute(

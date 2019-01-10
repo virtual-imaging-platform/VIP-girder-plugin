@@ -36,7 +36,11 @@ function getCurrentApiKeyVip () {
   if (typeof getCurrentUser().get('apiKeyVip') === 'undefined' || getCurrentUser().get('apiKeyVip').length == 0) {
     cancelRestRequests('fetch');
     router.navigate('', {trigger: true});
-    messageGirder("danger", "You must have a VIP API key. For that, you have to go to https://vip.creatis.insa-lyon.fr and create an account. Now, you can fill in your key in 'My Account > VIP'", 6000);
+    messageGirder("danger", "You must configure your VIP API key in \
+        'My Account > VIP API key'. You must have an account on \
+        https://vip.creatis.insa-lyon.fr and create or get your \
+        VIP api key in 'My Account > API key'"
+      , 30000);
     return null;
   }
 

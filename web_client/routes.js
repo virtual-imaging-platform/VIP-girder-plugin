@@ -29,7 +29,7 @@ router.route('pipelines-multi-files', 'pipelinesMultiFiles', function(params) {
   events.trigger('g:navigateTo', ListPipelinesMultiFiles);
 })
 
-// New route #my-pipelines
+// New route #my-executions
 router.route('my-executions', 'myexecutions', function() {
   events.trigger('g:navigateTo', MyExecutions);
 })

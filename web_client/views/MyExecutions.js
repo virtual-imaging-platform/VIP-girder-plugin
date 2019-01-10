@@ -82,7 +82,7 @@ var MyExecutions = View.extend({
                 data: { 'status': execution.status }
               })
               // the promise must return the updated execution
-              .then(execution);
+              .then(() => execution);
             } else {
               // nothing to do but forward the execution to be rendered
               return execution;
