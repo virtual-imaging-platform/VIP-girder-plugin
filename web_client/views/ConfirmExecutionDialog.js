@@ -4,18 +4,19 @@ import 'girder/utilities/jquery/girderModal';
 import { restRequest, getApiRoot } from 'girder/rest';
 import events from 'girder/events';
 import { Status } from '../constants';
-import { getCurrentUser, getCurrentToken } from 'girder/auth';
-import { checkRequestError, messageGirder, getTimestamp, createNewToken } from '../utilities';
+import { getCurrentUser} from 'girder/auth';
+import { checkRequestError, messageGirder, getTimestamp,
+  createOrVerifyPluginApiKey, createNewToken } from '../utilities';
 import 'bootstrap/js/button';
 
 // Import views
 import View from 'girder/views/View';
 
 // Import templates
-import ConfirmPipelineDialogTemplate from '../templates/confirmPipelineDialog.pug';
+import ConfirmExecutionDialogTemplate from '../templates/confirmExecutionDialog.pug';
 
 // Modal to fill parameters and launch the pipeline
-var ConfirmPipelineDialog = View.extend({
+var ConfirmExecutionDialog = View.extend({
 
   initialize: function (settings) {
     this.file = settings.file;
@@ -31,23 +32,25 @@ var ConfirmPipelineDialog = View.extend({
       return a.path.localeCompare(b.path)
     });
 
-    // Get the current user's token
-    if (!(this.currentToken = getCurrentToken())) {
-      createNewToken(getCurrentUser()).then(function (resp) {
-        this.currentToken = resp;
-      }.bind(this));
-    }
+    // verify that the api key is OK
+    createOrVerifyPluginApiKey(getCurrentUser())
+    .then( () => $('#run-execution').prop("disabled", false) )
+    .catch(e => {
+      console.log(e);
+      messageGirder("warning", "There is a problem with the Girder API key. \
+        Please correct it and come back");
+    });
 
     this.render();
   },
 
   events: {
-    'submit .creatis-launch-pipeline-form' : 'initPipeline'
+    'submit .creatis-launch-execution-form' : 'initExecution'
   },
 
   render: function () {
     // Display the modal with the parameter of the pipeline selectionned
-    $('#g-dialog-container').html(ConfirmPipelineDialogTemplate({
+    $('#g-dialog-container').html(ConfirmExecutionDialogTemplate({
       pipeline: this.currentPipeline,
       file: this.file,
       folders: this.foldersCollection,
@@ -62,7 +65,7 @@ var ConfirmPipelineDialog = View.extend({
     return this;
   },
 
-  initPipeline: function (e) {
+  initExecution: function (e) {
     // Cancel the button's action
     e.preventDefault();
 
@@ -71,7 +74,7 @@ var ConfirmPipelineDialog = View.extend({
     var folderGirderDestination = $('#selectFolderDestination');
     var checkArg = 1;
 
-    if (!this.currentToken && !getApiRoot()) {
+    if (!getApiRoot()) {
       this.messageDialog("danger", "A problem with your session has occurred");
     }
 
@@ -108,29 +111,31 @@ var ConfirmPipelineDialog = View.extend({
 
     // Loading animation on the button
     messageGirder("info", "Loading...", 1000);
-    $('#run-pipeline').button('loading');
+    $('#run-execution').button('loading');
 
     // If there aren't problems with the parameters
-    this.launchPipeline();
+    this.launchExecution();
   },
 
   // Get the parameters and launch the execution
-  launchPipeline: function () {
+  launchExecution: function () {
     var nameExecution = $('#name-execution').val();
     var folderGirderDestination = $('#selectFolderDestination').val();
-    var sendMail = $('#send-email').is(':checked');
+    this.sendMail = $('#send-email').is(':checked');
 
+    // begining of the promise chain
+    // always use arrow functions to keep "this"
     // Create result folder
-    var promiseNewFolder = this.createResultFolder(nameExecution, folderGirderDestination);
-
-    // Init execution when the result directory is created
-    var promiseInitExecution = promiseNewFolder.then(function (folderResultId) {
-      this.folderResultId = folderResultId;
+    this.createResultFolder(nameExecution, folderGirderDestination)
+    .then( folder => this.folderResultId = folder._id)
+    .then( () => createNewToken(getCurrentUser()) )
+    .then( token => {
+      this.token = token;
 
       // Map input with application parameters
-      _.each(this.currentPipeline.parameters, function (param) {
+      _.each(this.currentPipeline.parameters, param => {
         if (param.name == "results-directory") {
-          this.parameters[param.name] = this.constructApiUri("/Currently/Unused", folderResultId);
+          this.parameters[param.name] = this.constructApiUri("/Currently/Unused", this.folderResultId);
         } else if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) {
           this.parameters[param.name] = $('#'+param.name).val();
         } else if (param.type == "File" && !param.defaultValue) {
@@ -140,43 +145,60 @@ var ConfirmPipelineDialog = View.extend({
         } else {
           this.parameters[param.name] = param.defaultValue;
         }
-      }.bind(this));
+      });
 
       // Launch the execution
-      return this.carmin.initAndStart(nameExecution, this.currentPipeline.identifier, this.parameters);
-
-    }.bind(this), function () {
-      this.messageDialog("danger", "There was a problem launching the application");
-    });
-
-    // If the execution is launched correctly VIP side, add this execution on Girder db
-    promiseInitExecution.then(function (data) {
-      if (!checkRequestError(data)) {
-        var filesInput = $.extend({}, this.filesInput);
-        var params = {
-          name: data.name,
-          fileId: JSON.stringify(filesInput),
-          pipelineName: this.currentPipeline.name,
-          vipExecutionId: data.identifier,
-          status: data.status.toUpperCase(),
-          idFolderResult: this.folderResultId,
-          sendMail: sendMail,
-          listFileResult: '{}',
-          timestampFin: null
-        };
-
-        // Add this execution on Girder db
-        return restRequest({
-          method: 'POST',
-          url: 'pipeline_execution',
-          data: params
-        });
+      return this.carmin.initAndStart(
+        nameExecution,
+        this.currentPipeline.identifier,
+        this.parameters);
+    })
+    .then(data => {
+      if (checkRequestError(data)) {
+        Promise.reject("VIP returned an error, please contact the vip admins")
+      } else {
+        return data;
       }
-    }.bind(this)).then(function (){
-      this.messageDialog("success", "The execution is launched correctly");
-    }.bind(this), function () {
-      this.messageDialog("danger", "The execution is launched on VIP but we encounter a problem to fetch the informations about this execution");
-    }.bind(this));
+    })
+    // if it's OK, save it on girder, else show an error
+    .then(
+      // nested promise chain
+      data => { return Promise.resolve(data)
+        // need to initilize a promise chain, otherwise an error in
+        // saveExecutionOnGirder isnt' catch in this chain
+        .then(this.saveExecutionOnGirder(data))
+        .then( () => this.messageDialog("success", "The execution is launched correctly"))
+        .catch( e => {
+          console.log(e);
+          this.messageDialog("danger", "The execution is launched on VIP but we encounter a problem to fetch the informations about this execution");
+        });
+      }, e => {
+        console.log(e);
+        this.messageDialog("danger", "There was a problem launching the application");
+      }
+    );
+  },
+
+  saveExecutionOnGirder : function(data) {
+    // the execution was launched successly
+    var filesInput = $.extend({}, this.filesInput);
+    var params = {
+      name: data.name,
+      fileId: JSON.stringify(filesInput),
+      pipelineName: this.currentPipeline.name,
+      vipExecutionId: data.identifier,
+      status: data.status.toUpperCase(),
+      idFolderResult: this.folderResultId,
+      sendMail: this.sendMail,
+      timestampFin: null
+    };
+
+    // Add this execution on Girder db
+    return restRequest({
+      method: 'POST',
+      url: 'vip_execution',
+      data: params
+    });
   },
 
   constructApiUri: function(filePath, fileId) {
@@ -188,7 +210,7 @@ var ConfirmPipelineDialog = View.extend({
     // create the base uri
     return "girder:" + filePath + "?"
           + "apiurl=" + protocol + "://" + location.host + "/" + getApiRoot()
-          + "&amp;token=" + this.currentToken
+          + "&amp;token=" + this.token
           + "&amp;fileId=" + fileId;
   },
 
@@ -204,23 +226,17 @@ var ConfirmPipelineDialog = View.extend({
     return (requiredFile <= 1) ? 1 : 0;
   },
 
-  // Create the result folder before send the parameters and init the pipeline
+  // Create the result folder
   createResultFolder: function (nameExecution, idParentFolder) {
-    return new Promise(function (resolve, reject) {
-      restRequest({
-        method: 'POST',
-        url: 'folder',
-        data: {
-          parentType: 'folder',
-          parentId: idParentFolder,
-          name: this.getResultFolderName(nameExecution)
-        }
-      }).then(function (resp) {
-        resolve(resp._id);
-      }, function () {
-        reject();
-      });
-    }.bind(this));
+    return restRequest({
+      method: 'POST',
+      url: 'folder',
+      data: {
+        parentType: 'folder',
+        parentId: idParentFolder,
+        name: this.getResultFolderName(nameExecution)
+      }
+    });
   },
 
   getResultFolderName: function (nameExecution) {
@@ -234,11 +250,11 @@ var ConfirmPipelineDialog = View.extend({
 
   // For each error
   messageDialog: function(type, message) {
-    $('#run-pipeline').button('reset');
+    $('#run-execution').button('reset');
     $('#g-dialog-container').find('a.close').click();
     messageGirder(type, message, 3000);
   },
 
 });
 
-export default ConfirmPipelineDialog;
+export default ConfirmExecutionDialog;

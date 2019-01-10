@@ -7,25 +7,25 @@ from girder.constants import AccessType
 from girder.exceptions import ValidationException
 
 # Create new db and interactions api/db
-class PipelineExecution(Model):
+class Execution(Model):
     def initialize(self):
-        self.name = 'pipeline_execution'
-        self.ensureIndices(('name', 'fileId', 'userId', 'pipelineName', 'vipExecutionId', 'pathResultGirder',
-        'childFolderResult', 'status', 'sendMail', 'listFileResult', 'timestampCreation', 'timestampFin',
-        'folderNameProcessVip'))
+        self.name = 'vip_execution'
+        self.ensureIndices(('name', 'fileId', 'userId', 'pipelineName',
+            'vipExecutionId','childFolderResult',
+            'status', 'sendMail', 'timestampCreation', 'timestampFin'))
 
-    def validate(self, PipelineExecution):
-        return PipelineExecution
+    def validate(self, Execution):
+        return Execution
 
     def get(self):
-        for pipeline in self.find():
-            yield pipeline
+        for execution in self.find():
+            yield execution
 
-    def createProcess(self, params, user):
+    def createExecution(self, params, user):
         if len(params['fileId']) == 0:
             raise ValidationException("Parameter fileId should not be empty")
 
-        pipeline = {
+        execution = {
             'name': params['name'],
             'fileId': params['fileId'],
             'userId': user['_id'],
@@ -34,17 +34,16 @@ class PipelineExecution(Model):
             'idFolderResult': params['idFolderResult'],
             'status': params['status'],
             'sendMail': params['sendMail'],
-            'listFileResult': params['listFileResult'],
             'timestampCreation': time.time(),
             'timestampFin': params['timestampFin']
         }
 
         # Save in the db
-        return self.save(pipeline)
+        return self.save(execution)
 
-    def setStatus(self, pipeline, status):
-        pipeline['status'] = status
-        self.save(pipeline)
+    def setStatus(self, execution, status):
+        execution['status'] = status
+        self.save(execution)
 
     def remove(self, doc):
-        super(PipelineExecution, self).remove(doc)
+        super(Execution, self).remove(doc)

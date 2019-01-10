@@ -1,12 +1,12 @@
 import os
 from girder.models.user import User as UserModel
 from girder.constants import AccessType
-from . import pipeline_rest
+from . import execution_rest
 from . import user_rest
 
 def load(info):
     # Model PipelineExecution
-    info['apiRoot'].pipeline_execution = pipeline_rest.PipelineExecution()
+    info['apiRoot'].vip_execution = execution_rest.Execution()
 
     # Model User - extend user/
     UserModel().exposeFields(level=AccessType.READ, fields={'apiKeyVip'})

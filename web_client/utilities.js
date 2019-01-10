@@ -5,7 +5,9 @@ import { restRequest, cancelRestRequests } from 'girder/rest';
 import compareVersions from 'compare-versions';
 import router from 'girder/router';
 import events from 'girder/events';
-import { Status } from './constants';
+import ApiKeyCollection from 'girder/collections/ApiKeyCollection.js'
+import ApiKeyModel from 'girder/models/ApiKeyModel.js'
+import { Status, GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP } from './constants';
 
 // Import views
 import FrontPageView from 'girder/views/body/FrontPageView';
@@ -34,15 +36,15 @@ function getCurrentApiKeyVip () {
   if (typeof getCurrentUser().get('apiKeyVip') === 'undefined' || getCurrentUser().get('apiKeyVip').length == 0) {
     cancelRestRequests('fetch');
     router.navigate('', {trigger: true});
-    messageGirder("danger", "You must have a VIP API key. For that, you have to go to https://vip.creatis.insa-lyon.fr and create an account. Now, you can fill in your key in 'My Account > VIP'", 6000);
+    messageGirder("danger", "You must configure your VIP API key in \
+        'My Account > VIP API key'. You must have an account on VIP \
+        (https://vip.creatis.insa-lyon.fr) where you can create or get \
+        an api key in 'My Account > API key'"
+      , 30000);
     return null;
   }
 
   return (getCurrentUser().get('apiKeyVip') ? getCurrentUser().get('apiKeyVip') : null);
-}
-
-function getStatusKeys () {
-  return Object.keys(Status);
 }
 
 function sortPipelines(allPipelines) {
@@ -86,47 +88,70 @@ function sortPipelines(allPipelines) {
 }
 
 function createNewToken(user) {
-  return new Promise(function (resolve) {
-    var userId = user.get('_id');
-
-    var getApiKey = restRequest({
-      method: 'GET',
-      url: 'api_key',
+  return createOrVerifyPluginApiKey(user)
+  .then( apikey => {
+    return restRequest({
+      method: 'POST',
+      url: 'api_key/token',
       data: {
-        userId: userId,
-        limit: 1
+        key: apikey.get("key")
       }
     });
+  })
+  .then(resp => resp.authToken.token);
+}
 
-    getApiKey.then(function (resp) {
-      if (resp.length == 0) {
-        return restRequest({
-          method: 'POST',
-          url: 'api_key',
-          data: {
-            name: "apikeyToUseVIP",
-            tokenDuration: 2
-          }
-        });
+function createOrVerifyPluginApiKey(user) {
+  return new Promise((resolve, reject) => {
+    var allApiKeys = new ApiKeyCollection();
+    // filter apikey to only select the one searched
+    allApiKeys.filterFunc = function(apikey) {
+      return GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP === apikey.name;
+    };
+
+    allApiKeys.on('g:changed', () => {
+      if (allApiKeys.length > 1) {
+        reject("Too many apikeys returned");
       } else {
-        return Promise.resolve(resp);
+        resolve(allApiKeys.length ? allApiKeys.pop() : null);
       }
-    }).then(function (resp) {
-      var apiKey = (resp[0]) ? resp[0].key : resp.key;
+    })
+    .fetch({
+      userId: user.id
+    })
+  })
+  .then(apikey => {
+    if (apikey) {
+      return verifyPluginApiKey(apikey);
+    } else {
+      return createPluginApiKey();
+    }
+  });
+}
 
-      // Generate token
-      return restRequest({
-        method: 'POST',
-        url: 'api_key/token',
-        data: {
-          key: apiKey,
-          duration: 2
-        }
-      });
+function verifyPluginApiKey(apikey) {
+  if (!apikey.get("active")) {
+    messageGirder("warning", "The girder API key to use the VIP plugin should \
+      be active")
+    return Promise.reject();
+  } else if (!apikey.has("tokenDuration") || apikey.get("tokenDuration") > 1) {
+    messageGirder("warning", "The girder API key to use the VIP plugin should \
+      have a token duration of one day")
+    return Promise.reject();
+  } else {
+    return Promise.resolve(apikey);
+  }
+}
 
-    }).then(function (resp) {
-      resolve(resp.authToken.token);
+function createPluginApiKey() {
+  return new Promise(resolve => {
+    var apikey = new ApiKeyModel();
+    apikey.set({
+      name: GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP,
+      tokenDuration: 1
     });
+    apikey.once('g:saved', () => resolve(apikey))
+    .save();
   });
 }
 
@@ -135,7 +160,7 @@ export {
   messageGirder,
   checkRequestError,
   getCurrentApiKeyVip,
-  getStatusKeys,
   sortPipelines,
+  createOrVerifyPluginApiKey,
   createNewToken
 };

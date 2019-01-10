@@ -1,0 +1,31 @@
+- var i = 1;
+
+.creatis-list-executions-header
+  .g-body-title My executions
+  .g-body-subtitle Executions history
+
+table.table.table-hover
+  tbody
+    thead
+      tr
+        th #
+        th Name
+        th Application
+        th Status
+        th Start
+          small    JJ/MM/YYYY
+        th Actions
+    each execution in executions
+      - var date = new Date(execution.timestampCreation * 1000);
+      - var hideResult = (execution.status == 'FINISHED') ? '' : 'hidden';
+      tr.execution
+        td= i++
+        td= execution.name
+        td= execution.pipelineName
+        td.status= status[execution.status].text
+        td= date.getDate() + "/" + (date.getMonth()+1) + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
+        td
+          a(href="#user/" + user.id + "/folder/" + execution.idFolderResult, target='_blank', style="visibility:" + hideResult)
+            button.btn.btn-small.btn-primary Results
+
+          button.btn.btn-small.btn-danger.deleteExecution(value=execution.id) Delete
