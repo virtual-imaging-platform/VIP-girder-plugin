@@ -1,20 +1,20 @@
 //Import utilities
 import _ from 'underscore';
-import router from 'girder/router';
-import { restRequest } from 'girder/rest';
-import { cancelRestRequests } from 'girder/rest';
-import { confirm } from 'girder/dialog';
-import { getCurrentUser } from 'girder/auth';
-import events from 'girder/events';
+import router from '@girder/core/router';
+import { restRequest } from '@girder/core/rest';
+import { cancelRestRequests } from '@girder/core/rest';
+import { confirm } from '@girder/core/dialog';
+import { getCurrentUser } from '@girder/core/auth';
+import events from '@girder/core/events';
 import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
 import { getCurrentApiKeyVip, sortPipelines, messageGirder } from '../utilities';
 
 // Import Model
-import FileModel from 'girder/models/FileModel';
+import FileModel from '@girder/core/models/FileModel';
 
 // Import views
-import View from 'girder/views/View';
+import View from '@girder/core/views/View';
 import ConfirmExecutionDialogMultiFiles from './ConfirmExecutionDialogMultiFiles';
 
 // Import templates

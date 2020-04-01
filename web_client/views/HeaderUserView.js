@@ -1,10 +1,10 @@
 // Import utilities
-import { wrap } from 'girder/utilities/PluginUtils';
-import { getCurrentUser } from 'girder/auth';
-import { AccessType } from 'girder/constants';
+import { wrap } from '@girder/core/utilities/PluginUtils';
+import { getCurrentUser } from '@girder/core/auth';
+import { AccessType } from '@girder/core/constants';
 
 // Import views
-import HeaderUserView from 'girder/views/layout/HeaderUserView';
+import HeaderUserView from '@girder/core/views/layout/HeaderUserView';
 
 // Import templates
 import HeaderUserTemplate from '../templates/headerUser.pug';

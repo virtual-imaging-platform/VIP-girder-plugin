@@ -1,9 +1,9 @@
 // Import utilities
-import { wrap } from 'girder/utilities/PluginUtils';
-import { getCurrentUser } from 'girder/auth';
+import { wrap } from '@girder/core/utilities/PluginUtils';
+import { getCurrentUser } from '@girder/core/auth';
 
 // Import views
-import FrontPageView from 'girder/views/body/FrontPageView';
+import FrontPageView from '@girder/core/views/body/FrontPageView';
 
 // Import templates
 import FrontPageTemplate from '../templates/frontPage.pug';

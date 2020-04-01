@@ -1,15 +1,15 @@
 // Import utilities
-import { wrap } from 'girder/utilities/PluginUtils';
-import { restRequest } from 'girder/rest'
-import { getCurrentUser } from 'girder/auth';
-import router from 'girder/router';
-import events from 'girder/events';
+import { wrap } from '@girder/core/utilities/PluginUtils';
+import { restRequest } from '@girder/core/rest'
+import { getCurrentUser } from '@girder/core/auth';
+import router from '@girder/core/router';
+import events from '@girder/core/events';
 import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
 import { getCurrentApiKeyVip } from '../utilities';
 
 // Import views
-import UserAccountView from 'girder/views/body/UserAccountView';
+import UserAccountView from '@girder/core/views/body/UserAccountView';
 
 // Import templates
 import UserAccountTab from '../templates/userAccountTab.pug';

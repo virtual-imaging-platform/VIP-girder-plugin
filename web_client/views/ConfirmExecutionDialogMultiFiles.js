@@ -1,14 +1,14 @@
 // Import utilities
 import _ from 'underscore';
-import 'girder/utilities/jquery/girderModal';
-import { restRequest } from 'girder/rest';
-import events from 'girder/events';
+import '@girder/core/utilities/jquery/girderModal';
+import { restRequest } from '@girder/core/rest';
+import events from '@girder/core/events';
 import { Status } from '../constants';
 import { checkRequestError, messageGirder, getTimestamp } from '../utilities';
 import 'bootstrap/js/button';
 
 // Import views
-import View from 'girder/views/View';
+import View from '@girder/core/views/View';
 
 // Import templates
 import ConfirmExecutionDialogTemplate from '../templates/confirmExecutionDialog.pug';

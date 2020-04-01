@@ -5,12 +5,13 @@
         "homepage": "gitlab",
         "bugs" : {},
         "peerDependencies" :{
-                "@girder/core": "*",
-		"compare-versions": "3.2.1"
+          "@girder/core": "*"
+        },
+        "dependencies": {
+          "compare-versions": "3.2.1"
         },
         "girderPlugin": {
                 "name" : "vip",
                 "main" : "./main.js"
         }
 }
-
