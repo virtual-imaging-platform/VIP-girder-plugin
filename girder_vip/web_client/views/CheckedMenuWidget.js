@@ -6,7 +6,7 @@ import events from '@girder/core/events';
 import { EnabledMultiFiles } from '../constants';
 
 // Import views
-import CheckedMenuWidget from 'girder/views/widgets/CheckedMenuWidget';
+import CheckedMenuWidget from '@girder/core/views/widgets/CheckedMenuWidget';
 import ListPipelinesMultiFiles from './ListPipelinesMultiFiles';
 
 // Import templates
