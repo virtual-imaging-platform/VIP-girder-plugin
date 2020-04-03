@@ -40,7 +40,7 @@ var ListPipelines = View.extend({
 
     this.user = getCurrentUser();
     this.foldersCollection = [];
-    this.carmin = new CarminClient(constants.carminURL, apiKeyVip);
+    this.carmin = new CarminClient(constants.CARMIN_URL, apiKeyVip);
 
     if (!this.files) {
       messageGirder('danger', 'Checked files not found. Retry and don\'t reload the page', 3000);

@@ -3,7 +3,6 @@ import _ from 'underscore';
 import '@girder/core/utilities/jquery/girderModal';
 import { restRequest, getApiRoot } from '@girder/core/rest';
 import events from '@girder/core/events';
-import { Status } from '../constants';
 import { getCurrentUser} from '@girder/core/auth';
 import { checkRequestError, messageGirder, getTimestamp,
   createOrVerifyPluginApiKey, createNewToken } from '../utilities';

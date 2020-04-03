@@ -41,7 +41,7 @@ wrap(UserAccountView, 'render', function(render) {
 
       var errorMessage = $(this.el).find('#creatis-vip-error-msg');
       var key = $(this.el).find('#creatis-apikey-vip').val();
-      var carmin = new CarminClient(constants.carminURL, key);
+      var carmin = new CarminClient(constants.CARMIN_URL, key);
 
       errorMessage.empty();
 

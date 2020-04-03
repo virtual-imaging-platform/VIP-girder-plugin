@@ -3,6 +3,7 @@ import _ from 'underscore';
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import events from '@girder/core/events';
 import { restRequest } from '@girder/core/rest';
+import { hasTheVipApiKeyConfigured } from '../utilities';
 
 // Import views
 import ItemListWidget from '@girder/core/views/widgets/ItemListWidget';
@@ -18,6 +19,9 @@ import '../stylesheets/collapseImage.styl';
 wrap(ItemListWidget, 'render', function(render) {
   render.call(this);
 
+  if ( ! hasTheVipApiKeyConfigured) {
+    return;
+  }
   // For each entry of item
   var selector = 'li.g-item-list-entry';
   _.each(this.$(selector), function (el) {

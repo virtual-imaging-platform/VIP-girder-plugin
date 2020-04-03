@@ -2,6 +2,7 @@
 import _ from 'underscore';
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import { AccessType } from '@girder/core/constants';
+import { hasTheVipApiKeyConfigured } from '../utilities';
 //import events from 'girder/events';
 
 // Import views
@@ -13,6 +14,10 @@ import ButtonListPipeline from '../templates/buttonListPipeline.pug';
 // Add an entry to the ItemView
 wrap(ItemView, 'render', function(render) {
   this.once('g:rendered', () => {
+
+    if ( ! hasTheVipApiKeyConfigured) {
+      return;
+    }
 
     // Add a button in an item to get the list of pipelines
     if (this.model.get('_accessLevel') >= AccessType.READ) {

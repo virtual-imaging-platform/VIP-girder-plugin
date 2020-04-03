@@ -1,10 +1,17 @@
-const carminURL = "https://vip.creatis.insa-lyon.fr/rest";
-//const carminURL = "http://vip.creatis.insa-lyon.fr/vip-portal-1.23/rest";
-//const carminURL = "http://vip.creatis.insa-lyon.fr:4040/rest";
-//const carminURL = "http://newk.grid.creatis.insa-lyon.fr:4040/cors/rest";
-//const carminURL = "http://newk.grid.creatis.insa-lyon.fr:4040/rest";
+const CARMIN_URL = "https://vip.creatis.insa-lyon.fr/rest";
 
-const Status = {
+const VIP_PLUGIN_API_KEY = "vipPluginApiKey";
+
+// to change to the id of the external storage from VIP for this girder instance
+const VIP_EXTERNAL_STORAGE_NAME = "girderxxx";
+
+// the plugin will only work on the collections whose ids are listed here
+const COLLECTIONS_IDS = [];
+
+// Set this variable to 'true' to access to multi files menu
+const ENABLE_MULTIFILES = false;
+
+const STATUSES = {
   INITIALIZING: { order : 0, text: "Initializing"},
   READY:  { order : 10, text: "Ready"},
   RUNNING:  { order : 20, text: "Running"},
@@ -15,14 +22,11 @@ const Status = {
   KILLED:  { order : 70, text: "Killed"}
 };
 
-// Set this variable to 'true' to access to multi files menu
-const EnabledMultiFiles = false;
-
-const GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP = "vipPluginApiKey";
-
 export {
-  carminURL,
-  Status,
-  EnabledMultiFiles,
-  GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP
+  CARMIN_URL,
+  COLLECTIONS_IDS,
+  STATUSES,
+  ENABLE_MULTIFILES,
+  VIP_PLUGIN_API_KEY,
+  VIP_EXTERNAL_STORAGE_NAME
 };

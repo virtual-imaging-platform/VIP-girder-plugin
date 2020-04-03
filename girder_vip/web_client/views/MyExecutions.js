@@ -28,7 +28,7 @@ var MyExecutions = View.extend({
       return ;
     }
 
-    this.carmin = new CarminClient(constants.carminURL, apiKeyVip);
+    this.carmin = new CarminClient(constants.CARMIN_URL, apiKeyVip);
 
     // Get all executions
     restRequest({
@@ -52,7 +52,7 @@ var MyExecutions = View.extend({
     // Display the list of executions
     this.$el.html(MyExecutionsTemplate({
       executions: sortedExecutions,
-      status: constants.Status,
+      status: constants.STATUSES,
       user: getCurrentUser()
     }));
 
@@ -66,10 +66,10 @@ var MyExecutions = View.extend({
     // For each executions
     for (let execution of executions) {
       var executionStatus = execution.status;
-      if (! constants.Status[executionStatus]) {
+      if (! constants.STATUSES[executionStatus]) {
         // the status is unknown, report an error
         messageGirder("warning", "Unkown status : " + executionStatus);
-      } else if (constants.Status[executionStatus].order < 25) {
+      } else if (constants.STATUSES[executionStatus].order < 25) {
         // the execution wasn't finished at the last check, check again
         promiseArray.push(
           this.carmin.getExecution(execution.vipExecutionId)

@@ -3,7 +3,8 @@ import _ from 'underscore';
 import router from '@girder/core/router';
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import events from '@girder/core/events';
-import { EnabledMultiFiles } from '../constants';
+import { ENABLE_MULTIFILES } from '../constants';
+import { hasTheVipApiKeyConfigured } from '../utilities';
 
 // Import views
 import CheckedMenuWidget from '@girder/core/views/widgets/CheckedMenuWidget';
@@ -12,17 +13,30 @@ import ListPipelinesMultiFiles from './ListPipelinesMultiFiles';
 // Import templates
 import CheckedMenuTemplate from '../templates/checkedActionsMenu.pug';
 
-// Remark: Set the variable enabledMultiFiles to true in /vip/web_client/constants.js to display this component
+// Remark: Set the variable ENABLE_MULTIFILES to true in /vip/web_client/constants.js to display this component
 
 // Add an entry to the FolderView
 wrap(CheckedMenuWidget, 'render', function(render) {
   // Call the parent render
   render.call(this);
 
+
+  if ( ! hasTheVipApiKeyConfigured()) {
+    console.log("vip api key not configured");
+    return;
+  }
+  if (! ENABLE_MULTIFILES ) {
+    console.log("multifile not configured");
+    return;
+  }
+  if (! isPluginActivatedOn(this.parentView.parentModel) ) {
+    console.log("collection not configured for " + this.parentView.parentModel.get("_id"));
+    return;
+  }
+
   // Display the "application" button in the multifiles menu
   this.$('.g-checked-menu-header').after(CheckedMenuTemplate({
-    'itemCount': this.itemCount,
-    'enabledMultiFiles': EnabledMultiFiles
+    'itemCount': this.itemCount
   }));
 
   // Action 'click' on the "application" button to access to 'ListPipelines' page

@@ -7,7 +7,7 @@ import router from '@girder/core/router';
 import events from '@girder/core/events';
 import ApiKeyCollection from '@girder/core/collections/ApiKeyCollection.js'
 import ApiKeyModel from '@girder/core/models/ApiKeyModel.js'
-import { Status, GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP } from './constants';
+import { VIP_PLUGIN_API_KEY, COLLECTIONS_IDS } from './constants';
 
 // Import views
 import FrontPageView from '@girder/core/views/body/FrontPageView';
@@ -32,6 +32,11 @@ function checkRequestError (data) {
   return 0;
 }
 
+function hasTheVipApiKeyConfigured() {
+  return typeof getCurrentUser().get('apiKeyVip') !== 'undefined' &&
+    getCurrentUser().get('apiKeyVip').length != 0;
+}
+
 function getCurrentApiKeyVip () {
   if (typeof getCurrentUser().get('apiKeyVip') === 'undefined' || getCurrentUser().get('apiKeyVip').length == 0) {
     cancelRestRequests('fetch');
@@ -45,6 +50,21 @@ function getCurrentApiKeyVip () {
   }
 
   return (getCurrentUser().get('apiKeyVip') ? getCurrentUser().get('apiKeyVip') : null);
+}
+
+function isPluginActivatedOn(model) {
+  if (model.resourceName === 'user') {
+    return false;
+  } else if (model.resourceName === 'collection') {
+    return isPluginActivatedOnCollection(model.get('_id'));
+  } else if (model.resourceName === 'folder') {
+    return model.get('baseParentType') === 'collection' &&
+      isPluginActivatedOnCollection(model.get('baseParentId'));
+  }
+}
+
+function isPluginActivatedOnCollection(collectionId) {
+  return _.contains(COLLECTIONS_IDS, collectionId);
 }
 
 function sortPipelines(allPipelines) {
@@ -106,7 +126,7 @@ function createOrVerifyPluginApiKey(user) {
     var allApiKeys = new ApiKeyCollection();
     // filter apikey to only select the one searched
     allApiKeys.filterFunc = function(apikey) {
-      return GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP === apikey.name;
+      return VIP_PLUGIN_API_KEY === apikey.name;
     };
 
     allApiKeys.on('g:changed', () => {
@@ -147,7 +167,7 @@ function createPluginApiKey() {
   return new Promise(resolve => {
     var apikey = new ApiKeyModel();
     apikey.set({
-      name: GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP,
+      name: VIP_PLUGIN_API_KEY,
       tokenDuration: 1
     });
     apikey.once('g:saved', () => resolve(apikey))
@@ -159,6 +179,8 @@ export {
   getTimestamp,
   messageGirder,
   checkRequestError,
+  isPluginActivatedOn,
+  hasTheVipApiKeyConfigured,
   getCurrentApiKeyVip,
   sortPipelines,
   createOrVerifyPluginApiKey,

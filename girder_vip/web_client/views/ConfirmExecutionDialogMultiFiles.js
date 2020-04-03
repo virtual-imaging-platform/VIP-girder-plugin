@@ -3,7 +3,6 @@ import _ from 'underscore';
 import '@girder/core/utilities/jquery/girderModal';
 import { restRequest } from '@girder/core/rest';
 import events from '@girder/core/events';
-import { Status } from '../constants';
 import { checkRequestError, messageGirder, getTimestamp } from '../utilities';
 import 'bootstrap/js/button';
 
