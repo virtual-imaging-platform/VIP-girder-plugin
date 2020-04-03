@@ -1,7 +1,7 @@
 // Import utilities
 import router from '@girder/core/router';
 import events from '@girder/core/events';
-import { hasTheVipApiKeyConfigured } from '../utilities';
+import { hasTheVipApiKeyConfigured, messageGirder } from './utilities';
 
 // Import Model
 import FileModel from '@girder/core/models/FileModel';
@@ -38,6 +38,6 @@ router.route('my-executions', 'myexecutions', function() {
    messageGirder("danger", "You must configure your VIP API key in \
        'My Account > VIP API key' to use VIP features"
      , 30000);
-   router.navigate('collections', {trigger: true});
+   router.navigate('', {trigger: true});
   }
 })

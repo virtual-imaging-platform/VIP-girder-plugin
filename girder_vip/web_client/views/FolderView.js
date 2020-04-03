@@ -20,7 +20,8 @@ wrap(ItemListWidget, 'render', function(render) {
   render.call(this);
 
   // parentView is a HierarchyView
-  if ( ! hasTheVipApiKeyConfigured() || ! isPluginActivatedOn(this.parentView.parentModel) {
+  if ( ! hasTheVipApiKeyConfigured()
+          || ! isPluginActivatedOn(this.parentView.parentModel)) {
     return;
   }
   // For each entry of item

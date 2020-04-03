@@ -14,7 +14,8 @@ import ButtonListPipeline from '../templates/buttonListPipeline.pug';
 // Add an entry to the ItemView
 wrap(ItemView, 'render', function(render) {
 
-  if ( ! hasTheVipApiKeyConfigured() || ! isPluginActivatedOn(this.model) {
+  if ( ! hasTheVipApiKeyConfigured()
+          || ! isPluginActivatedOn(this.model)) {
     return;
   }
 
