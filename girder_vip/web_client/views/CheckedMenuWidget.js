@@ -4,7 +4,7 @@ import router from '@girder/core/router';
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import events from '@girder/core/events';
 import { ENABLE_MULTIFILES } from '../constants';
-import { hasTheVipApiKeyConfigured } from '../utilities';
+import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities';
 
 // Import views
 import CheckedMenuWidget from '@girder/core/views/widgets/CheckedMenuWidget';
@@ -21,16 +21,8 @@ wrap(CheckedMenuWidget, 'render', function(render) {
   render.call(this);
 
 
-  if ( ! hasTheVipApiKeyConfigured()) {
-    console.log("vip api key not configured");
-    return;
-  }
-  if (! ENABLE_MULTIFILES ) {
-    console.log("multifile not configured");
-    return;
-  }
-  if (! isPluginActivatedOn(this.parentView.parentModel) ) {
-    console.log("collection not configured for " + this.parentView.parentModel.get("_id"));
+  if ( ! hasTheVipApiKeyConfigured || ! ENABLE_MULTIFILES
+          || ! isPluginActivatedOn(this.parentView.parentModel) ) {
     return;
   }
 
