@@ -1,6 +1,7 @@
 // Import utilities
 import router from '@girder/core/router';
 import events from '@girder/core/events';
+import { hasTheVipApiKeyConfigured } from '../utilities';
 
 // Import Model
 import FileModel from '@girder/core/models/FileModel';
@@ -31,5 +32,12 @@ router.route('pipelines-multi-files', 'pipelinesMultiFiles', function(params) {
 
 // New route #my-executions
 router.route('my-executions', 'myexecutions', function() {
-  events.trigger('g:navigateTo', MyExecutions);
+  if ( hasTheVipApiKeyConfigured()) {
+   events.trigger('g:navigateTo', MyExecutions);
+  } else {
+   messageGirder("danger", "You must configure your VIP API key in \
+       'My Account > VIP API key' to use VIP features"
+     , 30000);
+   router.navigate('collections', {trigger: true});
+  }
 })

@@ -57,7 +57,7 @@ function isPluginActivatedOn(model) {
     return false;
   } else if (model.resourceName === 'collection') {
     return isPluginActivatedOnCollection(model.get('_id'));
-  } else if (model.resourceName === 'folder') {
+  } else if (_.contains(['item', 'folder'], model.resourceName)) {
     return model.get('baseParentType') === 'collection' &&
       isPluginActivatedOnCollection(model.get('baseParentId'));
   }
