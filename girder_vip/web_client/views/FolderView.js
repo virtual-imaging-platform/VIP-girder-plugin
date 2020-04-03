@@ -19,7 +19,7 @@ import '../stylesheets/collapseImage.styl';
 wrap(ItemListWidget, 'render', function(render) {
   render.call(this);
 
-  if ( ! hasTheVipApiKeyConfigured) {
+  if ( ! hasTheVipApiKeyConfigured()) {
     return;
   }
   // For each entry of item

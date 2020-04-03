@@ -15,7 +15,7 @@ wrap(HeaderUserView, 'render', function(render) {
   // Call the parent render
   render.call(this);
 
-  if ( ! hasTheVipApiKeyConfigured) {
+  if ( ! hasTheVipApiKeyConfigured()) {
     return;
   }
 

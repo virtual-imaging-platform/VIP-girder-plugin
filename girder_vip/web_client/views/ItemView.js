@@ -15,7 +15,7 @@ import ButtonListPipeline from '../templates/buttonListPipeline.pug';
 wrap(ItemView, 'render', function(render) {
   this.once('g:rendered', () => {
 
-    if ( ! hasTheVipApiKeyConfigured) {
+    if ( ! hasTheVipApiKeyConfigured()) {
       return;
     }
 
