@@ -1,13 +1,13 @@
 // Import utilities
 import _ from 'underscore';
-import { cancelRestRequests, restRequest } from 'girder/rest';
+import { cancelRestRequests, restRequest } from '@girder/core/rest';
 import * as constants from '../constants';
 import { getCurrentApiKeyVip, messageGirder } from '../utilities';
-import { getCurrentUser } from 'girder/auth';
+import { getCurrentUser } from '@girder/core/auth';
 import CarminClient from '../vendor/carmin/carmin-client';
 
 // Import views
-import View from 'girder/views/View';
+import View from '@girder/core/views/View';
 
 // Import collections
 import ExecutionCollection from '../collections/ExecutionCollection';

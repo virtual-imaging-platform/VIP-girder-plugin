@@ -1,4 +1,4 @@
-import Model from 'girder/models/Model';
+import Model from '@girder/core/models/Model';
 
 var ExecutionModel = Model.extend({
     resourceName: "vip_execution"

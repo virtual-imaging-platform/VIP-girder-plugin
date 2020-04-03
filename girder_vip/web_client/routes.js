@@ -1,9 +1,9 @@
 // Import utilities
-import router from 'girder/router';
-import events from 'girder/events';
+import router from '@girder/core/router';
+import events from '@girder/core/events';
 
 // Import Model
-import FileModel from 'girder/models/FileModel';
+import FileModel from '@girder/core/models/FileModel';
 
 // Import Views
 import ListPipelines from './views/ListPipelines';

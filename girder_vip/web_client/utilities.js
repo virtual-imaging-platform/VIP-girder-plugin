@@ -1,16 +1,16 @@
 // Import utilities
 import _ from 'underscore';
-import { getCurrentUser } from 'girder/auth';
-import { restRequest, cancelRestRequests } from 'girder/rest';
+import { getCurrentUser } from '@girder/core/auth';
+import { restRequest, cancelRestRequests } from '@girder/core/rest';
 import compareVersions from 'compare-versions';
-import router from 'girder/router';
-import events from 'girder/events';
-import ApiKeyCollection from 'girder/collections/ApiKeyCollection.js'
-import ApiKeyModel from 'girder/models/ApiKeyModel.js'
+import router from '@girder/core/router';
+import events from '@girder/core/events';
+import ApiKeyCollection from '@girder/core/collections/ApiKeyCollection.js'
+import ApiKeyModel from '@girder/core/models/ApiKeyModel.js'
 import { Status, GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP } from './constants';
 
 // Import views
-import FrontPageView from 'girder/views/body/FrontPageView';
+import FrontPageView from '@girder/core/views/body/FrontPageView';
 
 function getTimestamp () {
   return (Math.round((new Date()).getTime() / 1000));

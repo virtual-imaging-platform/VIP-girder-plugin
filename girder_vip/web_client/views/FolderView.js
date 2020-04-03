@@ -1,11 +1,11 @@
 // Import utilities
 import _ from 'underscore';
-import { wrap } from 'girder/utilities/PluginUtils';
-import events from 'girder/events';
-import { restRequest } from 'girder/rest';
+import { wrap } from '@girder/core/utilities/PluginUtils';
+import events from '@girder/core/events';
+import { restRequest } from '@girder/core/rest';
 
 // Import views
-import ItemListWidget from 'girder/views/widgets/ItemListWidget';
+import ItemListWidget from '@girder/core/views/widgets/ItemListWidget';
 
 // Import Templates
 import ButtonListPipeline from '../templates/buttonListPipeline.pug';

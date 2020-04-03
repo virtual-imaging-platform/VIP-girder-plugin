@@ -1,4 +1,4 @@
-const carminURL = "http://vip.creatis.insa-lyon.fr/rest";
+const carminURL = "https://vip.creatis.insa-lyon.fr/rest";
 //const carminURL = "http://vip.creatis.insa-lyon.fr/vip-portal-1.23/rest";
 //const carminURL = "http://vip.creatis.insa-lyon.fr:4040/rest";
 //const carminURL = "http://newk.grid.creatis.insa-lyon.fr:4040/cors/rest";

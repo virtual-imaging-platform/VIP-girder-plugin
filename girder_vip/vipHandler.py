@@ -1,13 +1,19 @@
+from girder import logprint
+from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
+from girder.models.user import User
 from girder.constants import AccessType
 from girder.models.user import User as UserModel
-from girder.api.rest import Resource
-from girder.api import access
 
 VIP_FIELD = 'apiKeyVip'
+class VipHandler(object):
 
-# Extend User's routes
-class UserExtend(Resource):
+
+    def __init__(self):
+        super(VipHandler, self).__init__()
+        self._model = UserModel()
+        self.__users = User()
+
 
     @access.user
     @autoDescribeRoute(
@@ -17,7 +23,7 @@ class UserExtend(Resource):
     )
     def setApiKeyVip(self, user, apiKeyVip):
         user[VIP_FIELD] = apiKeyVip
-        self.model('user').save(user)
+        self._model.save(user)
         return {'message': 'Api Key VIP changed'}
 
 

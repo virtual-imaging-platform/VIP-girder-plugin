@@ -1,45 +1,67 @@
 //Import utilities
 import _ from 'underscore';
-import { restRequest } from 'girder/rest';
-import { cancelRestRequests } from 'girder/rest';
-import { confirm } from 'girder/dialog';
-import { getCurrentUser } from 'girder/auth';
-import events from 'girder/events';
+import router from '@girder/core/router';
+import { restRequest } from '@girder/core/rest';
+import { cancelRestRequests } from '@girder/core/rest';
+import { confirm } from '@girder/core/dialog';
+import { getCurrentUser } from '@girder/core/auth';
+import events from '@girder/core/events';
 import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip, sortPipelines } from '../utilities';
+import { getCurrentApiKeyVip, sortPipelines, messageGirder } from '../utilities';
+
+// Import Model
+import FileModel from '@girder/core/models/FileModel';
 
 // Import views
-import View from 'girder/views/View';
-import ConfirmExecutionDialog from './ConfirmExecutionDialog';
+import View from '@girder/core/views/View';
+import ConfirmExecutionDialogMultiFiles from './ConfirmExecutionDialogMultiFiles';
 
 // Import templates
-import ListPipelinesTemplate from '../templates/listPipelines.pug';
+import ListPipelinesMultiFilesTemplate from '../templates/listPipelinesMultiFiles.pug';
 
 // List of pipelines allowed by the user
 var ListPipelines = View.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
-    // Get api key of VIP
-    var apiKeyVip = getCurrentApiKeyVip();
-    if (apiKeyVip == null) {
+    if (typeof settings.items == 'undefined' || settings.items == null) {
+      messageGirder('danger', 'Checked files not found. Retry and don\'t reload the page', 3000);
+      router.navigate('', {trigger: true});
       return ;
     }
 
+    // Get checked files
+    this.files = this.getFilesFromCheckedItems(settings.items);
+
+    var apiKeyVip = getCurrentApiKeyVip();
+    if (apiKeyVip == null)
+      return ;
+
     this.user = getCurrentUser();
-    this.file = settings.file.responseJSON;
     this.foldersCollection = [];
     this.carmin = new CarminClient(constants.carminURL, apiKeyVip);
 
-    // Get collection id
-    restRequest({
-      method: 'GET',
-      url: 'item/' + this.file.itemId
-    }).done((resp) => {
-      this.collectionId = resp.baseParentId;
-    });
+    if (!this.files) {
+      messageGirder('danger', 'Checked files not found. Retry and don\'t reload the page', 3000);
+      router.navigate('', {trigger: true});
+      return ;
+    }
 
+    // Fill this.files with file's data
+    _.each(this.files, function (file, i) {
+      restRequest({
+        method: 'GET',
+        url: 'file/' + file._id + '/download',
+        xhrFields: {
+          responseType: "arraybuffer"
+        }
+      }).done((resp) => {
+        this.files[i].data = new Uint8Array(resp);
+      }).fail((error) => {
+        console.log("Error:" + error);
+      });
+    }.bind(this));
 
     // Get pipelines of user
     this.carmin.listPipelines().then(function (data) {
@@ -60,9 +82,9 @@ var ListPipelines = View.extend({
     // Get folders of the user
     this.getFolderRecursively(this.user.id, 0, "");
 
-    this.$el.html(ListPipelinesTemplate({
-      file: this.file,
+    this.$el.html(ListPipelinesMultiFilesTemplate({
       pipelines: this.pipelines,
+      filesCount: Object.keys(this.files).length
     }));
 
     // User's view goes back up on top
@@ -92,8 +114,9 @@ var ListPipelines = View.extend({
         });
       }
       else {
-        new ConfirmExecutionDialog({
-          file: this.file,
+        new ConfirmExecutionDialogMultiFiles({
+          files: this.files,
+          filesCount: Object.keys(this.files).length,
           pipeline: data,
           foldersCollection: this.foldersCollection,
           carmin: this.carmin,
@@ -111,7 +134,7 @@ var ListPipelines = View.extend({
   *   - Replace 'user' to 'collection' line 118
   *   - Uncommented line 59
   *   - Commented line 62
-  * Conversely, to get the folder tree of the user (default)
+  * Conversely, to get the folder tree of the user
   *   - Replace 'collection' to 'user' line 118
   *   - Uncommented line 62
   *   - Commented line 59
@@ -127,9 +150,8 @@ var ListPipelines = View.extend({
         parentId: parentId
       },
     }).done((resp) => {
-      if (resp.length == 0) {
-        return;
-      }
+      if (resp.length == 0)
+      return;
 
       _.each(resp, function(e) {
         e.path = path.concat("/"+e.name);
@@ -139,6 +161,31 @@ var ListPipelines = View.extend({
         this.getFolderRecursively(e._id, i, e.path);
       }.bind(this));
     });
+  },
+
+  getFilesFromCheckedItems: function (items) {
+    var obj = {};
+    var len = Object.keys(items).length - 1;
+
+    _.each(items, function (item, i) {
+      restRequest({
+        method: 'GET',
+        url: 'item/' + item.id + '/files',
+        async: false,
+        data: {
+          limit: 1
+        }
+      }).done((resp) => {
+        return restRequest({
+          method: 'GET',
+          url: 'file/' + resp[0]._id
+        });
+      }).done((resp) => {
+        obj[i] = resp[0];
+      });
+    });
+
+    return obj;
   }
 
 });

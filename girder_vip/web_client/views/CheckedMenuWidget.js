@@ -1,12 +1,12 @@
 // Import utilities
 import _ from 'underscore';
-import router from 'girder/router';
-import { wrap } from 'girder/utilities/PluginUtils';
-import events from 'girder/events';
+import router from '@girder/core/router';
+import { wrap } from '@girder/core/utilities/PluginUtils';
+import events from '@girder/core/events';
 import { EnabledMultiFiles } from '../constants';
 
 // Import views
-import CheckedMenuWidget from 'girder/views/widgets/CheckedMenuWidget';
+import CheckedMenuWidget from '@girder/core/views/widgets/CheckedMenuWidget';
 import ListPipelinesMultiFiles from './ListPipelinesMultiFiles';
 
 // Import templates
