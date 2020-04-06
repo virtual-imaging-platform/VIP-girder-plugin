@@ -22,7 +22,7 @@ wrap(ItemListWidget, 'render', function(render) {
   // parentView is a HierarchyView
   if ( ! hasTheVipApiKeyConfigured()
           || ! isPluginActivatedOn(this.parentView.parentModel)) {
-    return;
+    return this;
   }
   // For each entry of item
   var selector = 'li.g-item-list-entry';

@@ -19,10 +19,8 @@ import UserAccountVIP from '../templates/userAccountVIP.pug';
 wrap(UserAccountView, 'render', function(render) {
   render.call(this);
 
-
   var apiKeyVip = getCurrentUser().get('apiKeyVip');
   if (typeof apiKeyVip === 'undefined') apiKeyVip = '';
-
 
   const TAB_NAME = "vip";
   // Display tab and pane
@@ -30,7 +28,7 @@ wrap(UserAccountView, 'render', function(render) {
   $(this.el).find('.tab-content').append(UserAccountVIP({apiKeyVip: apiKeyVip}));
 
   // Configure new vip tab
-  var tablink = $(this.el).find('a[name=' + TAB_NAME + '']');
+  var tablink = $(this.el).find('a[name=' + TAB_NAME + ']');
   // display the tab content on click
   tablink.on('shown.bs.tab', (e) => {
     this.tab = $(e.currentTarget).attr('name');
@@ -40,34 +38,32 @@ wrap(UserAccountView, 'render', function(render) {
   if (TAB_NAME === this.tab) {
     tablink.tab("show");
   }
-
-  // Event click on button (submit)
-  $('#sendApiKeyVip').click(e => {
-    e.preventDefault();
-
-    var errorMessage = $(this.el).find('#creatis-vip-error-msg');
-    var newkey = $(this.el).find('#creatis-apikey-vip').val();
-    var carmin = new CarminClient(constants.CARMIN_URL, newkey);
-
-    errorMessage.empty();
-
-    if (newkey.length === 0) {
-      saveVipApiKey(newkey);
-    } else {
-      // Test API key on VIP
-      carmin.listPipelines()
-        // Update User table
-      .then(pipelines => saveVipApiKey(newkey))
-      .catch(status => {
-        // Wrong API
-        if (status == 401) {
-          errorMessage.text("This API key is wrong");
-          return ;
-        } else {
-          messageGirder("danger", "An error occured while changing VIP API key, please concact administrators");
-        }
-      });
-    }
-
-  });
 });
+
+UserAccountView.prototype.events['submit #sendApiKeyVip'] = function (e) {
+  e.preventDefault();
+
+  var errorMessage = this.$('#creatis-vip-error-msg');
+  var newkey = this.$('#creatis-apikey-vip').val();
+  var carmin = new CarminClient(constants.CARMIN_URL, newkey);
+
+  errorMessage.empty();
+
+  if (newkey.length === 0) {
+    saveVipApiKey(newkey);
+  } else {
+    // Test API key on VIP
+    carmin.listPipelines()
+      // Update User table
+    .then(pipelines => saveVipApiKey(newkey))
+    .catch(status => {
+      // Wrong API
+      if (status == 401) {
+        errorMessage.text("This API key is wrong");
+        return ;
+      } else {
+        messageGirder("danger", "An error occured while changing VIP API key, please concact administrators");
+      }
+    });
+  }
+};

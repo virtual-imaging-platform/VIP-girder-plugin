@@ -24,7 +24,7 @@ wrap(CheckedMenuWidget, 'render', function(render) {
   // parentView is a HierarchyView
   if ( ! hasTheVipApiKeyConfigured || ! ENABLE_MULTIFILES
           || ! isPluginActivatedOn(this.parentView.parentModel) ) {
-    return;
+    return this;
   }
 
   // Display the "application" button in the multifiles menu

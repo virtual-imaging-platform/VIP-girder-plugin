@@ -48,7 +48,8 @@ function saveVipApiKey(newkey) {
     }
   }).done((resp) => {
     messageGirder("success", "API key of VIP has changed with success.");
-    getCurrentUser().set('apiKeyVip', newkey);
+    // reload to refresh user
+    Backbone.history.loadUrl(Backbone.history.fragment);
   }).fail(() => {
     messageGirder("danger", "An error occured while processing your request");
   });
@@ -73,7 +74,7 @@ function isPluginActivatedOn(model) {
   if (model.resourceName === 'user') {
     return false;
   } else if (model.resourceName === 'collection') {
-    return isPluginActivatedOnCollection(model.get('_id'));
+    return isPluginActivatedOnCollection(model.id);
   } else if (_.contains(['item', 'folder'], model.resourceName)) {
     return model.get('baseParentType') === 'collection' &&
       isPluginActivatedOnCollection(model.get('baseParentId'));
