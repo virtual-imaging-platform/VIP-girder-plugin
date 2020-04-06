@@ -2,6 +2,7 @@
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import { AccessType } from '@girder/core/constants';
 import { hasTheVipApiKeyConfigured } from '../utilities';
+import events from '@girder/core/events';
 
 // Import views
 import HeaderUserView from '@girder/core/views/layout/HeaderUserView';
@@ -19,4 +20,11 @@ wrap(HeaderUserView, 'render', function(render) {
   }
 
   return this;
+});
+
+wrap(HeaderUserView, 'initialize', function(initialize, args) {
+  // Call the parent render
+  initialize.call(this, args);
+
+  this.listenTo(events, 'vip:vipApiKeyChanged', this.render);
 });

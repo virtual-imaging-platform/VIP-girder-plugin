@@ -50,15 +50,16 @@ UserAccountView.prototype.events['submit #ApiKeyVip-form'] = function (e) {
   errorMessage.empty();
 
   if (newkey.length === 0) {
-    saveVipApiKey(newkey);
+    saveVipApiKey(newkey).then(() = > this.render());
   } else {
     // Test API key on VIP
     carmin.listPipelines()
       // Update User table
     .then(pipelines => saveVipApiKey(newkey))
+    .then(() = > this.render())
     .catch(status => {
       // Wrong API
-      if (status == 401) {
+      if (status === 401) {
         errorMessage.text("This API key is wrong");
         return ;
       } else {
