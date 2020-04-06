@@ -40,7 +40,7 @@ wrap(UserAccountView, 'render', function(render) {
   }
 });
 
-UserAccountView.prototype.events['submit #sendApiKeyVip'] = function (e) {
+UserAccountView.prototype.events['submit #ApiKeyVip-form'] = function (e) {
   e.preventDefault();
 
   var errorMessage = this.$('#creatis-vip-error-msg');

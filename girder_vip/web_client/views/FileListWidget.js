@@ -4,7 +4,7 @@ import { AccessType } from '@girder/core/constants';
 import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities';
 
 // Import views
-import FileListWidget from '@girder/core/views/widget/FileListWidget';
+import FileListWidget from '@girder/core/views/widgets/FileListWidget';
 
 // Import about Creatis
 import ButtonListPipeline from '../templates/buttonListPipeline.pug';
@@ -20,8 +20,8 @@ wrap(FileListWidget, 'render', function(render) {
 
   if (item.get('_accessLevel') >= AccessType.READ) {
     this.collection.each(file => {
-      this.$('li.g-file-list-entry.g-show-info[file-cid=' + file.cid']')
-        .after(ButtonListPipeline({file: file})));
+      this.$('li.g-file-list-entry.g-show-info[file-cid=' + file.cid + ']')
+        .after(ButtonListPipeline({file: file}));
     });
   }
   return this;

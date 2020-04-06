@@ -48,6 +48,7 @@ function saveVipApiKey(newkey) {
     }
   }).done((resp) => {
     messageGirder("success", "API key of VIP has changed with success.");
+    getCurrentUser().set('apiKeyVip', newkey);
     // reload to refresh user
     Backbone.history.loadUrl(Backbone.history.fragment);
   }).fail(() => {
