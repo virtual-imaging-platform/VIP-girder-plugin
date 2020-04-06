@@ -1,27 +1,26 @@
 #creatis-account-tab-apikey-vip.tab-pane
-  .g-api-keys-container.g-user-settings-container
+  .creatis-apikey-vip.g-user-settings-container
     if !apiKeyVip
-      .g-api-keys-info-text.
+      .g-api-keys-info-text
+        .alert.alert-info.
+          Attention : VIP applications will only be available on the files from some collections.
+          Please contact your administrators to know which collections are eligible.
+
         ul
-          li
-            To use VIP applications on gilder files, it is necessary to have an
+          li To use VIP applications on gilder files, it is necessary to have an
             a.creatis-vip-link(href='https://vip.creatis.insa-lyon.fr/', target='_blank')  VIP account
 
-          li
+          li.
             Then generate your API key in VIP > My Account > API key, and copy/paste it here
 
-          li.warn
-            Attention : VIP applications will only be available on the files from some collections.
-            Please contact your administrators to know which collections are eligible.
 
-    .g-api-keys-list-container
-      form(role="form")
-        .form-group
-          label(for="creatis-apikey-vip") VIP - API key
-          input#creatis-apikey-vip.input-sm.form-control(type="text", value=apiKeyVip)
+    form(role="form")
+      .form-group
+        label(for="creatis-apikey-vip") VIP - API key
+        input#creatis-apikey-vip.input-sm.form-control(type="text", value=apiKeyVip)
 
-        button.btn.btn-default.btn-sm#sendApiKeyVip(type="submit")
-          i.icon-lock
-          | Change
+      button.btn.btn-default.btn-sm#sendApiKeyVip(type="submit")
+        i.icon-lock
+        | Change
 
-        #creatis-vip-error-msg.g-validation-failed-message
+      #creatis-vip-error-msg.g-validation-failed-message

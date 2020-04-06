@@ -36,7 +36,7 @@ function hasTheVipApiKeyConfigured() {
   var currentUser = getCurrentUser()
   return currentUser !== null
     && typeof currentUser !== 'undefined'
-    &&_currentUser.get('apiKeyVip').length != 0;
+    && currentUser.get('apiKeyVip').length != 0;
 }
 
 function saveVipApiKey(newkey) {

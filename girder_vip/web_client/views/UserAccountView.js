@@ -2,7 +2,7 @@
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import { restRequest } from '@girder/core/rest'
 import { getCurrentUser } from '@girder/core/auth';
-import * from '../utilities';
+import {saveVipApiKey, messageGirder} from '../utilities';
 import router from '@girder/core/router';
 import events from '@girder/core/events';
 import CarminClient from '../vendor/carmin/carmin-client';
@@ -19,18 +19,27 @@ import UserAccountVIP from '../templates/userAccountVIP.pug';
 wrap(UserAccountView, 'render', function(render) {
   render.call(this);
 
+
   var apiKeyVip = getCurrentUser().get('apiKeyVip');
   if (typeof apiKeyVip === 'undefined') apiKeyVip = '';
 
+
+  const TAB_NAME = "vip";
   // Display tab and pane
   $(this.el).find('ul.g-account-tabs.nav.nav-tabs').append(UserAccountTab);
   $(this.el).find('.tab-content').append(UserAccountVIP({apiKeyVip: apiKeyVip}));
 
-  // Change the route
-  $(this.el).find('a[name="vip"]').on('shown.bs.tab', (e) => {
-    var tab = $(e.currentTarget).attr('name');
-    router.navigate('useraccount/' + this.model.id + '/' + tab);
+  // Configure new vip tab
+  var tablink = $(this.el).find('a[name=' + TAB_NAME + '']');
+  // display the tab content on click
+  tablink.on('shown.bs.tab', (e) => {
+    this.tab = $(e.currentTarget).attr('name');
+    router.navigate('useraccount/' + this.model.id + '/' + this.tab);
   });
+  // display the tab if requested from url
+  if (TAB_NAME === this.tab) {
+    tablink.tab("show");
+  }
 
   // Event click on button (submit)
   $('#sendApiKeyVip').click(e => {
