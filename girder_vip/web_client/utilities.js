@@ -16,7 +16,7 @@ function getTimestamp () {
   return (Math.round((new Date()).getTime() / 1000));
 }
 
-function messageGirder (type, text, duration) {
+function messageGirder (type, text, duration = 5000) {
   events.trigger('g:alert', {
     text: text,
     type: type,
@@ -26,15 +26,32 @@ function messageGirder (type, text, duration) {
 
 function checkRequestError (data) {
   if (typeof data !== 'undefined' && typeof data.errorCode !== 'undefined' && data.errorCode != null) {
-    messageGirder("danger", data.errorMessage, 3000);
+    messageGirder("danger", data.errorMessage);
     return 1;
   }
   return 0;
 }
 
 function hasTheVipApiKeyConfigured() {
-  return typeof getCurrentUser().get('apiKeyVip') !== 'undefined' &&
-    getCurrentUser().get('apiKeyVip').length != 0;
+  var currentUser = getCurrentUser()
+  return currentUser !== null
+    && typeof currentUser !== 'undefined'
+    &&_currentUser.get('apiKeyVip').length != 0;
+}
+
+function saveVipApiKey(newkey) {
+  return restRequest({
+    method: 'PUT',
+    url: '/user/' + getCurrentUser().id + '/apiKeyVip',
+    data: {
+      apiKeyVip: newkey
+    }
+  }).done((resp) => {
+    messageGirder("success", "API key of VIP has changed with success.");
+    getCurrentUser().set('apiKeyVip', newkey);
+  }).fail(() => {
+    messageGirder("danger", "An error occured while processing your request");
+  });
 }
 
 function getCurrentApiKeyVip () {
@@ -182,6 +199,7 @@ export {
   isPluginActivatedOn,
   hasTheVipApiKeyConfigured,
   getCurrentApiKeyVip,
+  saveVipApiKey,
   sortPipelines,
   createOrVerifyPluginApiKey,
   createNewToken
