@@ -2,7 +2,7 @@
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import { restRequest } from '@girder/core/rest'
 import { getCurrentUser } from '@girder/core/auth';
-import {saveVipApiKey, messageGirder} from '../utilities';
+import {saveVipApiKey, messageGirder} from '../utilities/vipPluginUtils';
 import router from '@girder/core/router';
 import events from '@girder/core/events';
 import CarminClient from '../vendor/carmin/carmin-client';
@@ -50,13 +50,13 @@ UserAccountView.prototype.events['submit #ApiKeyVip-form'] = function (e) {
   errorMessage.empty();
 
   if (newkey.length === 0) {
-    saveVipApiKey(newkey).then(() = > this.render());
+    saveVipApiKey(newkey).then(() => this.render());
   } else {
     // Test API key on VIP
     carmin.listPipelines()
       // Update User table
     .then(pipelines => saveVipApiKey(newkey))
-    .then(() = > this.render())
+    .then(() => this.render())
     .catch(status => {
       // Wrong API
       if (status === 401) {

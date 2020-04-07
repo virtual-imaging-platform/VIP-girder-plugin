@@ -3,7 +3,7 @@ import _ from 'underscore';
 import '@girder/core/utilities/jquery/girderModal';
 import { restRequest } from '@girder/core/rest';
 import events from '@girder/core/events';
-import { checkRequestError, messageGirder, getTimestamp } from '../utilities';
+import { checkRequestError, messageGirder, getTimestamp } from '../utilities/vipPluginUtils';
 import 'bootstrap/js/button';
 
 // Import views

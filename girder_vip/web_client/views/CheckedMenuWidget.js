@@ -4,7 +4,7 @@ import router from '@girder/core/router';
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import events from '@girder/core/events';
 import { ENABLE_MULTIFILES } from '../constants';
-import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities';
+import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities/vipPluginUtils';
 
 // Import views
 import CheckedMenuWidget from '@girder/core/views/widgets/CheckedMenuWidget';

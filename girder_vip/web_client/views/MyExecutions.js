@@ -2,7 +2,7 @@
 import _ from 'underscore';
 import { cancelRestRequests, restRequest } from '@girder/core/rest';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip, messageGirder } from '../utilities';
+import { getCurrentApiKeyVip, messageGirder } from '../utilities/vipPluginUtils';
 import { getCurrentUser } from '@girder/core/auth';
 import CarminClient from '../vendor/carmin/carmin-client';
 

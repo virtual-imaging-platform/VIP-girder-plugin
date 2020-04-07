@@ -3,7 +3,7 @@ import _ from 'underscore';
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import events from '@girder/core/events';
 import { restRequest } from '@girder/core/rest';
-import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities';
+import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities/vipPluginUtils';
 
 // Import views
 import ItemListWidget from '@girder/core/views/widgets/ItemListWidget';

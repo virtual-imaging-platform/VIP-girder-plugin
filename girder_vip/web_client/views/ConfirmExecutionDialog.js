@@ -5,7 +5,7 @@ import { restRequest, getApiRoot } from '@girder/core/rest';
 import events from '@girder/core/events';
 import { getCurrentUser} from '@girder/core/auth';
 import { checkRequestError, messageGirder, getTimestamp,
-  createOrVerifyPluginApiKey, createNewToken } from '../utilities';
+  createOrVerifyPluginApiKey, createNewToken } from '../utilities/vipPluginUtils';
 import 'bootstrap/js/button';
 
 // Import views

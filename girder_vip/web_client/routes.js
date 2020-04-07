@@ -1,7 +1,7 @@
 // Import utilities
 import router from '@girder/core/router';
 import events from '@girder/core/events';
-import { hasTheVipApiKeyConfigured, messageGirder } from './utilities';
+import { hasTheVipApiKeyConfigured, messageGirder } from './utilities/vipPluginUtils';
 
 // Import Model
 import FileModel from '@girder/core/models/FileModel';

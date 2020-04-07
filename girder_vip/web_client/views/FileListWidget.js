@@ -1,7 +1,7 @@
 // Import utilities
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import { AccessType } from '@girder/core/constants';
-import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities';
+import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities/vipPluginUtils';
 
 // Import views
 import FileListWidget from '@girder/core/views/widgets/FileListWidget';

@@ -7,7 +7,7 @@ import router from '@girder/core/router';
 import events from '@girder/core/events';
 import ApiKeyCollection from '@girder/core/collections/ApiKeyCollection.js'
 import ApiKeyModel from '@girder/core/models/ApiKeyModel.js'
-import { VIP_PLUGIN_API_KEY, COLLECTIONS_IDS } from './constants';
+import { VIP_PLUGIN_API_KEY, COLLECTIONS_IDS } from '../constants';
 
 // Import views
 import FrontPageView from '@girder/core/views/body/FrontPageView';

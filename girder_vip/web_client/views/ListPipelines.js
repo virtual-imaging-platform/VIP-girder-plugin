@@ -7,7 +7,7 @@ import { getCurrentUser } from '@girder/core/auth';
 import events from '@girder/core/events';
 import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip, sortPipelines } from '../utilities';
+import { getCurrentApiKeyVip, sortPipelines } from '../utilities/vipPluginUtils';
 
 // Import views
 import View from '@girder/core/views/View';
