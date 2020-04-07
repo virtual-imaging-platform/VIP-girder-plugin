@@ -42,7 +42,7 @@ var ListPipelines = View.extend({
     this.carmin = new CarminClient(constants.CARMIN_URL, apiKeyVip);
 
     var getPipelinesPromise = this.carmin.listPipelines()
-    .then(pipelines => this.pipelines = sortPipelines(data))
+    .then(pipelines => this.pipelines = sortPipelines(pipelines))
     .catch( (status) => {
       messageGirder('danger', 'Error fetching VIP pipelines' + status);
       throw 'Error fetching VIP pipelines';
@@ -176,18 +176,18 @@ var ListPipelines = View.extend({
     var allDownloads = [];
 
     _.each(itemsIds, itemId => {
-        var itemFiles = new FileCollection();
-        itemFiles.altUrl = 'item/' + itemId + '/files';
-        var downloadPromise = itemFiles.fetch()
-        .then(() => {
-          if (itemFiles.hasNextPage()) {
-            messageGirder('danger', 'An item has too many files');
-            throw 'An item has too many files';
-          }
-          this.allFiles.add(itemFiles.models);
-          return undefined;
-        };
-        allDownloads.push(downloadPromise);
+      var itemFiles = new FileCollection();
+      itemFiles.altUrl = 'item/' + itemId + '/files';
+      var downloadPromise = itemFiles.fetch()
+      .then(() => {
+        if (itemFiles.hasNextPage()) {
+          messageGirder('danger', 'An item has too many files');
+          throw 'An item has too many files';
+        }
+        this.allFiles.add(itemFiles.models);
+        return undefined;
+      });
+      allDownloads.push(downloadPromise);
     });
 
     return Promise.all(allDownloads);

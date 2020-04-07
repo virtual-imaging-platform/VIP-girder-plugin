@@ -36,7 +36,7 @@ wrap(CheckedMenuWidget, 'render', function(render) {
 });
 
 HierarchyWidget.prototype.events['click a.creatis-pipelines-checked'] = function (e) {
-  var itemsIds = this.parentView._getCheckedResourceParam(true).items;
+  var itemsIds = this._getCheckedResourceParam(true).item;
 
   if (itemsIds.length === 0) {
     messageGirder("danger", "No item selected to launch a VIP pipeline.")
@@ -45,7 +45,7 @@ HierarchyWidget.prototype.events['click a.creatis-pipelines-checked'] = function
 
   var params = {
     text: 'Are you sure you want to launch a VIP pipeline on the '
-    + itemsIds.length + ' selected elements ?',
+    + itemsIds.length + ' selected items ?',
     yesText: 'OK',
     yesClass: 'btn-primary',
     confirmCallback: () => {
