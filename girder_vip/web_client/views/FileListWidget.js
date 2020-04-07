@@ -7,7 +7,7 @@ import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities/vip
 import FileListWidget from '@girder/core/views/widgets/FileListWidget';
 
 // Import about Creatis
-import ButtonListPipeline from '../templates/buttonListPipeline.pug';
+import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';
 
 // Add an entry to the ItemView
 wrap(FileListWidget, 'render', function(render) {
@@ -21,14 +21,14 @@ wrap(FileListWidget, 'render', function(render) {
   if (item.get('_accessLevel') >= AccessType.READ) {
     this.collection.each(file => {
       this.$('li.g-file-list-entry.g-show-info[file-cid=' + file.cid + ']')
-        .after(ButtonListPipeline({file: file}));
+        .after(ButtonLaunchPipeline({model: file}));
     });
   }
   return this;
 });
 
 FileListWidget.prototype.events['click a.vip-launch-pipeline'] = function (e) {
-    var cid = $(e.currentTarget).parent().attr('file-cid');
+    var cid = $(e.currentTarget).parent().attr('model-cid');
     var fileId = this.collection.get(cid).id;
     router.navigate("#file/" + fileId + "/#pipelines", {trigger: true});
 };
