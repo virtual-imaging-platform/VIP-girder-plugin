@@ -1,8 +1,11 @@
 // Import utilities
 import _ from 'underscore';
 import { wrap } from '@girder/core/utilities/PluginUtils';
+import { AccessType } from '@girder/core/constants';
 import events from '@girder/core/events';
+import router from '@girder/core/router';
 import { restRequest } from '@girder/core/rest';
+import FileCollection from '@girder/core/collections/FileCollection';
 import { hasTheVipApiKeyConfigured, isPluginActivatedOn, messageGirder } from '../utilities/vipPluginUtils';
 
 // Import views
@@ -22,7 +25,7 @@ wrap(ItemListWidget, 'render', function(render) {
     return this;
   }
 
-  this.collection
+  this.collection.chain()
   .filter(item => item.get('_accessLevel') >= AccessType.READ)
   .each(item => {
     var itemNameEl =
@@ -40,7 +43,7 @@ wrap(ItemListWidget, 'render', function(render) {
 });
 
 ItemListWidget.prototype.events['click a.vip-launch-pipeline'] = function (e) {
-  var cid = $(e.currentTarget).parent().attr('model-cid');
+  var cid = $(e.currentTarget).attr('model-cid');
   var itemId = this.collection.get(cid).id;
 
   new LoadingAnimation({
@@ -63,11 +66,23 @@ ItemListWidget.prototype.onItemFilesReceived = function () {
   if (this.itemFiles.length === 0) {
     messageGirder("info", "VIP can not launch a pipeline on this item because it does not have any file")
   } else if (this.itemFiles.length > 1) {
-    messageGirder("info", "This item has several files. You can launch a VIP pipeline on any of them in this item detailed page.")
+
+    var params = {
+      text: 'This item has several files. Do you want to see the file list to launch a VIP pipeline on any of them ?',
+      yesText: 'OK',
+      yesClass: 'btn-primary',
+      confirmCallback: () => {
+        this.trigger('g:navigateTo', ItemView, {
+          item: item
+        });
+      }
+    };
+    confirm(params);
   } else {
     // it's OK
-    var fileId = this.itemFiles.pop();
-    router.navigate("#file/" + fileId + "/#pipelines", {trigger: true});
+    this.trigger('g:navigateTo', ListPipelines, {
+      file: this.itemFiles.pop()
+    });
   }
 
 };

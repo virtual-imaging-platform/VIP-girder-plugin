@@ -1,6 +1,7 @@
 // Import utilities
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import { AccessType } from '@girder/core/constants';
+import router from '@girder/core/router';
 import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities/vipPluginUtils';
 
 // Import views
@@ -20,7 +21,7 @@ wrap(FileListWidget, 'render', function(render) {
 
   if (item.get('_accessLevel') >= AccessType.READ) {
     this.collection.each(file => {
-      this.$('li.g-file-list-entry.g-show-info[file-cid=' + file.cid + ']')
+      this.$('li.g-file-list-entry .g-show-info[file-cid=' + file.cid + ']')
         .after(ButtonLaunchPipeline({model: file}));
     });
   }
@@ -28,7 +29,9 @@ wrap(FileListWidget, 'render', function(render) {
 });
 
 FileListWidget.prototype.events['click a.vip-launch-pipeline'] = function (e) {
-    var cid = $(e.currentTarget).parent().attr('model-cid');
-    var fileId = this.collection.get(cid).id;
-    router.navigate("#file/" + fileId + "/#pipelines", {trigger: true});
+    var cid = $(e.currentTarget).attr('model-cid');
+
+    this.trigger('g:navigateTo', ListPipelines, {
+      file: this.collection.get(cid)
+    });
 };

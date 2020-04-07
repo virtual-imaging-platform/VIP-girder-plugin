@@ -9,6 +9,7 @@ import events from '@girder/core/events';
 import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
 import { getCurrentApiKeyVip, sortPipelines, messageGirder } from '../utilities/vipPluginUtils';
+import FileCollection from '@girder/core/collections/FileCollection';
 
 // Import Model
 import FileModel from '@girder/core/models/FileModel';
@@ -25,29 +26,41 @@ var ListPipelines = View.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
-    if (typeof settings.items == 'undefined' || settings.items == null) {
-      messageGirder('danger', 'Checked files not found. Retry and don\'t reload the page', 3000);
-      router.navigate('', {trigger: true});
-      return ;
-    }
-
-    // Get checked files
-    this.files = this.getFilesFromCheckedItems(settings.items);
-
     var apiKeyVip = getCurrentApiKeyVip();
     if (apiKeyVip == null)
       return ;
+
+    if (typeof settings.itemsIds == 'undefined' || settings.itemsIds == null) {
+      messageGirder('danger', 'Checked files not found to launch a VIP pipeline');
+      router.navigate('/', {trigger: true});
+      return ;
+    }
+
 
     this.user = getCurrentUser();
     this.foldersCollection = [];
     this.carmin = new CarminClient(constants.CARMIN_URL, apiKeyVip);
 
-    if (!this.files) {
-      messageGirder('danger', 'Checked files not found. Retry and don\'t reload the page', 3000);
-      router.navigate('', {trigger: true});
-      return ;
-    }
+    var getPipelinesPromise = this.carmin.listPipelines()
+    .then(pipelines => this.pipelines = sortPipelines(data))
+    .catch( (status) => {
+      messageGirder('danger', 'Error fetching VIP pipelines' + status);
+      throw 'Error fetching VIP pipelines';
+    });
 
+    // Get checked files
+    this.allFiles = new FileCollection();
+    var fetchAllFilesPromise = this.fetchAllFiles(settings.itemsIds);
+
+
+    Promise.all([getPipelinesPromise, fetchAllFilesPromise])
+    .then( () => this.render())
+    .catch( () => {
+      messageGirder('danger', 'Error initializing VIP launch page');
+      router.navigate('/', {trigger: true});
+    });
+
+    /*
     // Fill this.files with file's data
     _.each(this.files, function (file, i) {
       restRequest({
@@ -61,13 +74,9 @@ var ListPipelines = View.extend({
       }).fail((error) => {
         console.log("Error:" + error);
       });
-    }.bind(this));
+    }.bind(this)); */
 
     // Get pipelines of user
-    this.carmin.listPipelines().then(function (data) {
-      this.pipelines = sortPipelines(data);
-      this.render();
-    }.bind(this));
 
   },
 
@@ -84,7 +93,7 @@ var ListPipelines = View.extend({
 
     this.$el.html(ListPipelinesMultiFilesTemplate({
       pipelines: this.pipelines,
-      filesCount: Object.keys(this.files).length
+      filesCount: this.allFiles.length
     }));
 
     // User's view goes back up on top
@@ -163,29 +172,25 @@ var ListPipelines = View.extend({
     });
   },
 
-  getFilesFromCheckedItems: function (items) {
-    var obj = {};
-    var len = Object.keys(items).length - 1;
+  fetchAllFiles: function (itemsIds) {
+    var allDownloads = [];
 
-    _.each(items, function (item, i) {
-      restRequest({
-        method: 'GET',
-        url: 'item/' + item.id + '/files',
-        async: false,
-        data: {
-          limit: 1
-        }
-      }).done((resp) => {
-        return restRequest({
-          method: 'GET',
-          url: 'file/' + resp[0]._id
-        });
-      }).done((resp) => {
-        obj[i] = resp[0];
-      });
+    _.each(itemsIds, itemId => {
+        var itemFiles = new FileCollection();
+        itemFiles.altUrl = 'item/' + itemId + '/files';
+        var downloadPromise = itemFiles.fetch()
+        .then(() => {
+          if (itemFiles.hasNextPage()) {
+            messageGirder('danger', 'An item has too many files');
+            throw 'An item has too many files';
+          }
+          this.allFiles.add(itemFiles.models);
+          return undefined;
+        };
+        allDownloads.push(downloadPromise);
     });
 
-    return obj;
+    return Promise.all(allDownloads);
   }
 
 });
