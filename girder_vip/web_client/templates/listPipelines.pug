@@ -1,30 +1,35 @@
-.creatis-list-pipelines-header
-  .g-body-title Applications
-  .g-body-subtitle= file.name
+.modal-dialog
+  .modal-content
+    .modal-header
+      button.close(data-dismiss="modal", aria-hidden="true", type="button") &times;
+      h4.modal-title= VIP application
+      .g-dialog-subtitle= Launch file.name on
+    .modal-body
+      - var i = 1
 
-- var i = 1
-
-table.table.table-hover
-  tbody
-    thead
-      tr
-        th #
-        th Application
-        th Description
-        th Version
-        th Execution
-    each pipeline, name in pipelines
-      - var firstVersion = pipeline[0].identifier
-      tr
-        td= i
-        td= name
-        td
-        td
-          select.form-control.select-version-pipeline(data-id=i)
-            each version in pipeline
-              option(value=version.identifier)= version.version
-        td
-          button.btn.btn-small.btn-primary.confirm-pipeline(id="confirm-pipeline" + i++, value=firstVersion) Run it
+      table.table.table-hover
+        tbody
+          thead
+            tr
+              th #
+              th Application
+              th Description
+              th Version
+              th Execution
+          each pipeline, name in pipelines
+            - var firstVersion = pipeline[0].identifier
+            tr
+              td= i
+              td= name
+              td
+              td
+                select.form-control.select-version-pipeline(data-id=i)
+                  each version in pipeline
+                    option(value=version.identifier)= version.version
+              td
+                button.btn.btn-small.btn-primary.confirm-pipeline(id="confirm-pipeline" + i++, value=firstVersion) Run it
+    .modal-footer
+      a.btn.btn-small.btn-default(data-dismiss="modal") Cancel
 
 script.
   $('.select-version-pipeline').change(function (){

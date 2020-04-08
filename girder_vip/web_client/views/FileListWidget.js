@@ -4,7 +4,7 @@ import { AccessType } from '@girder/core/constants';
 import events from '@girder/core/events';
 import router from '@girder/core/router';
 import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities/vipPluginUtils';
-import ListPipelines from './ListPipelines';
+import ListPipelinesWidget from './ListPipelinesWidget';
 
 // Import views
 import FileListWidget from '@girder/core/views/widgets/FileListWidget';
@@ -31,9 +31,12 @@ wrap(FileListWidget, 'render', function(render) {
 });
 
 FileListWidget.prototype.events['click a.vip-launch-pipeline'] = function (e) {
-    var cid = $(e.currentTarget).attr('model-cid');
+  var cid = $(e.currentTarget).attr('model-cid');
 
-    events.trigger('g:navigateTo', ListPipelines, {
-      file: this.collection.get(cid)
-    });
+  // it's OK
+  new ListPipelinesWidget({
+      el: $('#g-dialog-container'),
+      file: this.itemFiles.pop(),
+      item: this.itemToLaunch
+  });
 };

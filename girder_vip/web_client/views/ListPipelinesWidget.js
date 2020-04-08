@@ -17,35 +17,38 @@ import ConfirmExecutionDialog from './ConfirmExecutionDialog';
 import ListPipelinesTemplate from '../templates/listPipelines.pug';
 
 // List of pipelines allowed by the user
-var ListPipelines = View.extend({
+var ListPipelinesWidget = View.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
     // Get api key of VIP
     var apiKeyVip = getCurrentApiKeyVip();
     if (apiKeyVip == null) {
+    //  TODO close modal
+      return ;
+    }
+    if (! settings.file ||_! settings.item) {
+      messageGirder('danger', 'Missing information to launch a VIP pipeline');
+      //  TODO close modal
       return ;
     }
 
     this.user = getCurrentUser();
-    this.file = settings.file.responseJSON;
+    this.file = settings.file;
+    this.item = settings.item;
+
     this.foldersCollection = [];
     this.carmin = new CarminClient(constants.CARMIN_URL, apiKeyVip);
-
-    // Get collection id
-    restRequest({
-      method: 'GET',
-      url: 'item/' + this.file.itemId
-    }).done((resp) => {
-      this.collectionId = resp.baseParentId;
-    });
-
+    new LoadingAnimation({
+        el: this.$el,
+        parentView: this
+    }).render();
 
     // Get pipelines of user
-    this.carmin.listPipelines().then(function (data) {
-      this.pipelines = sortPipelines(data);
+    this.carmin.listPipelines().then(pipelines => {
+      this.pipelines = sortPipelines(pipelines);
       this.render();
-    }.bind(this));
+    });
 
   },
 
@@ -66,7 +69,7 @@ var ListPipelines = View.extend({
     }));
 
     // User's view goes back up on top
-    $("html, body").animate({scrollTop: 0}, "slow");
+    // $("html, body").animate({scrollTop: 0}, "slow");
 
     return this;
   },
@@ -143,4 +146,4 @@ var ListPipelines = View.extend({
 
 });
 
-export default ListPipelines;
+export default ListPipelinesWidget;

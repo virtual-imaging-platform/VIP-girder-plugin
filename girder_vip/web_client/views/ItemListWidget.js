@@ -7,7 +7,7 @@ import router from '@girder/core/router';
 import { restRequest } from '@girder/core/rest';
 import FileCollection from '@girder/core/collections/FileCollection';
 import { hasTheVipApiKeyConfigured, isPluginActivatedOn, messageGirder } from '../utilities/vipPluginUtils';
-import ListPipelines from './ListPipelines';
+import ListPipelinesWidget from './ListPipelinesWidget';
 import { confirm } from '@girder/core/dialog';
 
 // Import views
@@ -74,10 +74,14 @@ ItemListWidget.prototype.onItemFilesReceived = function () {
     };
     confirm(params);
   } else {
+
     // it's OK
-    events.trigger('g:navigateTo', ListPipelines, {
-      file: this.itemFiles.pop()
+    new ListPipelinesWidget({
+        el: $('#g-dialog-container'),
+        file: this.itemFiles.pop(),
+        item: this.itemToLaunch
     });
+
   }
 
 };
