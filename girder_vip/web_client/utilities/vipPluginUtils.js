@@ -87,43 +87,36 @@ function isPluginActivatedOnCollection(collectionId) {
 }
 
 function sortPipelines(allPipelines) {
-  // Regroupe toutes les pipelines par leur nom
-  var pipelinesByName = _.groupBy(allPipelines, 'name');
 
+  var pipelineSortFunc = function (pipelineA, pipelineB){
+    if (!pipelineA.versionClean && pipelineB.versionClean)
+      return -1;
+
+    if (pipelineA.versionClean && !pipelineB.versionClean)
+      return 1;
+
+    if (pipelineA.versionClean && pipelineB.versionClean)
+      return compareVersions(pipelineA.versionClean, pipelineB.versionClean);
+  }
+
+  var cid = 0;
+
+  return _.chain(allPipelines)
   // Créer une nouvelle variable dans chaque version
   // Cette variable 'versionClean' est la version sans superflux (on garde que les chiffres et les points)
   // cad: v0.1.2(experimental) -> 0.1.2
-  var pipelinesClean = _.map(pipelinesByName, function(e){
-    return _.map(e, function (a){
-      a["versionClean"] = a["version"].replace(/[^0-9\.]/g, '');
-      return a;
-    });
-  });
-
-  // Tri les éléments du tableau par rapport aux valeurs de 'versionClean' (desc)
-  var pipelines = _.map(pipelinesClean, function (e) {
-    return e.sort(function (a, b){
-      if (!a.versionClean && b.versionClean)
-        return -1;
-
-      if (a.versionClean && !b.versionClean)
-        return 1;
-
-      if (a.versionClean && b.versionClean)
-        return compareVersions(a.versionClean, b.versionClean);
-    }).reverse();
-  });
-
-  // Créer un objet en remplacant les clés par l'id du pipeline
-  // cad: au lieu d'avoir array[0], on a array['Id_Of_Pipeline']
-  var keys = Object.keys(pipelinesByName);
-  var tmp = {};
-
-  pipelines.forEach(function (e, k) {
-    tmp[keys[k]] = e;
+  .each(pipeline =>  {
+    pipeline["versionClean"] = pipeline["version"].replace(/[^0-9\.]/g, '');
+    pipeline["versionId"] = cid++;
   })
-
-  return tmp;
+  .groupBy('name'); // Regroupe toutes les pipelines par leur nom
+  .each(pipelinesByName => pipelinesByName.sort(pipelineSortFunc).reverse())
+  // put an cid as key instead of a name
+  .reduce((memo, pipelines, name) => memo[pipelines[1].versionId] = pipelines, {})
+  .value();
+  // return {"1" : [{identifier : xxxx, ... ,versionId : 1}, ... , {identifier : xxxx, ... ,versionId : 4}],
+  // ... ,
+  //  "42" : [{identifier : xxxx, ... ,versionId : 42}, ... , {identifier : xxxx, ... ,versionId : 31}] }
 }
 
 function createNewToken(user) {

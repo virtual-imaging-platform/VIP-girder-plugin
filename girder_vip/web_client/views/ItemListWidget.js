@@ -79,7 +79,8 @@ ItemListWidget.prototype.onItemFilesReceived = function () {
     new ListPipelinesWidget({
         el: $('#g-dialog-container'),
         file: this.itemFiles.pop(),
-        item: this.itemToLaunch
+        item: this.itemToLaunch,
+        parentView: this
     });
 
   }

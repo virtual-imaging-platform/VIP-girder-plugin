@@ -6,6 +6,7 @@ import { confirm } from '@girder/core/dialog';
 import { getCurrentUser } from '@girder/core/auth';
 import events from '@girder/core/events';
 import CarminClient from '../vendor/carmin/carmin-client';
+import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
 import * as constants from '../constants';
 import { getCurrentApiKeyVip, sortPipelines } from '../utilities/vipPluginUtils';
 
@@ -16,8 +17,15 @@ import ConfirmExecutionDialog from './ConfirmExecutionDialog';
 // Import templates
 import ListPipelinesTemplate from '../templates/listPipelines.pug';
 
+import '@girder/core/utilities/jquery/girderModal';
+
 // List of pipelines allowed by the user
 var ListPipelinesWidget = View.extend({
+
+events: {
+  'click button.confirm-pipeline' : 'confirmPipeline'
+},
+
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
@@ -27,7 +35,7 @@ var ListPipelinesWidget = View.extend({
     //  TODO close modal
       return ;
     }
-    if (! settings.file ||_! settings.item) {
+    if (! settings.file || ! settings.item) {
       messageGirder('danger', 'Missing information to launch a VIP pipeline');
       //  TODO close modal
       return ;
@@ -45,67 +53,48 @@ var ListPipelinesWidget = View.extend({
     }).render();
 
     // Get pipelines of user
+    // they are sorted by name with custom ids as keys
     this.carmin.listPipelines().then(pipelines => {
       this.pipelines = sortPipelines(pipelines);
       this.render();
     });
 
-  },
 
-  events: {
-    'click .confirm-pipeline' : 'confirmPipeline'
+    this.getFolderRecursively(this.user.id, 0, "");
+
   },
 
   render: function () {
-    // Get folders of the collection
-    //this.getFolderRecursively(this.collectionId, 0, "");
-
-    // Get folders of the user
-    this.getFolderRecursively(this.user.id, 0, "");
 
     this.$el.html(ListPipelinesTemplate({
       file: this.file,
       pipelines: this.pipelines,
     }));
 
-    // User's view goes back up on top
-    // $("html, body").animate({scrollTop: 0}, "slow");
+    this.$el.girderModal(this).on('hidden.bs.modal', () => console.log("modal closed"));
 
     return this;
   },
 
-  /**
-  * If the request to get details of pipeline has success
-  * Create new instance of ConfirmPipelineDialog to
-  * configure the launch of pipeline :
-  *     - name of execution
-  *     - result directory (stack results in girder)
-  *     - checkbox to choose to send an email when the process is done
-  *     - parameters of pipeline
-  */
   confirmPipeline: function (e) {
-    var pipelineIdentifier = $(e.currentTarget)[0].value;
+    var pipelineId = $(e.currentTarget).attr("pid");
+    var pipelineVersion =
+      this.$('select.select-version-pipeline[pid='+ pipelineId + ']').val();
 
-    this.carmin.describePipeline(pipelineIdentifier).then(function (data) {
-      if (typeof data.errorCode !== 'undefined') {
-        events.trigger('g:alert', {
-          text: "Unable to retrieve application informations for this version",
-          type: "danger",
-          duration: 3000
-        });
-      }
-      else {
-        new ConfirmExecutionDialog({
-          file: this.file,
-          pipeline: data,
-          foldersCollection: this.foldersCollection,
-          carmin: this.carmin,
-          parentView: this,
-          el: $('#g-dialog-container')
-        });
-      }
-    }.bind(this));
-
+    this.carmin.describePipeline(pipelineIdentifier)
+    .then(pipeline => {
+      new ConfirmExecutionDialog({
+        file: this.file,
+        pipeline: data,
+        foldersCollection: this.foldersCollection,
+        carmin: this.carmin,
+        parentView: this,
+        el: $('#g-dialog-container')
+      });
+    })
+    .catch(pipeline => {
+      messageGirder("danger", "Unable to retrieve application informations");
+    });
   },
 
   /**

@@ -37,6 +37,7 @@ FileListWidget.prototype.events['click a.vip-launch-pipeline'] = function (e) {
   new ListPipelinesWidget({
       el: $('#g-dialog-container'),
       file: this.itemFiles.pop(),
-      item: this.itemToLaunch
+      item: this.itemToLaunch,
+      parentView: this
   });
 };
