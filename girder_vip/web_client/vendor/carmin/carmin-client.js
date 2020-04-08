@@ -27,12 +27,9 @@ CarminClient.prototype.doRequest = function(path, method, opts) {
             var response = xmlHttp.responseText;
           else if (opts.responseTypeBuffer)
             var response = xmlHttp.response;
-          else if (isJson(xmlHttp.responseText)) {
+          else if (isJson(xmlHttp.responseText))
             var response = JSON.parse(xmlHttp.responseText);
-            if (typeof response.errorCode !== 'undefined') {
-              reject(response);
-            }
-          } else
+          else
             var response = xmlHttp.responseText;
 
           resolve(response);

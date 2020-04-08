@@ -80,7 +80,7 @@ ItemListWidget.prototype.onItemFilesReceived = function () {
         el: $('#g-dialog-container'),
         file: this.itemFiles.pop(),
         item: this.itemToLaunch,
-        parentView: this
+        parentView: this.parentView
     });
 
   }

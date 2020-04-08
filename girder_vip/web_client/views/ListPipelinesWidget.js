@@ -8,7 +8,7 @@ import events from '@girder/core/events';
 import CarminClient from '../vendor/carmin/carmin-client';
 import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip, sortPipelines } from '../utilities/vipPluginUtils';
+import { getCurrentApiKeyVip, sortPipelines, messageGirder } from '../utilities/vipPluginUtils';
 
 // Import views
 import View from '@girder/core/views/View';
@@ -22,9 +22,9 @@ import '@girder/core/utilities/jquery/girderModal';
 // List of pipelines allowed by the user
 var ListPipelinesWidget = View.extend({
 
-events: {
-  'click button.confirm-pipeline' : 'confirmPipeline'
-},
+  events: {
+    'click button.confirm-pipeline' : 'confirmPipeline'
+  },
 
   initialize: function (settings) {
     cancelRestRequests('fetch');
@@ -44,13 +44,10 @@ events: {
     this.user = getCurrentUser();
     this.file = settings.file;
     this.item = settings.item;
+    this.goingToConfirmDialog = false;
 
     this.foldersCollection = [];
     this.carmin = new CarminClient(constants.CARMIN_URL, apiKeyVip);
-    new LoadingAnimation({
-        el: this.$el,
-        parentView: this
-    }).render();
 
     // Get pipelines of user
     // they are sorted by name with custom ids as keys
@@ -71,30 +68,46 @@ events: {
       pipelines: this.pipelines,
     }));
 
-    this.$el.girderModal(this).on('hidden.bs.modal', () => console.log("modal closed"));
+    this.$el.girderModal(this).on('hidden.bs.modal', () => {
+      if (! this.goingToConfirmDialog) {
+        // reset route to the hierarchy one ()
+        this.parentView._setRoute();
+      }
+    });
 
     return this;
   },
 
   confirmPipeline: function (e) {
     var pipelineId = $(e.currentTarget).attr("pid");
-    var pipelineVersion =
+    var pipelineVersionId =
       this.$('select.select-version-pipeline[pid='+ pipelineId + ']').val();
 
-    this.carmin.describePipeline(pipelineIdentifier)
+    var pipelineVersion =  _.findWhere(
+        this.pipelines[pipelineId],
+        {versionId : pipelineVersionId});
+
+    new LoadingAnimation({
+        el: this.$('.modal-body'),
+        parentView: this
+    }).render();
+
+    this.carmin.describePipeline(pipelineVersion.identifier)
     .then(pipeline => {
+      this.goingToConfirmDialog = true;
       new ConfirmExecutionDialog({
         file: this.file,
-        pipeline: data,
+        pipeline: pipeline,
         foldersCollection: this.foldersCollection,
         carmin: this.carmin,
-        parentView: this,
+        parentView: this.parentView,
         el: $('#g-dialog-container')
       });
     })
-    .catch(pipeline => {
-      messageGirder("danger", "Unable to retrieve application informations");
-    });
+    .catch(error => {
+      messageGirder("danger", "Unable to retrieve application informations :" + error);
+      this.render();
+    }
   },
 
   /**

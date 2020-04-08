@@ -8,6 +8,7 @@ import ListPipelinesWidget from './ListPipelinesWidget';
 
 // Import views
 import FileListWidget from '@girder/core/views/widgets/FileListWidget';
+import ItemView from '@girder/core/views/body/ItemView';
 
 // Import about Creatis
 import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';
@@ -27,17 +28,35 @@ wrap(FileListWidget, 'render', function(render) {
         .after(ButtonLaunchPipeline({model: file}));
     });
   }
+
+  if (this.parentView.showVipPipeline) {
+    this.showPipelinesModal(this.vipPipelineFileId);
+  }
+
   return this;
 });
 
 FileListWidget.prototype.events['click a.vip-launch-pipeline'] = function (e) {
   var cid = $(e.currentTarget).attr('model-cid');
 
-  // it's OK
+  router.navigate('item/' + this.parentItem + '/file/' + this.collection.get(fileId).id + '/vip-pipelines');
+  this.showPipelinesModal(cid);
+};
+
+FileListWidget.prototype.showPipelinesModal = function (fileId) {
   new ListPipelinesWidget({
       el: $('#g-dialog-container'),
-      file: this.itemFiles.pop(),
-      item: this.itemToLaunch,
-      parentView: this
+      file: this.collection.get(fileId),
+      item: this.parentItem,
+      parentView: this.parentView
   });
 };
+
+wrap(ItemView, 'initialize', function(initialize, settings) {
+
+  this.showVipPipeline = settings.showVipPipeline || false;
+  this.vipPipelineFileId = settings.vipPipelineFileId || false;
+
+  // Call the parent render
+  initialize.call(this, settings);
+});

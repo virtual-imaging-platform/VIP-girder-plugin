@@ -107,12 +107,12 @@ function sortPipelines(allPipelines) {
   // cad: v0.1.2(experimental) -> 0.1.2
   .each(pipeline =>  {
     pipeline["versionClean"] = pipeline["version"].replace(/[^0-9\.]/g, '');
-    pipeline["versionId"] = cid++;
+    pipeline["versionId"] = (cid++).toString();
   })
-  .groupBy('name'); // Regroupe toutes les pipelines par leur nom
+  .groupBy('name') // Regroupe toutes les pipelines par leur nom
   .each(pipelinesByName => pipelinesByName.sort(pipelineSortFunc).reverse())
   // put an cid as key instead of a name
-  .reduce((memo, pipelines, name) => memo[pipelines[1].versionId] = pipelines, {})
+  .indexBy(pipelines => pipelines[0].versionId)
   .value();
   // return {"1" : [{identifier : xxxx, ... ,versionId : 1}, ... , {identifier : xxxx, ... ,versionId : 4}],
   // ... ,

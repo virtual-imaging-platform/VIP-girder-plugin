@@ -9,6 +9,14 @@ import FileModel from '@girder/core/models/FileModel';
 // Import Views
 import MyExecutions from './views/MyExecutions';
 import ListPipelinesMultiFiles from './views/ListPipelinesMultiFiles';
+import ItemView from '@girder/core/views/body/ItemView';
+
+router.route('item/:id/file/:id/vip-pipelines', 'vip-pipelines', function (itemId, fileId, params) {
+    ItemView.fetchAndInit(itemId, {
+        showVipPipeline: true,
+        vipPipelineFileId: fileId
+    });
+});
 
 // New route #my-executions
 router.route('my-executions', 'myexecutions', function() {
