@@ -1,6 +1,7 @@
 //Import utilities
 import _ from 'underscore';
 import { restRequest } from '@girder/core/rest';
+import router from '@girder/core/router';
 import { cancelRestRequests } from '@girder/core/rest';
 import { confirm } from '@girder/core/dialog';
 import { getCurrentUser } from '@girder/core/auth';
@@ -70,12 +71,24 @@ var ListPipelinesWidget = View.extend({
 
     this.$el.girderModal(this).on('hidden.bs.modal', () => {
       if (! this.goingToConfirmDialog) {
-        // reset route to the hierarchy one ()
-        this.parentView._setRoute();
+        // reset route to the former one
+        router.navigate(this.getParentRoute(), {replace: true});
       }
     });
 
     return this;
+  },
+
+  getParentRoute: function () {
+
+    var currentRoute = Backbone.history.fragment;
+    // default for folder view, remove starting from item path
+    var stopIndex = currentRoute.indexOf('/item/');
+    // but if it start by 'item', its an item view, remove starting from file path
+    if (currentRoute.startWith('item'))
+      var stopIndex = currentRoute.indexOf('/file/');
+
+    return currentRoute.substring(0, stopIndex);
   },
 
   confirmPipeline: function (e) {
@@ -107,7 +120,7 @@ var ListPipelinesWidget = View.extend({
     .catch(error => {
       messageGirder("danger", "Unable to retrieve application informations :" + error);
       this.render();
-    }
+    });
   },
 
   /**
