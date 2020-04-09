@@ -2,7 +2,7 @@
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import { restRequest } from '@girder/core/rest'
 import { getCurrentUser } from '@girder/core/auth';
-import {saveVipApiKey, messageGirder} from '../utilities/vipPluginUtils';
+import {saveVipApiKey, messageGirder, isVipPlatformConfig, updateGirderApiKey} from '../utilities/vipPluginUtils';
 import router from '@girder/core/router';
 import events from '@girder/core/events';
 import CarminClient from '../vendor/carmin/carmin-client';
@@ -43,28 +43,34 @@ wrap(UserAccountView, 'render', function(render) {
 UserAccountView.prototype.events['submit #ApiKeyVip-form'] = function (e) {
   e.preventDefault();
 
-  var errorMessage = this.$('#creatis-vip-error-msg');
   var newkey = this.$('#creatis-apikey-vip').val();
-  var carmin = new CarminClient(constants.CARMIN_URL, newkey);
-
-  errorMessage.empty();
 
   if (newkey.length === 0) {
     saveVipApiKey(newkey).then(() => this.render());
-  } else {
-    // Test API key on VIP
-    carmin.listPipelines()
-      // Update User table
-    .then(pipelines => saveVipApiKey(newkey))
-    .then(() => this.render())
-    .catch(status => {
-      // Wrong API
-      if (status === 401) {
-        errorMessage.text("This API key is wrong");
-        return ;
-      } else {
-        messageGirder("danger", "An error occured while changing VIP API key, please concact administrators");
-      }
-    });
+    return;
   }
+    // Test API key on VIP
+    // and Verify the platform is declared on VIP
+  var carmin = new CarminClient(constants.CARMIN_URL, newkey);
+  carmin.listExternalPlatforms()
+  .then(externalPlatforms => {
+      if ( ! _.findWhere(externalPlatforms, {identifier : VIP_EXTERNAL_STORAGE_NAME}))
+        messageGirder("danger", "There is a configuration problem about VIP, please contact administrators");
+      else {
+        updateGirderApiKey(carmin)
+        .saveVipApiKey(newkey)
+        .then(() => this.render())
+        .catch(error => {
+            messageGirder("danger", "An error occured while configuring Girder API key, please contact administrators -- " + error);
+        });
+      }
+  })
+  .catch(data => {
+    // Wrong API
+    if (data.errorCode && data.errorCode === 40100) {
+      messageGirder("danger", "This API key is wrong, it is not saved");
+    } else {
+      messageGirder("danger", "An error occured while changing VIP API key, please contact administrators");
+    }
+  });
 };

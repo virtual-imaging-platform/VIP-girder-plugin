@@ -124,7 +124,7 @@ ItemListWidget.prototype.onItemFilesReceived = function () {
   }
 
   if (this.itemFiles.length === 0) {
-    messageGirder("warnimg", "VIP can not launch a pipeline on this item because it does not have any file")
+    messageGirder("warning", "VIP can not launch a pipeline on this item because it does not have any file")
   } else if (this.itemFiles.length > 1) {
     this.showConfirmModal();
   } else {

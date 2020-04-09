@@ -7,10 +7,13 @@ import router from '@girder/core/router';
 import events from '@girder/core/events';
 import ApiKeyCollection from '@girder/core/collections/ApiKeyCollection.js'
 import ApiKeyModel from '@girder/core/models/ApiKeyModel.js'
-import { VIP_PLUGIN_API_KEY, COLLECTIONS_IDS } from '../constants';
+import { VIP_PLUGIN_API_KEY, COLLECTIONS_IDS, VIP_EXTERNAL_STORAGE_NAME } from '../constants';
 
 // Import views
 import FrontPageView from '@girder/core/views/body/FrontPageView';
+
+
+// general utils
 
 function getTimestamp () {
   return (Math.round((new Date()).getTime() / 1000));
@@ -24,36 +27,13 @@ function messageGirder (type, text, duration = 5000) {
   });
 }
 
-function checkRequestError (data) {
-  if (typeof data !== 'undefined' && typeof data.errorCode !== 'undefined' && data.errorCode != null) {
-    messageGirder("danger", data.errorMessage);
-    return 1;
-  }
-  return 0;
-}
+// VIP api key utils
 
 function hasTheVipApiKeyConfigured() {
   var currentUser = getCurrentUser()
   return currentUser !== null
     && typeof currentUser !== 'undefined'
     && currentUser.get('apiKeyVip').length != 0;
-}
-
-function saveVipApiKey(newkey) {
-  return restRequest({
-    method: 'PUT',
-    url: '/user/' + getCurrentUser().id + '/apiKeyVip',
-    data: {
-      apiKeyVip: newkey
-    }
-  }).done((resp) => {
-    messageGirder("success", "API key of VIP has changed with success.");
-    getCurrentUser().set('apiKeyVip', newkey);
-    // reload header view to refresh the 'My execution' menu
-    events.trigger('vip:vipApiKeyChanged', {apiKeyVip: newkey});
-  }).fail(() => {
-    messageGirder("danger", "An error occured while processing your request");
-  });
 }
 
 function getCurrentApiKeyVip () {
@@ -84,6 +64,106 @@ function isPluginActivatedOn(model) {
 
 function isPluginActivatedOnCollection(collectionId) {
   return _.contains(COLLECTIONS_IDS, collectionId);
+}
+
+function saveVipApiKey(newkey) {
+  return restRequest({
+    method: 'PUT',
+    url: '/user/' + getCurrentUser().id + '/apiKeyVip',
+    data: {
+      apiKeyVip: newkey
+    }
+  }).done((resp) => {
+    messageGirder("success", "API key of VIP has changed with success.");
+    getCurrentUser().set('apiKeyVip', newkey);
+    // reload header view to refresh the 'My execution' menu
+    events.trigger('vip:vipApiKeyChanged', {apiKeyVip: newkey});
+  }).fail(() => {
+    messageGirder("danger", "An error occured while processing your request");
+  });
+}
+
+// girder api key utils
+
+function updateGirderApiKey(carminClient) {
+  // fetch api key
+  var allApiKeys = new ApiKeyCollection();
+  allApiKeys.filterFunc = function(apikey) {
+    return VIP_PLUGIN_API_KEY === apikey.name;
+  };
+  allApiKeys.fetch({userId: user.id})
+  .then( () => {
+    if (allApiKeys.length > 1) {
+      // not normal. Delete all and create a new one
+      return deleteApiKeys(allApiKeys);
+    } else {
+      return allApiKeys.length ? allApiKeys.pop() : null;
+    }
+  })
+  // if it exists, check it
+  .then( apikey => {
+    // check if is ok
+    if (apikey && isGirderApiKeyOk) {
+      return apikey;
+    } else if (apikey) {
+      // not ok, delete it
+      return deleteApiKeys(apikey);
+    }
+  })
+  // create it if necessary
+  .then( apikey => apikey ? apikey : createGirderApiKey()  )
+  // and push it on vip
+  .then( apikey => carmin.createOrUpdateApiKey(
+    VIP_EXTERNAL_STORAGE_NAME, apikey.get('key'))
+  );
+}
+
+function createGirderApiKey() {
+  var apikey = new ApiKeyModel();
+  apikey.set({
+    name: VIP_PLUGIN_API_KEY,
+    tokenDuration: 1
+  });
+  apikey.save().then( () => return apikey);
+}
+
+function isGirderApiKeyOk(apikey) {
+  var error;
+  if (!apikey.get("active")) {
+    error = 'Your Girder API key for VIP is not active. It will be replaced';
+  } else if (!apikey.has("tokenDuration") || apikey.get("tokenDuration") > 1) {
+    error = 'Your Girder API key for VIP allowed for long-lived tokens. It will be replaced';
+  } else {
+    return true;
+  }
+  messageGirder("warning", error);
+  return false;
+}
+
+function deleteApiKeys(apiKeys) {
+  if (! _.isArray(apiKeys))
+    apiKeys = [ apiKeys ];
+  var resources = JSON.stringify({
+   api_key : _.pluck(apiKeys, 'id')
+  });
+  return restRequest({
+      url: 'resource',
+      method: 'POST',
+      data: { resources: resources, progress: true },
+      headers: { 'X-HTTP-Method-Override': 'DELETE' }
+  })
+  // need to return void
+  .then( () => return undefined );
+}
+
+// CARMIN utils
+
+function checkRequestError (data) {
+  if (typeof data !== 'undefined' && typeof data.errorCode !== 'undefined' && data.errorCode != null) {
+    messageGirder("danger", data.errorMessage);
+    return 1;
+  }
+  return 0;
 }
 
 function sortPipelines(allPipelines) {
@@ -119,73 +199,7 @@ function sortPipelines(allPipelines) {
   //  "42" : [{identifier : xxxx, ... ,versionId : 42}, ... , {identifier : xxxx, ... ,versionId : 31}] }
 }
 
-function createNewToken(user) {
-  return createOrVerifyPluginApiKey(user)
-  .then( apikey => {
-    return restRequest({
-      method: 'POST',
-      url: 'api_key/token',
-      data: {
-        key: apikey.get("key")
-      }
-    });
-  })
-  .then(resp => resp.authToken.token);
-}
 
-function createOrVerifyPluginApiKey(user) {
-  return new Promise((resolve, reject) => {
-    var allApiKeys = new ApiKeyCollection();
-    // filter apikey to only select the one searched
-    allApiKeys.filterFunc = function(apikey) {
-      return VIP_PLUGIN_API_KEY === apikey.name;
-    };
-
-    allApiKeys.on('g:changed', () => {
-      if (allApiKeys.length > 1) {
-        reject("Too many apikeys returned");
-      } else {
-        resolve(allApiKeys.length ? allApiKeys.pop() : null);
-      }
-    })
-    .fetch({
-      userId: user.id
-    })
-  })
-  .then(apikey => {
-    if (apikey) {
-      return verifyPluginApiKey(apikey);
-    } else {
-      return createPluginApiKey();
-    }
-  });
-}
-
-function verifyPluginApiKey(apikey) {
-  if (!apikey.get("active")) {
-    messageGirder("warning", "The girder API key to use the VIP plugin should \
-      be active")
-    return Promise.reject();
-  } else if (!apikey.has("tokenDuration") || apikey.get("tokenDuration") > 1) {
-    messageGirder("warning", "The girder API key to use the VIP plugin should \
-      have a token duration of one day")
-    return Promise.reject();
-  } else {
-    return Promise.resolve(apikey);
-  }
-}
-
-function createPluginApiKey() {
-  return new Promise(resolve => {
-    var apikey = new ApiKeyModel();
-    apikey.set({
-      name: VIP_PLUGIN_API_KEY,
-      tokenDuration: 1
-    });
-    apikey.once('g:saved', () => resolve(apikey))
-    .save();
-  });
-}
 
 export {
   getTimestamp,
@@ -197,5 +211,7 @@ export {
   saveVipApiKey,
   sortPipelines,
   createOrVerifyPluginApiKey,
-  createNewToken
+  createNewToken,
+  updateGirderApiKey,
+  isVipPlatformConfig
 };

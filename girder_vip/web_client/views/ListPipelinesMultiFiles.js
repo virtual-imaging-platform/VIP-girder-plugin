@@ -54,7 +54,14 @@ var ListPipelines = View.extend({
 
 
     Promise.all([getPipelinesPromise, fetchAllFilesPromise])
-    .then( () => this.render())
+    .then( () => {
+      if (this.allFiles.length) {
+        this.render();
+      } else {
+        messageGirder('warning', 'The selected items do not have any file');
+        router.navigate('/', {trigger: true});
+      }
+    })
     .catch( () => {
       messageGirder('danger', 'Error initializing VIP launch page');
       router.navigate('/', {trigger: true});
