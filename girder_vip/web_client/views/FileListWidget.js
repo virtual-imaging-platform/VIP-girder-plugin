@@ -30,6 +30,7 @@ wrap(FileListWidget, 'render', function(render) {
 
   if (this.parentView.showVipPipelines) {
     this.showPipelinesModal(this.parentView.vipPipelineFileId);
+    this.parentView.showVipPipelines = false;
   }
 
   return this;
@@ -59,6 +60,7 @@ FileListWidget.prototype.canRenderVipPlugin = function (item) {
   }
   // there's an error
 
+  this.parentView.showVipPipelines = false;
   messageGirder('danger', error);
   router.navigate('/item/' + item.id, {replace: true});
   return false;

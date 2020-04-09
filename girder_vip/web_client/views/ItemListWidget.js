@@ -80,6 +80,7 @@ ItemListWidget.prototype.canRenderVipPlugin = function (model) {
   }
   // there's an error
 
+  this.parentView.parentView.showVipPipelines = false;
   messageGirder('danger', error);
   this.navigateToParentViewRoute();
   return false;
@@ -111,6 +112,7 @@ ItemListWidget.prototype.fetchFilesForItem = function (item) {
 ItemListWidget.prototype.onItemFilesReceived = function () {
   // is there a requested modal ?
   if (this.parentView.parentView.showVipPipelines) {
+    this.parentView.parentView.showVipPipelines = false;
     var file = this.itemFiles.get(this.parentView.parentView.vipPipelineFileId);
     if ( ! file) {
       messageGirder('danger', 'You cannot launch a VIP pipeline on this file because it does not exist in this item');
