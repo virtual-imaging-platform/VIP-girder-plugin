@@ -33,12 +33,12 @@ var ListPipelinesWidget = View.extend({
     // Get api key of VIP
     var apiKeyVip = getCurrentApiKeyVip();
     if (apiKeyVip == null) {
-    //  TODO close modal
+      this.$el.modal('hide');
       return ;
     }
     if (! settings.file || ! settings.item) {
       messageGirder('danger', 'Missing information to launch a VIP pipeline');
-      //  TODO close modal
+      this.$el.modal('hide');
       return ;
     }
 
@@ -46,6 +46,7 @@ var ListPipelinesWidget = View.extend({
     this.file = settings.file;
     this.item = settings.item;
     this.goingToConfirmDialog = false;
+    this.originalRoute = Backbone.history.fragment;
 
     this.foldersCollection = [];
     this.carmin = new CarminClient(constants.CARMIN_URL, apiKeyVip);
@@ -72,23 +73,27 @@ var ListPipelinesWidget = View.extend({
     this.$el.girderModal(this).on('hidden.bs.modal', () => {
       if (! this.goingToConfirmDialog) {
         // reset route to the former one
-        router.navigate(this.getParentRoute(), {replace: true});
+        this.goToParentRoute();
       }
     });
 
     return this;
   },
 
-  getParentRoute: function () {
+  goToParentRoute: function () {
 
     var currentRoute = Backbone.history.fragment;
+    if (currentRoute !== this.originalRoute) {
+      // the route has already changed (back or loading custom url)
+      return;
+    }
     // default for folder view, remove starting from item path
     var stopIndex = currentRoute.indexOf('/item/');
     // but if it start by 'item', its an item view, remove starting from file path
-    if (currentRoute.startWith('item'))
+    if (currentRoute.startsWith('item'))
       var stopIndex = currentRoute.indexOf('/file/');
 
-    return currentRoute.substring(0, stopIndex);
+    router.navigate(currentRoute.substring(0, stopIndex), {replace: true});
   },
 
   confirmPipeline: function (e) {

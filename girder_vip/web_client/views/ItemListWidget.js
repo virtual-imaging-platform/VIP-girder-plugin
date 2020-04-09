@@ -22,8 +22,14 @@ import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';
 wrap(ItemListWidget, 'render', function(render) {
   render.call(this);
 
+  // there is a bug, there's a first render before the item collection is loaded
+  if (! this.passageNumber) {
+    this.passageNumber = 1;
+    return this;
+  }
+
   // parentView is a HierarchyView
-  if ( ! canRenderVipPlugin(this.parentView.parentModel)) {
+  if ( ! this.canRenderVipPlugin(this.parentView.parentModel)) {
     return this;
   }
 
@@ -50,7 +56,7 @@ wrap(ItemListWidget, 'render', function(render) {
 });
 
 // return true if render must be done
-FileListWidget.prototype.canRenderVipPlugin = function (model) {
+ItemListWidget.prototype.canRenderVipPlugin = function (model) {
   var showModal = this.parentView.parentView.showVipPipelines;
   var isApiKeyOk = hasTheVipApiKeyConfigured();
   var isPluginActivated = isPluginActivatedOn(model);
@@ -122,7 +128,7 @@ ItemListWidget.prototype.onItemFilesReceived = function () {
   } else {
     var file = this.itemFiles.pop();
     var currentRoute = Backbone.history.fragment;
-    router.navigate(currentRoute + 'item/' + this.itemToLaunch.id + '/file/' + file.id + '?dialog=vip-pipelines');
+    router.navigate(currentRoute + '/item/' + this.itemToLaunch.id + '/file/' + file.id + '?dialog=vip-pipelines');
     this.showPipelinesModal(file);
   }
 
@@ -133,11 +139,8 @@ ItemListWidget.prototype.showConfirmModal = function (file) {
     text: 'This item has several files. Do you want to see the file list to launch a VIP pipeline on any of them ?',
     yesText: 'OK',
     yesClass: 'btn-primary',
-    confirmCallback: () => {
-      events.trigger('g:navigateTo', ItemView, {
-        item: this.itemToLaunch
-      });
-    }
+    confirmCallback: () => router.navigate('item/' + this.itemToLaunch.id, {trigger : true})
+
   };
   confirm(params);
 };

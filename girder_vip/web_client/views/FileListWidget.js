@@ -17,11 +17,11 @@ import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';
 wrap(FileListWidget, 'render', function(render) {
   render.call(this);
 
-  if (! canRenderVipPlugin(this.parentItem)) {
+  if (! this.canRenderVipPlugin(this.parentItem)) {
     return this;
   }
 
-  if (item.get('_accessLevel') >= AccessType.READ) {
+  if (this.parentItem.get('_accessLevel') >= AccessType.READ) {
     this.collection.each(file => {
       this.$('li.g-file-list-entry .g-show-info[file-cid=' + file.cid + ']')
         .after(ButtonLaunchPipeline({model: file}));
