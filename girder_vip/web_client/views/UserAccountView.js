@@ -54,12 +54,12 @@ UserAccountView.prototype.events['submit #ApiKeyVip-form'] = function (e) {
   var carmin = new CarminClient(constants.CARMIN_URL, newkey);
   carmin.listExternalPlatforms()
   .then(externalPlatforms => {
-      if ( ! _.findWhere(externalPlatforms, {identifier : VIP_EXTERNAL_STORAGE_NAME}))
+      if ( ! _.findWhere(externalPlatforms, {identifier : constants.VIP_EXTERNAL_STORAGE_NAME}))
         messageGirder("danger", "There is a configuration problem about VIP, please contact administrators");
       else {
         updateGirderApiKey(carmin)
-        .saveVipApiKey(newkey)
-        .then(() => this.render())
+        .then( () => saveVipApiKey(newkey))
+        .then( () => this.render())
         .catch(error => {
             messageGirder("danger", "An error occured while configuring Girder API key, please contact administrators -- " + error);
         });
@@ -67,10 +67,10 @@ UserAccountView.prototype.events['submit #ApiKeyVip-form'] = function (e) {
   })
   .catch(data => {
     // Wrong API
-    if (data.errorCode && data.errorCode === 40100) {
+    if (data.errorCode && data.errorCode === 40101) {
       messageGirder("danger", "This API key is wrong, it is not saved");
     } else {
-      messageGirder("danger", "An error occured while changing VIP API key, please contact administrators");
+      messageGirder("danger", "An error occured while changing VIP API key, please contact administrators -- " + data);
     }
   });
 };

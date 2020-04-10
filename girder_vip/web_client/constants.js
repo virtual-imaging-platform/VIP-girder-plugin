@@ -22,11 +22,14 @@ const STATUSES = {
   KILLED:  { order : 70, text: "Killed"}
 };
 
+const NEEDED_TOKEN_SCOPES = ['core.data.read', 'core.data.write'];
+
 export {
   CARMIN_URL,
   COLLECTIONS_IDS,
   STATUSES,
   ENABLE_MULTIFILES,
   VIP_PLUGIN_API_KEY,
-  VIP_EXTERNAL_STORAGE_NAME
+  VIP_EXTERNAL_STORAGE_NAME,
+  NEEDED_TOKEN_SCOPES
 };

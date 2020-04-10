@@ -34,7 +34,7 @@ CarminClient.prototype.doRequest = function(path, method, opts) {
 
           resolve(response);
         }
-        else if (isJson(xmlHttp.responseText) {
+        else if (isJson(xmlHttp.responseText)) {
           reject(JSON.parse(xmlHttp.responseText));
         } else {
           reject(xmlHttp.status);

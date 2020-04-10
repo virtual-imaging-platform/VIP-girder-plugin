@@ -7,7 +7,7 @@ import router from '@girder/core/router';
 import events from '@girder/core/events';
 import ApiKeyCollection from '@girder/core/collections/ApiKeyCollection.js'
 import ApiKeyModel from '@girder/core/models/ApiKeyModel.js'
-import { VIP_PLUGIN_API_KEY, COLLECTIONS_IDS, VIP_EXTERNAL_STORAGE_NAME } from '../constants';
+import { VIP_PLUGIN_API_KEY, COLLECTIONS_IDS, VIP_EXTERNAL_STORAGE_NAME, NEEDED_TOKEN_SCOPES } from '../constants';
 
 // Import views
 import FrontPageView from '@girder/core/views/body/FrontPageView';
@@ -32,7 +32,7 @@ function messageGirder (type, text, duration = 5000) {
 function hasTheVipApiKeyConfigured() {
   var currentUser = getCurrentUser()
   return currentUser !== null
-    && typeof currentUser !== 'undefined'
+    && currentUser.get('apiKeyVip') !== undefined
     && currentUser.get('apiKeyVip').length != 0;
 }
 
@@ -91,7 +91,7 @@ function updateGirderApiKey(carminClient) {
   allApiKeys.filterFunc = function(apikey) {
     return VIP_PLUGIN_API_KEY === apikey.name;
   };
-  allApiKeys.fetch({userId: user.id})
+  return allApiKeys.fetch({userId: getCurrentUser().id})
   .then( () => {
     if (allApiKeys.length > 1) {
       // not normal. Delete all and create a new one
@@ -103,7 +103,7 @@ function updateGirderApiKey(carminClient) {
   // if it exists, check it
   .then( apikey => {
     // check if is ok
-    if (apikey && isGirderApiKeyOk) {
+    if (apikey && isGirderApiKeyOk(apikey)) {
       return apikey;
     } else if (apikey) {
       // not ok, delete it
@@ -113,8 +113,8 @@ function updateGirderApiKey(carminClient) {
   // create it if necessary
   .then( apikey => apikey ? apikey : createGirderApiKey()  )
   // and push it on vip
-  .then( apikey => carmin.createOrUpdateApiKey(
-    VIP_EXTERNAL_STORAGE_NAME, apikey.get('key'))
+  .then( apikey =>
+    carminClient.createOrUpdateApiKey(VIP_EXTERNAL_STORAGE_NAME, apikey.get('key'))
   );
 }
 
@@ -124,7 +124,7 @@ function createGirderApiKey() {
     name: VIP_PLUGIN_API_KEY,
     tokenDuration: 1
   });
-  apikey.save().then( () => return apikey);
+  return apikey.save().then( () => apikey);
 }
 
 function isGirderApiKeyOk(apikey) {
@@ -133,7 +133,11 @@ function isGirderApiKeyOk(apikey) {
     error = 'Your Girder API key for VIP is not active. It will be replaced';
   } else if (!apikey.has("tokenDuration") || apikey.get("tokenDuration") > 1) {
     error = 'Your Girder API key for VIP allowed for long-lived tokens. It will be replaced';
+  } else if (apikey.get('scope') !== null &&
+    _.difference(NEEDED_TOKEN_SCOPES, apikey.get('scope').length !== 0)) {
+    error = 'Your Girder API key for VIP does not have enough rights. It will be replaced';
   } else {
+    // it's ok
     return true;
   }
   messageGirder("warning", error);
@@ -141,19 +145,19 @@ function isGirderApiKeyOk(apikey) {
 }
 
 function deleteApiKeys(apiKeys) {
-  if (! _.isArray(apiKeys))
-    apiKeys = [ apiKeys ];
-  var resources = JSON.stringify({
-   api_key : _.pluck(apiKeys, 'id')
-  });
-  return restRequest({
-      url: 'resource',
-      method: 'POST',
-      data: { resources: resources, progress: true },
-      headers: { 'X-HTTP-Method-Override': 'DELETE' }
-  })
-  // need to return void
-  .then( () => return undefined );
+  if (apiKeys instanceof Backbone.Model) {
+    // should return void
+    return apiKeys.destroy().then( () => undefined);
+  } else if (apiKeys instanceof Backbone.Collection) {
+    return Promise.all(
+      apiKeys.reduce(
+        (allPromises, apikey) => {
+          allPromises.push(apikey.destroy());
+          return allPromises;
+      }, [])
+    ).then( () => undefined);
+  }
+  throw "Unexpected api key to delete";
 }
 
 // CARMIN utils
@@ -204,14 +208,13 @@ function sortPipelines(allPipelines) {
 export {
   getTimestamp,
   messageGirder,
-  checkRequestError,
+  getCurrentApiKeyVip,
   isPluginActivatedOn,
   hasTheVipApiKeyConfigured,
-  getCurrentApiKeyVip,
   saveVipApiKey,
-  sortPipelines,
-  createOrVerifyPluginApiKey,
-  createNewToken,
+
   updateGirderApiKey,
-  isVipPlatformConfig
+
+  checkRequestError,
+  sortPipelines
 };
