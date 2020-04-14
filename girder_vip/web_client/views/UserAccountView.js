@@ -1,11 +1,9 @@
 // Import utilities
 import { wrap } from '@girder/core/utilities/PluginUtils';
-import { restRequest } from '@girder/core/rest'
 import { getCurrentUser } from '@girder/core/auth';
-import {saveVipApiKey, messageGirder, isVipPlatformConfig, updateGirderApiKey} from '../utilities/vipPluginUtils';
+import {saveVipApiKey, messageGirder, updateApiKeysConfiguration, verifyApiKeysConfiguration} from '../utilities/vipPluginUtils';
 import router from '@girder/core/router';
 import events from '@girder/core/events';
-import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
 
 // Import views
@@ -20,7 +18,7 @@ wrap(UserAccountView, 'render', function(render) {
   render.call(this);
 
   var apiKeyVip = getCurrentUser().get('apiKeyVip');
-  if (typeof apiKeyVip === 'undefined') apiKeyVip = '';
+  if (! apiKeyVip) apiKeyVip = '';
 
   const TAB_NAME = "vip";
   // Display tab and pane
@@ -33,12 +31,35 @@ wrap(UserAccountView, 'render', function(render) {
   tablink.on('shown.bs.tab', (e) => {
     this.tab = $(e.currentTarget).attr('name');
     router.navigate('useraccount/' + this.model.id + '/' + this.tab);
+
+    if (! this.vipPluginConfigChecked) {
+      this.vipPluginConfigChecked = true;
+      this.checkVipPluginConfig();
+    }
   });
   // display the tab if requested from url
   if (TAB_NAME === this.tab) {
     tablink.tab("show");
   }
 });
+
+UserAccountView.prototype.checkVipPluginConfig = function () {
+
+  if (! this.$('#creatis-apikey-vip').val()) return;
+
+  // Test and correct everything
+  verifyApiKeysConfiguration({
+    printWarning : false
+  })
+  .then(isOk => {
+    if (isOk) return;
+    messageGirder("warning", "There is a problem with your VIP configuration. Please click \"Update\"");
+  })
+  .catch(error => {
+    messageGirder("warning", "There is a with the VIP plugin configuration : " + error);
+  });
+
+};
 
 UserAccountView.prototype.events['submit #ApiKeyVip-form'] = function (e) {
   e.preventDefault();
@@ -49,28 +70,20 @@ UserAccountView.prototype.events['submit #ApiKeyVip-form'] = function (e) {
     saveVipApiKey(newkey).then(() => this.render());
     return;
   }
-    // Test API key on VIP
-    // and Verify the platform is declared on VIP
-  var carmin = new CarminClient(constants.CARMIN_URL, newkey);
-  carmin.listExternalPlatforms()
-  .then(externalPlatforms => {
-      if ( ! _.findWhere(externalPlatforms, {identifier : constants.VIP_EXTERNAL_STORAGE_NAME}))
-        messageGirder("danger", "There is a configuration problem about VIP, please contact administrators");
-      else {
-        updateGirderApiKey(carmin)
-        .then( () => saveVipApiKey(newkey))
-        .then( () => this.render())
-        .catch(error => {
-            messageGirder("danger", "An error occured while configuring Girder API key, please contact administrators -- " + error);
-        });
-      }
+  // Test and correct everything
+  updateApiKeysConfiguration({
+    newKey : newkey,
+    printWarning : false,
+    keysCollection : this.apiKeyListWidget.collection
   })
-  .catch(data => {
-    // Wrong API
-    if (data.errorCode && data.errorCode === 40101) {
-      messageGirder("danger", "This API key is wrong, it is not saved");
-    } else {
-      messageGirder("danger", "An error occured while changing VIP API key, please contact administrators -- " + data);
-    }
+  .then(() => saveVipApiKey(newkey))
+  .then(() => {
+    getCurrentUser().set('apiKeyVip', newkey);
+    // reload header view to refresh the 'My execution' menu
+    events.trigger('vip:vipApiKeyChanged', {apiKeyVip: newkey});
+    messageGirder("succes", "Your VIP configuration has been updated");
+  })
+  .catch(error => {
+    messageGirder("danger", "An error occured while changing VIP API key : " + error );
   });
 };

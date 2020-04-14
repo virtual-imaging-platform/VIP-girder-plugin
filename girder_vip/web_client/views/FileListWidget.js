@@ -1,14 +1,13 @@
 // Import utilities
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import { AccessType } from '@girder/core/constants';
-import events from '@girder/core/events';
 import router from '@girder/core/router';
 import { hasTheVipApiKeyConfigured, isPluginActivatedOn, messageGirder } from '../utilities/vipPluginUtils';
-import ListPipelinesWidget from './ListPipelinesWidget';
 
 // Import views
 import FileListWidget from '@girder/core/views/widgets/FileListWidget';
 import ItemView from '@girder/core/views/body/ItemView';
+import ListPipelinesWidget from './ListPipelinesWidget';
 
 // Import about Creatis
 import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';

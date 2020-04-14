@@ -3,16 +3,13 @@ import _ from 'underscore';
 import router from '@girder/core/router';
 import { restRequest } from '@girder/core/rest';
 import { cancelRestRequests } from '@girder/core/rest';
-import { confirm } from '@girder/core/dialog';
 import { getCurrentUser } from '@girder/core/auth';
 import events from '@girder/core/events';
-import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip, sortPipelines, messageGirder } from '../utilities/vipPluginUtils';
-import FileCollection from '@girder/core/collections/FileCollection';
+import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, getCarminClient } from '../utilities/vipPluginUtils';
 
 // Import Model
-import FileModel from '@girder/core/models/FileModel';
+import FileCollection from '@girder/core/collections/FileCollection';
 
 // Import views
 import View from '@girder/core/views/View';
@@ -26,8 +23,8 @@ var ListPipelines = View.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
-    var apiKeyVip = getCurrentApiKeyVip();
-    if (apiKeyVip == null)
+    if (! hasTheVipApiKeyConfigured())
+      // todo
       return ;
 
     if (typeof settings.itemsIds == 'undefined' || settings.itemsIds == null) {
@@ -39,9 +36,8 @@ var ListPipelines = View.extend({
 
     this.user = getCurrentUser();
     this.foldersCollection = [];
-    this.carmin = new CarminClient(constants.CARMIN_URL, apiKeyVip);
 
-    var getPipelinesPromise = this.carmin.listPipelines()
+    var getPipelinesPromise = getCarminClient().listPipelines()
     .then(pipelines => this.pipelines = sortPipelines(pipelines))
     .catch( (status) => {
       messageGirder('danger', 'Error fetching VIP pipelines' + status);
@@ -121,7 +117,7 @@ var ListPipelines = View.extend({
   confirmPipeline: function (e) {
     var pipelineIdentifier = $(e.currentTarget)[0].value;
 
-    this.carmin.describePipeline(pipelineIdentifier).then(function (data) {
+    getCarminClient().describePipeline(pipelineIdentifier).then(function (data) {
       if (typeof data.errorCode !== 'undefined') {
         events.trigger('g:alert', {
           text: "Unable to retrieve application informations for this version",
@@ -134,8 +130,7 @@ var ListPipelines = View.extend({
           files: this.files,
           filesCount: Object.keys(this.files).length,
           pipeline: data,
-          foldersCollection: this.foldersCollection,
-          carmin: this.carmin,
+          foldersCollection: this.foldersCollection
           parentView: this,
           el: $('#g-dialog-container')
         });

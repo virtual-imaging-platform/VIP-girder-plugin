@@ -1,19 +1,14 @@
 // Import utilities
-import _ from 'underscore';
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import { AccessType } from '@girder/core/constants';
-import events from '@girder/core/events';
 import router from '@girder/core/router';
-import { restRequest } from '@girder/core/rest';
 import FileCollection from '@girder/core/collections/FileCollection';
 import { hasTheVipApiKeyConfigured, isPluginActivatedOn, messageGirder } from '../utilities/vipPluginUtils';
-import ListPipelinesWidget from './ListPipelinesWidget';
 import { confirm } from '@girder/core/dialog';
 
 // Import views
 import ItemListWidget from '@girder/core/views/widgets/ItemListWidget';
-import ItemView from '@girder/core/views/body/ItemView';
-import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
+import ListPipelinesWidget from './ListPipelinesWidget';
 
 // Import Templates
 import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';

@@ -3,12 +3,8 @@ import router from '@girder/core/router';
 import events from '@girder/core/events';
 import { hasTheVipApiKeyConfigured, messageGirder } from './utilities/vipPluginUtils';
 
-// Import Model
-import FileModel from '@girder/core/models/FileModel';
-
 // Import Views
 import MyExecutions from './views/MyExecutions';
-import ListPipelinesMultiFiles from './views/ListPipelinesMultiFiles';
 import ItemView from '@girder/core/views/body/ItemView';
 import FolderView from '@girder/core/views/body/FolderView';
 import CollectionView from '@girder/core/views/body/CollectionView';

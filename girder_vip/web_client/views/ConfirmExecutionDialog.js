@@ -1,15 +1,16 @@
 // Import utilities
 import _ from 'underscore';
-import '@girder/core/utilities/jquery/girderModal';
 import { restRequest, getApiRoot } from '@girder/core/rest';
 import events from '@girder/core/events';
 import { getCurrentUser} from '@girder/core/auth';
 import { checkRequestError, messageGirder, getTimestamp,
-  createOrVerifyPluginApiKey, createNewToken } from '../utilities/vipPluginUtils';
+  verifyApiKeysConfiguration, fetchGirderFolders} from '../utilities/vipPluginUtils';
 import 'bootstrap/js/button';
+import FolderCollection from '@girder/core/collections/FolderCollection';
 
 // Import views
 import View from '@girder/core/views/View';
+import '@girder/core/utilities/jquery/girderModal';
 
 // Import templates
 import ConfirmExecutionDialogTemplate from '../templates/confirmExecutionDialog.pug';
@@ -19,28 +20,35 @@ var ConfirmExecutionDialog = View.extend({
 
   initialize: function (settings) {
     this.file = settings.file;
-    this.currentPipeline = settings.pipeline;
-    this.foldersCollection = settings.foldersCollection;
-    this.carmin = settings.carmin;
-    this.pathVIP = "/vip/Home/Girder/";
-    this.filesInput = [this.file._id];
-    this.parameters = {};
-
-    // Sort the foldersCollection array according to "path" (parameter "resultDirectory")
-    this.foldersCollection.sort(function(a, b){
-      return a.path.localeCompare(b.path)
-    });
-
-    // verify that the api key is OK
-    createOrVerifyPluginApiKey(getCurrentUser())
-    .then( () => $('#run-execution').prop("disabled", false) )
-    .catch(e => {
-      console.log(e);
-      messageGirder("warning", "There is a problem with the Girder API key. \
-        Please correct it and come back");
-    });
+    this.pipeline = settings.pipeline;
 
     this.render();
+    new LoadingAnimation({
+        el: this.$('.modal-body'),
+        parentView: this
+    }).render();
+
+    (settings.vipConfigOk ?
+      Promise.resolve(true)
+      :
+      verifyApiKeysConfiguration({printWarning : true})
+    )
+    .then((isOk) => {
+      if (isOk) {
+        return fetchGirderFolders(getCurrentUser())
+        .then((userFolderGraph) => {
+          this.usersFolders = userFolderGraph;
+          this.render());
+        }
+      } else {
+        // warning already printed
+        this.$el.modal('hide');
+      }
+    })
+    .catch(error => {
+      messageGirder('danger', 'Cannot launch a VIP pipeline : ' + error);
+      this.$el.modal('hide');
+    });
   },
 
   events: {
@@ -50,9 +58,9 @@ var ConfirmExecutionDialog = View.extend({
   render: function () {
     // Display the modal with the parameter of the pipeline selectionned
     $('#g-dialog-container').html(ConfirmExecutionDialogTemplate({
-      pipeline: this.currentPipeline,
+      pipeline: this.pipeline,
       file: this.file,
-      folders: this.foldersCollection,
+      folders: getUsersFolderWithIndent(),
       authorizedForVersionOne: this.checkParametersForVersionOne(this.currentPipeline.parameters)
     })).girderModal(this);
 
@@ -64,9 +72,25 @@ var ConfirmExecutionDialog = View.extend({
     return this;
   },
 
+  getUsersFolderWithIndent: function() {
+    if (! this.usersFolders) return false;
+    var folders = new FolderCollection();
+
+    var adaptFolder = (folder) => {
+      folder.model.set('indentText', "&nbsp;".repeat((folder.level - 1) * 3));
+      folders.add(folder.model);
+      _each(folder.children, child => adaptFolder(child) );
+    }
+
+    _.each(this.usersFolders.children, folder => adaptFolder(folder));
+
+    return folders;
+  },
+
   initExecution: function (e) {
     // Cancel the button's action
     e.preventDefault();
+    return;
 
 
     var nameExecution = $('#name-execution');
@@ -138,7 +162,7 @@ var ConfirmExecutionDialog = View.extend({
         } else if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) {
           this.parameters[param.name] = $('#'+param.name).val();
         } else if (param.type == "File" && !param.defaultValue) {
-          this.parameters[param.name] = this.constructApiUri("/" + this.file.name, this.filesInput[0]);
+          this.parameters[param.name] = this.constructApiUri("/" + this.file.name, this.file._id);
         } else if ($('#advanced-' + param.name).val() && param.defaultValue) {
           this.parameters[param.name] = $('#advanced-' + param.name).val();
         } else {
@@ -180,7 +204,7 @@ var ConfirmExecutionDialog = View.extend({
 
   saveExecutionOnGirder : function(data) {
     // the execution was launched successly
-    var filesInput = $.extend({}, this.filesInput);
+    var filesInput = $.extend({}, [this.file._id]);
     var params = {
       name: data.name,
       fileId: JSON.stringify(filesInput),

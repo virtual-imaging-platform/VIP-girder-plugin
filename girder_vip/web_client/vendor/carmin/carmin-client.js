@@ -193,4 +193,12 @@ CarminClient.prototype.createOrUpdateApiKey = function(platformIdentifier, apiKe
   return this.doRequestBody("user/externalKeys", "PUT", content, opts);
 }
 
+CarminClient.prototype.listUserExternalPlatformKeys = function() {
+  var opts = {};
+
+  opts.contentType = "application/json";
+  opts.async = true;
+  return this.doRequestBody("user/externalKeys", "GET", opts);
+}
+
 export default CarminClient;

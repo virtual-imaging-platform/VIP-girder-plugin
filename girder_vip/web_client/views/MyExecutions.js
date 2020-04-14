@@ -23,7 +23,7 @@ var MyExecutions = View.extend({
     cancelRestRequests('fetch');
 
     // Get the api key of VIP
-    var apiKeyVip = getCurrentApiKeyVip();
+    var apiKeyVip = getCurrentApiKeyVip(); // to change
     if (apiKeyVip == null) {
       return ;
     }

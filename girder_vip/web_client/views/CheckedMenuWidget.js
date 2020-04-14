@@ -1,6 +1,4 @@
 // Import utilities
-import _ from 'underscore';
-import router from '@girder/core/router';
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import events from '@girder/core/events';
 import { ENABLE_MULTIFILES } from '../constants';

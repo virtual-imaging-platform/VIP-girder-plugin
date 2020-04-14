@@ -3,22 +3,19 @@ import _ from 'underscore';
 import { restRequest } from '@girder/core/rest';
 import router from '@girder/core/router';
 import { cancelRestRequests } from '@girder/core/rest';
-import { confirm } from '@girder/core/dialog';
 import { getCurrentUser } from '@girder/core/auth';
-import events from '@girder/core/events';
-import CarminClient from '../vendor/carmin/carmin-client';
-import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip, sortPipelines, messageGirder } from '../utilities/vipPluginUtils';
+import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, getCarminClient, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
 
 // Import views
 import View from '@girder/core/views/View';
 import ConfirmExecutionDialog from './ConfirmExecutionDialog';
+import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
+import '@girder/core/utilities/jquery/girderModal';
 
 // Import templates
 import ListPipelinesTemplate from '../templates/listPipelines.pug';
 
-import '@girder/core/utilities/jquery/girderModal';
 
 // List of pipelines allowed by the user
 var ListPipelinesWidget = View.extend({
@@ -31,8 +28,8 @@ var ListPipelinesWidget = View.extend({
     cancelRestRequests('fetch');
 
     // Get api key of VIP
-    var apiKeyVip = getCurrentApiKeyVip();
-    if (apiKeyVip == null) {
+    if (! hasTheVipApiKeyConfigured()) {
+      messageGirder('danger', 'You should have a VIP key configured to launch a VIP pipeline');
       this.$el.modal('hide');
       return ;
     }
@@ -49,17 +46,35 @@ var ListPipelinesWidget = View.extend({
     this.originalRoute = Backbone.history.fragment;
 
     this.foldersCollection = [];
-    this.carmin = new CarminClient(constants.CARMIN_URL, apiKeyVip);
 
-    // Get pipelines of user
-    // they are sorted by name with custom ids as keys
-    this.carmin.listPipelines().then(pipelines => {
-      this.pipelines = sortPipelines(pipelines);
-      this.render();
+
+    this.render();
+    new LoadingAnimation({
+        el: this.$('.modal-body'),
+        parentView: this
+    }).render();
+
+    verifyApiKeysConfiguration({printWarning : true})
+    .then(isOk => {
+      if (isOk) {
+        // Get pipelines of user
+        // they are sorted by name with custom ids as keys
+        return getCarminClient().listPipelines().then(pipelines => {
+          this.pipelines = sortPipelines(pipelines);
+          this.render();
+        });
+      } else {
+        // warning already printed
+        this.$el.modal('hide');
+      }
+    })
+    .catch(error => {
+      messageGirder('danger', 'Cannot launch a VIP pipeline : ' + error);
+      this.$el.modal('hide');
     });
 
 
-    this.getFolderRecursively(this.user.id, 0, "");
+    this.getFolderRecursively(this.user.id, 0, ""); // todo : to move
 
   },
 
@@ -110,14 +125,14 @@ var ListPipelinesWidget = View.extend({
         parentView: this
     }).render();
 
-    this.carmin.describePipeline(pipelineVersion.identifier)
+    getCarminClient().describePipeline(pipelineVersion.identifier)
     .then(pipeline => {
       this.goingToConfirmDialog = true;
       new ConfirmExecutionDialog({
         file: this.file,
         pipeline: pipeline,
         foldersCollection: this.foldersCollection,
-        carmin: this.carmin,
+        vipConfigOk : true,
         parentView: this.parentView,
         el: $('#g-dialog-container')
       });
@@ -125,42 +140,6 @@ var ListPipelinesWidget = View.extend({
     .catch(error => {
       messageGirder("danger", "Unable to retrieve application informations :" + error);
       this.render();
-    });
-  },
-
-  /**
-  * Get all folders from the current collection OR from the current user
-  * To get the folder tree of a collection
-  *   - Replace 'user' to 'collection' line 118
-  *   - Uncommented line 59
-  *   - Commented line 62
-  * Conversely, to get the folder tree of the user (default)
-  *   - Replace 'collection' to 'user' line 118
-  *   - Uncommented line 62
-  *   - Commented line 59
-  */
-  getFolderRecursively: function (parentId, i, path="") {
-    var parentType = (i++ == 0) ? "user" : "folder";
-
-    restRequest({
-      method: "GET",
-      url: "folder/",
-      data: {
-        parentType: parentType,
-        parentId: parentId
-      },
-    }).done((resp) => {
-      if (resp.length == 0) {
-        return;
-      }
-
-      _.each(resp, function(e) {
-        e.path = path.concat("/"+e.name);
-        e.indent = i;
-        e.indentText = "&nbsp;".repeat((i - 1) * 3);
-        this.foldersCollection.push(e);
-        this.getFolderRecursively(e._id, i, e.path);
-      }.bind(this));
     });
   }
 

@@ -6,22 +6,23 @@
       .g-dialog-subtitle= "Launch " + file.name() + " on :"
 
     .modal-body
-      table.table.table-hover
-        tbody
-          thead
-            tr
-              th Application
-              th Version
-              th Execution
-          each pipeline, pid in pipelines
-            tr
-              td= pipeline[0].name
-              td
-                select.form-control.select-version-pipeline(pid=pid)
-                  each pipelinesVersion in pipeline
-                    option(value=pipelinesVersion.versionId)= pipelinesVersion.version
-              td
-                button.btn.btn-small.btn-primary.confirm-pipeline(pid=pid) Run it
+      if pipelines
+        table.table.table-hover
+          tbody
+            thead
+              tr
+                th Application
+                th Version
+                th Execution
+            each pipeline, pid in pipelines
+              tr
+                td= pipeline[0].name
+                td
+                  select.form-control.select-version-pipeline(pid=pid)
+                    each pipelinesVersion in pipeline
+                      option(value=pipelinesVersion.versionId)= pipelinesVersion.version
+                td
+                  button.btn.btn-small.btn-primary.confirm-pipeline(pid=pid) Run it
 
     .modal-footer
       a.btn.btn-small.btn-default(data-dismiss="modal") Cancel

@@ -1,6 +1,5 @@
 // Import utilities
 import { wrap } from '@girder/core/utilities/PluginUtils';
-import { AccessType } from '@girder/core/constants';
 import { hasTheVipApiKeyConfigured } from '../utilities/vipPluginUtils';
 import events from '@girder/core/events';
 
