@@ -11,10 +11,10 @@
         .modal-header
           button.close(data-dismiss="modal", aria-hidden="true", type="button") &times;
           h4.modal-title!= pipeline.name + "  <small>Version " + pipeline.version + "</small>"
-          if file && file.name
+          if file && file.get('name')
             .g-dialog-subtitle
               i.icon-doc-inv
-              span= file.name
+              span= file.get('name')
 
           if filesCount && filesCount > 0
             .g-dialog-subtitle
@@ -70,7 +70,8 @@
                     input.form-control.optional-vip-param(id="input-param-" + i, type="text", placeholder="Default : " + param.defaultValue)
 
       .modal-footer
-        a.btn.btn-small.btn-default.btn-close-execution(data-dismiss="modal") Close
+        a.btn.btn-small.btn-default(data-dismiss="modal") Close
+        a.btn.btn-small.btn-default#go-back-to-pipelines(data-dismiss="modal") Go Back to pipeline list
         button.btn.btn-success#run-execution(type="submit", data-loading-text="<i class='fa fa-spinner fa-spin'></i> Execute")
           i.icon-play
           |  Execute

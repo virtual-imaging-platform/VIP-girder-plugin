@@ -80,7 +80,7 @@ var ListPipelinesWidget = View.extend({
     return getCarminClient().listPipelines().then(pipelines => {
       this.pipelines = sortPipelines(pipelines);
     });
-  }
+  },
 
   render: function () {
 
@@ -109,9 +109,10 @@ var ListPipelinesWidget = View.extend({
       // route already OK
       return;
     }
+    this.route = this.parentView.getRoute();
     var routeToAdd = '/file/' + this.file.id;
-    if ( ! this.route.indexOf('item/')) {
-      routeToAdd = '/item/' + this.item.id + '/' + route;
+    if ( this.route.indexOf('item/') === -1) {
+      routeToAdd = '/item/' + this.item.id + routeToAdd;
     }
     router.navigate(this.route + routeToAdd);
     handleOpen('vip-pipelines', {replace : true});

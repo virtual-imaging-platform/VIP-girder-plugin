@@ -38,4 +38,8 @@ var ConfigView = View.extend({
 
         return this;
     }
-}
+});
+
+
+
+export default ConfigView;

@@ -3,11 +3,13 @@ import _ from 'underscore';
 import moment from 'moment';
 import { getCurrentUser} from '@girder/core/auth';
 import { handleOpen } from '@girder/core/dialog';
+import { parseQueryString, splitRoute } from '@girder/core/misc';
+import router from '@girder/core/router';
 import { messageGirder, verifyApiKeysConfiguration, fetchGirderFolders, getCarminClient} from '../utilities/vipPluginUtils';
 //import 'bootstrap/js/button'; todo check if needed
 import { VIP_EXTERNAL_STORAGE_NAME } from '../constants';
 import FolderCollection from '@girder/core/collections/FolderCollection';
-import ExecutionModel from '../models/models/ExecutionModel';
+import ExecutionModel from '../models/ExecutionModel';
 
 // Import views
 import View from '@girder/core/views/View';
@@ -22,7 +24,8 @@ import ConfirmExecutionDialogTemplate from '../templates/confirmExecutionDialog.
 var ConfirmExecutionDialog = View.extend({
 
   events: {
-    'submit .creatis-launch-execution-form' : 'initExecution'
+    'submit .creatis-launch-execution-form' : 'buildParameters'
+    'click #go-back-to-pipelines' : 'goToPipelineModal'
   },
 
   initialize: function (settings) {
@@ -30,7 +33,7 @@ var ConfirmExecutionDialog = View.extend({
     this.item = settings.item;
     this.pipelines = settings.pipelines;
     this.pipeline = settings.pipeline;
-    this.pipelineId = settings.pipelineId;
+    this.pipelineId = settings.pipelineId || (this.pipeline && this.pipeline.id );
 
     this.initRoute();
 
@@ -53,7 +56,7 @@ var ConfirmExecutionDialog = View.extend({
     )
     .then((isOk) => {
       if (isOk) {
-        return fetchPipelineIfNecessary()
+        return this.fetchPipelineIfNecessary()
         .then( () => fetchGirderFolders(getCurrentUser()))
         .then( userFolderGraph => {
           this.usersFolders = this.getUsersFolderWithIndent(userFolderGraph),
@@ -102,7 +105,7 @@ var ConfirmExecutionDialog = View.extend({
   // Check the number of required parameters
   // If there is only one, the application can be started
   checkParametersForVersionOne: function () {
-    if (! this pipeline) return false;
+    if (! this.pipeline) return false;
     var requiredFile = 0;
     _.each(this.pipeline.parameters, function (param) {
       if (param.type == "File" && !param.defaultValue)
@@ -120,12 +123,13 @@ var ConfirmExecutionDialog = View.extend({
       // route already OK
       return;
     }
+    this.route = this.parentView.getRoute();
     var routeToAdd = '/file/' + this.file.id;
-    if ( ! this.route.indexOf('item/')) {
-      routeToAdd = '/item/' + this.item.id + '/' + route;
+    if ( this.route.indexOf('item/') === -1) {
+      routeToAdd = '/item/' + this.item.id + routeToAdd;
     }
     router.navigate(this.route + routeToAdd);
-    handleOpen('vip-launch', {replace : true});
+    handleOpen('vip-launch', {replace : true}, this.pipelineId);
     this.route = Backbone.history.fragment;
 
   },
@@ -161,10 +165,10 @@ var ConfirmExecutionDialog = View.extend({
     /*********************************/
 
     var allTabs = {ok : [], ko : []};
-    var insertInTab = (isOk, el) => tabsOk[isOk ? 'ok' : 'ko'].push(el);
+    var insertInTab = (isOk, el) => allTabs[isOk ? 'ok' : 'ko'].push(el);
 
     // Check General paramaters
-    var executionName = $('#name-execution').var();
+    var executionName = $('#name-execution').val();
     var girderFolderIndex = $('#selectFolderDestination').val();
     insertInTab(executionName && girderFolderIndex, this.$('#tab-general'));
 
@@ -173,7 +177,7 @@ var ConfirmExecutionDialog = View.extend({
     var fileParam;
     _.each(this.pipeline.parameters, (param, index) => {
       var paramInput = this.$('#input-param-' + index);
-      if (paramInput) {
+      if (paramInput.length) {
         execParams[param.name] = paramInput.val();
         if ( ! paramInput.hasClass( "optional-vip-param" )) {
           insertInTab(paramInput.val(), this.$('#tab-param-' + index));
@@ -185,13 +189,13 @@ var ConfirmExecutionDialog = View.extend({
     });
 
     _.each(allTabs.ko, tab => {
-      this.$('#tab-general').css('background-color', '#dc3545');
-      this.$('#tab-general').css('color', '#fff');
+      tab.css('background-color', '#dc3545');
+      tab.css('color', '#fff');
     });
 
     _.each(allTabs.ok, tab => {
-      this.$('#tab-general').css('background-color', '');
-      this.$('#tab-general').css('color', '');
+      tab.css('background-color', '');
+      tab.css('color', '');
     });
 
     // If the required parameters are not fill
@@ -244,11 +248,11 @@ var ConfirmExecutionDialog = View.extend({
           the 'My executions' menu (cause : " + error +  ")", 10000);
         $('#run-execution').button('reset');
       });
-    )
+    })
     .catch(error => {
       var msg = 'VIP error : ';
       if (data && data.errorCode) {
-        msg += data.errorMessage + ' (code ' + data.errorCode + ')');
+        msg += data.errorMessage + ' (code ' + data.errorCode + ')';
       } else {
         msg += error;
       }
@@ -272,7 +276,7 @@ var ConfirmExecutionDialog = View.extend({
   saveExecutionOnGirder : function(vipExec, fileParam) {
     var girderExec = new ExecutionModel({
       name: vipExec.name,
-      fileId: JSON.stringify({fileParam : this.file.id}}),
+      fileId: JSON.stringify({fileParam : this.file.id}),
       pipelineName: this.pipeline.name,
       vipExecutionId: vipExec.identifier,
       status: vipExec.status.toUpperCase(),
