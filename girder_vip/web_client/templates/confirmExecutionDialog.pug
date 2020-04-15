@@ -22,7 +22,7 @@
               span= filesCount + " selected files"
 
       .modal-body
-        if folders
+        if folders && pipeline
           ul.nav.nav-tabs
             li.active
               a(data-toggle="tab", id="tab-general", href="#general") General

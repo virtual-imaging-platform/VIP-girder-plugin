@@ -9,6 +9,7 @@ import { messageGirder, verifyApiKeysConfiguration, fetchGirderFolders, getCarmi
 //import 'bootstrap/js/button'; todo check if needed
 import { VIP_EXTERNAL_STORAGE_NAME } from '../constants';
 import FolderCollection from '@girder/core/collections/FolderCollection';
+import FolderModel from '@girder/core/models/FolderModel';
 import ExecutionModel from '../models/ExecutionModel';
 
 // Import views
@@ -24,7 +25,7 @@ import ConfirmExecutionDialogTemplate from '../templates/confirmExecutionDialog.
 var ConfirmExecutionDialog = View.extend({
 
   events: {
-    'submit .creatis-launch-execution-form' : 'buildParameters'
+    'submit .creatis-launch-execution-form' : 'buildParameters',
     'click #go-back-to-pipelines' : 'goToPipelineModal'
   },
 
@@ -33,7 +34,7 @@ var ConfirmExecutionDialog = View.extend({
     this.item = settings.item;
     this.pipelines = settings.pipelines;
     this.pipeline = settings.pipeline;
-    this.pipelineId = settings.pipelineId || (this.pipeline && this.pipeline.id );
+    this.pipelineId = settings.pipelineId || (this.pipeline && this.pipeline.identifier );
 
     this.initRoute();
 
@@ -99,20 +100,21 @@ var ConfirmExecutionDialog = View.extend({
   fetchPipelineIfNecessary: function() {
     if (this.pipeline) return Promise.resolve();
 
-    return getCarminClient().describePipeline(this.pipelineId);
+    return getCarminClient().describePipeline(this.pipelineId)
+    .then(pipeline => this.pipeline = pipeline);
   },
 
   // Check the number of required parameters
   // If there is only one, the application can be started
   checkParametersForVersionOne: function () {
-    if (! this.pipeline) return false;
+    if (! this.pipeline) return true;
     var requiredFile = 0;
     _.each(this.pipeline.parameters, function (param) {
       if (param.type == "File" && !param.defaultValue)
         requiredFile++;
     });
 
-    return (requiredFile <= 1) ? 1 : 0;
+    return requiredFile <= 1;
   },
 
   // todo refator this copy/paste from ListPipelineWidget
@@ -184,7 +186,7 @@ var ConfirmExecutionDialog = View.extend({
         }
       }
       if (param.type == "File" && !param.defaultValue) {
-        fileParam = param;
+        fileParam = param.name;
       }
     });
 
@@ -204,12 +206,8 @@ var ConfirmExecutionDialog = View.extend({
       return;
     }
 
-    // Loading animation on the button
-    messageGirder("info", "Launching execution, this could take a few seconds", 3000);
-    $('#run-execution').button('loading');
-
     // If there aren't problems with the parameters
-    this.launchExecution(executionName, this.usersFolder.at(girderFolderIndex), fileParam, execParams);
+    this.launchExecution(executionName, this.usersFolders.at(girderFolderIndex), fileParam, execParams);
   },
 
   // Get the parameters and launch the execution
@@ -219,11 +217,11 @@ var ConfirmExecutionDialog = View.extend({
     this.createResultFolder(executionName, girderFolder)
     .then( folder => {
 
-      execParams[fileParam] = VIP_EXTERNAL_STORAGE_NAME + "/" + this.file.id;
-      var resultsLocation = VIP_EXTERNAL_STORAGE_NAME + "/" + folder.id;
+      execParams[fileParam] = VIP_EXTERNAL_STORAGE_NAME + ":" + this.file.id;
+      var resultsLocation = VIP_EXTERNAL_STORAGE_NAME + ":" + folder.id;
 
       return getCarminClient().initAndStart(
-        nameExecution,
+        executionName,
         this.pipeline.identifier,
         resultsLocation,
         execParams
@@ -236,7 +234,7 @@ var ConfirmExecutionDialog = View.extend({
     .then(vipExec => {
       // nested promise chain to seperate in case of girder error after vip success
       // so no return
-      saveExecutionOnGirder(vipExec, fileParam)
+      this.saveExecutionOnGirder(vipExec, fileParam)
       .then( () => {
         messageGirder("success", "The execution is launched correctly");
         this.execSuccess = true;
@@ -251,19 +249,23 @@ var ConfirmExecutionDialog = View.extend({
     })
     .catch(error => {
       var msg = 'VIP error : ';
-      if (data && data.errorCode) {
-        msg += data.errorMessage + ' (code ' + data.errorCode + ')';
+      if (error && error.errorCode) {
+        msg += error.errorMessage + ' (code ' + error.errorCode + ')';
       } else {
         msg += error;
       }
       messageGirder("danger", msg);
       $('#run-execution').button('reset');
     });
+
+    // Loading animation on the button
+    messageGirder("info", "Launching execution, this could take a few seconds", 3000);
+    $('#run-execution').button('loading');
   },
 
   createResultFolder: function (executionName, parentFolder) {
     var dateString = moment().format("YYYY/MM/DD HH:mm:ss");
-    var folderName = "VIP Results - " + executionName + dateString;
+    var folderName = "VIP Results - " + executionName + ' - ' + dateString;
 
     var folder = new FolderModel({
       parentType: 'folder',
