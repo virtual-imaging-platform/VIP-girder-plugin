@@ -297,7 +297,7 @@ var ConfirmExecutionDialog = View.extend({
     });
   }
 
-  // For each error check if needed
+  // todo : check if needed
   /*
   messageDialog: function(type, message) {
     $('#run-execution').button('reset');

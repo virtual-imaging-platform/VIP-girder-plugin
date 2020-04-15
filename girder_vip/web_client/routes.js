@@ -9,6 +9,15 @@ import ItemView from '@girder/core/views/body/ItemView';
 import FolderView from '@girder/core/views/body/FolderView';
 import CollectionView from '@girder/core/views/body/CollectionView';
 
+import { exposePluginConfig } from '@girder/core/utilities/PluginUtils';
+
+exposePluginConfig('vip', 'plugins/vip/config');
+
+import ConfigView from './views/ConfigView';
+router.route('plugins/vip/config', 'vipConfig', function () {
+    events.trigger('g:navigateTo', ConfigView);
+});
+
 // add route to open launch popups
 router.route('item/:id/file/:id', 'item-file-vip-pipelines', function (itemId, fileId, params) {
     if (params.dialog === 'vip-pipelines') {

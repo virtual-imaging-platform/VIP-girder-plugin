@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # Description : Girder plugin to use VIP's applications.
-#           
+#
 # Author      : Frederic Cervenansky <frederic.cervenansky@creatis.insa-lyon.fr>
 #               Axel Bonnet <axel.bonnet@creatis.insa-lyon.fr>
 #
@@ -17,7 +17,6 @@ from girder.constants import AccessType
 # Local imports
 from . import execution_rest
 from .vipHandler import VipHandler
-from girder.plugin import GirderPlugin
 
 
 class VipPlugin(GirderPlugin):
@@ -33,6 +32,9 @@ class VipPlugin(GirderPlugin):
         UserModel().exposeFields(level=AccessType.READ, fields={'apiKeyVip'})
         info['apiRoot'].user.route('PUT', (':id', 'apiKeyVip'), vipHandler.setApiKeyVip)
         info['apiRoot'].user.route('GET', (':id', 'apiKeyVip'), vipHandler.getApiKeyVip)
+
+        # expose plugin conf
+        info['apiRoot'].system.route('GET', ('setting', 'vip_plugin'), vipHandler.getVipPluginConf)
 
         # Customizing the swagger page
         # Don't change this part
