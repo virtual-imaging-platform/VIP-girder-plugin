@@ -13,10 +13,6 @@ import CarminClient from '../vendor/carmin/carmin-client';
 
 // general utils
 
-function getTimestamp () {
-  return (Math.round((new Date()).getTime() / 1000));
-}
-
 function messageGirder (type, text, duration = 5000) {
   events.trigger('g:alert', {
     text: text,
@@ -25,23 +21,23 @@ function messageGirder (type, text, duration = 5000) {
   });
 }
 
-function fetchGirderFolders: function (model, level=0) {
+function fetchGirderFolders(model, level=0) {
   var children = new FolderCollection();
 
   return children.fetch({
       parentType: model.resourceName,
       parentId: model.id
   })
-  .then( (() => this).bind(children)
+  .then( function() {return this;}.bind(children))
   .then(children =>
     Promise.all( children.map(child => fetchGirderFolders(child, level+1)) )
   ).then(
-    childrenWithFolders => {
-      model : moder,
+    childrenWithFolders => { return {
+      model : model,
       level : level,
       children : _.sortBy(childrenWithFolders, child => child.model.get('name'))
-    }
-  );
+    };
+  });
 /*
   return restRequest({
     method: "GET",
@@ -96,7 +92,8 @@ function saveVipApiKey(newkey) {
     data: {
       apiKeyVip: newkey
     }
-  });
+  })
+  .then(() => getCurrentUser().set('apiKeyVip', newkey));
 }
 
 // key config stuff
@@ -125,9 +122,6 @@ const NOT_RECOVERABLE_ERRORS = [
 // if not ok and not recoverable, throw the error message
 function updateApiKeysConfiguration(opts) {
 
-    // test if vip key is configured
-    if (! hasTheVipApiKeyConfigured()) throw ERRORS.VIP_API_KEY_NOT_CONFIGURED;
-
     if (opts.newKey) getCarminClient(opts.newKey);
     // test vip config and api key
     return verifyVipConfig()
@@ -137,7 +131,7 @@ function updateApiKeysConfiguration(opts) {
       pushOnVip : true,
       firstTime : true,
       keysCollection : opts.keysCollection
-    });
+    }))
     .catch(error => {
       // deal with vip api error
       if (error.vipPluginError) {
@@ -159,13 +153,15 @@ function updateApiKeysConfiguration(opts) {
 function verifyApiKeysConfiguration(opts) {
 
   // test if vip key is configured
-  if (! hasTheVipApiKeyConfigured()) throw ERRORS.VIP_API_KEY_NOT_CONFIGURED;
+  if (! hasTheVipApiKeyConfigured()) {
+    return Promise.reject(ERRORS.VIP_API_KEY_NOT_CONFIGURED);
+  }
 
   // test it is valid (by fetching external keys)
-  return doVipRequest(getCarminClient().listUserExternalPlatformKeys)
+  return doVipRequest('listUserExternalPlatformKeys')
   // test there is a girder key in there
   .then(userVipKeys =>
-    _.findWhere(userVipKeys, {identifier : constants.VIP_EXTERNAL_STORAGE_NAME})
+    _.findWhere(userVipKeys, {storageIdentifier : VIP_EXTERNAL_STORAGE_NAME})
   )
   // verify it is ok
   .then(vipKeyForGirder => {
@@ -175,12 +171,13 @@ function verifyApiKeysConfiguration(opts) {
         onlyCheck : true,
         printWarning : opts.printWarning,
         keyValue : vipKeyForGirder.apiKey,
-        pushOnVip : false
+        pushOnVip : false,
+        keysCollection : opts.keysCollection
       });
     }
     // problem : girder non configured in vip or girder key not configured
     return verifyVipConfig()
-    .then( () => throw { vipPluginError : 'NO_KEY_CONFIGURED_IN_VIP' });
+    .then( () => { throw { vipPluginError : 'NO_KEY_CONFIGURED_IN_VIP' }});
   })
   .then( () => true)
   .catch(error => {
@@ -213,10 +210,10 @@ function verifyApiKeysConfiguration(opts) {
 */
 function verifyGirderApiKey(opts = {}) {
   var onWarningFunction = (errorCode) => {
-    if (printWarning) {
+    if (opts.printWarning) {
       messageGirder("danger", ERRORS[errorCode]);
     }
-    if (onlyCheck) {
+    if (opts.onlyCheck) {
       throw { vipPluginError : errorCode };
     }
   }
@@ -224,13 +221,13 @@ function verifyGirderApiKey(opts = {}) {
   return fetchGirderApiKeysForVip({keysCollection : opts.keysCollection})
   .then( (girderApiKeysForVip) => {
     if (opts.keyValue) {
-      return girderApiKeysForVip.findWhere({key : opts.keyValue});
-    } if (girderApiKeysForVip.length > 1) {
+      return _.find(girderApiKeysForVip, key => key.get('key') == opts.keyValue);
+    }
+    if (girderApiKeysForVip.length > 1) {
       onWarningFunction('SEVERAL_GIRDER_KEY');
       return deleteApiKeys(girderApiKeysForVip);
-    } else {
-      return girderApiKeysForVip.length ? girderApiKeysForVip.pop() : null;
     }
+    return girderApiKeysForVip.length ? girderApiKeysForVip.pop() : null;
   })
   // if it exists, check it
   .then( apikey => {
@@ -242,10 +239,12 @@ function verifyGirderApiKey(opts = {}) {
         onWarningFunction('NO_GIRDER_KEY');
       return undefined;
     }
-    return isGirderApiKeyOk(apikey, {
+    if ( ! isGirderApiKeyOk(apikey, {
       onError : onWarningFunction
-    })
-    .then(isOk => isOk ? apikey : deleteApiKeys(apikey));
+    })) {
+      return deleteApiKeys(apikey);
+    }
+    return apikey;
   })
   // create it if necessary
   .then( apikey => createAndPushGirderApiKey({
@@ -257,24 +256,24 @@ function verifyGirderApiKey(opts = {}) {
 }
 
 function doVipRequest(vipFunction) {
-  return vipFunction.call()
+  return getCarminClient()[vipFunction]()
   .catch(data => {
     if (data.errorCode && data.errorCode === 40101) {
       throw { vipPluginError : 'WRONG_VIP_API_KEY' };
     } else {
-      throw "An error occured while using the VIP API (" + data + ")");
+      throw "An error occured while using the VIP API (" + data + ")";
     }
   });
 }
 
 function verifyVipConfig() {
-  return doVipRequest(getCarminClient().listExternalPlatforms)
+  return doVipRequest('listExternalPlatforms')
   .then( vipExternalPlatforms => {
     if ( _.findWhere(vipExternalPlatforms,
-      {identifier : constants.VIP_EXTERNAL_STORAGE_NAME})) {
-      throw { vipPluginError : 'GIRDER_NOT_CONFIGURED_IN_VIP' };
+      {identifier : VIP_EXTERNAL_STORAGE_NAME})) {
+        return true;
     } else {
-      return true;
+      throw { vipPluginError : 'GIRDER_NOT_CONFIGURED_IN_VIP' };
     }
   });
 }
@@ -288,7 +287,7 @@ function fetchGirderApiKeysForVip(opts = {}) {
     initialPromise = Promise.resolve(opts.keysCollection);
   } else {
     var allApiKeys = new ApiKeyCollection();
-    initialPromise = allApiKeys.fetch({userId: getCurrentUser().id}).then(allApiKeys);
+    initialPromise = allApiKeys.fetch({userId: getCurrentUser().id}).then(() => allApiKeys);
   }
   return initialPromise.then( apikeys => apikeys.where({name : VIP_PLUGIN_API_KEY}) );
 }
@@ -364,18 +363,10 @@ function getCarminClient(newApiKey) {
     messageGirder("danger", 'Wrong VIP plugin client creation');
     throw "Wrong VIP plugin client creation";
   } else if (! newApiKey) {
-    newApiKey = currentUser.get('apiKeyVip');
+    newApiKey = getCurrentUser().get('apiKeyVip');
   }
-  carminClient = new CarminClient(CARMIN_URL, newkey);
+  carminClient = new CarminClient(CARMIN_URL, newApiKey);
   return carminClient;
-}
-
-function checkRequestError (data) {
-  if (typeof data !== 'undefined' && typeof data.errorCode !== 'undefined' && data.errorCode != null) {
-    messageGirder("danger", data.errorMessage);
-    return 1;
-  }
-  return 0;
 }
 
 function sortPipelines(allPipelines) {
@@ -414,7 +405,6 @@ function sortPipelines(allPipelines) {
 
 
 export {
-  getTimestamp,
   messageGirder,
   fetchGirderFolders,
 
@@ -426,6 +416,5 @@ export {
   verifyApiKeysConfiguration,
 
   getCarminClient,
-  checkRequestError,
   sortPipelines
 };

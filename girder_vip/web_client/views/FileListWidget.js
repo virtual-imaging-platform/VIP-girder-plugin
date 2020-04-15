@@ -8,6 +8,7 @@ import { hasTheVipApiKeyConfigured, isPluginActivatedOn, messageGirder } from '.
 import FileListWidget from '@girder/core/views/widgets/FileListWidget';
 import ItemView from '@girder/core/views/body/ItemView';
 import ListPipelinesWidget from './ListPipelinesWidget';
+import ConfirmExecutionDialog from './ConfirmExecutionDialog';
 
 // Import about Creatis
 import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';
@@ -16,7 +17,7 @@ import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';
 wrap(FileListWidget, 'render', function(render) {
   render.call(this);
 
-  if (! this.canRenderVipPlugin(this.parentItem)) {
+  if (! this.canRenderVipPlugin()) {
     return this;
   }
 
@@ -28,18 +29,23 @@ wrap(FileListWidget, 'render', function(render) {
   }
 
   if (this.parentView.showVipPipelines) {
-    this.showPipelinesModal(this.parentView.vipPipelineFileId);
     this.parentView.showVipPipelines = false;
+    this.showPipelinesModal(this.parentView.vipPipelineFileId);
+  }
+
+  if (this.parentView.showVipLaunch) {
+    this.parentView.showVipLaunch = false;
+    this.showLaunchModal();
   }
 
   return this;
 });
 
 // return true if render must be done
-FileListWidget.prototype.canRenderVipPlugin = function (item) {
-  var showModal = this.parentView.showVipPipelines;
+FileListWidget.prototype.canRenderVipPlugin = function () {
+  var showModal = this.parentView.showVipPipelines || this.parentView.showVipLaunch;
   var isApiKeyOk = hasTheVipApiKeyConfigured();
-  var isPluginActivated = isPluginActivatedOn(item);
+  var isPluginActivated = isPluginActivatedOn(this.parentItem);
 
   if (!showModal) {
     return isApiKeyOk && isPluginActivated;
@@ -60,18 +66,20 @@ FileListWidget.prototype.canRenderVipPlugin = function (item) {
   // there's an error
 
   this.parentView.showVipPipelines = false;
+  this.parentView.showVipLaunch = false;
   messageGirder('danger', error);
-  router.navigate('/item/' + item.id, {replace: true});
+  router.navigate(this.getRoute(), {replace: true});
   return false;
 
 };
 
 FileListWidget.prototype.events['click a.vip-launch-pipeline'] = function (e) {
   var cid = $(e.currentTarget).attr('model-cid');
-
-  var currentRoute = Backbone.history.fragment;
-  router.navigate(currentRoute + '/file/' + this.collection.get(cid).id + '?dialog=vip-pipelines');
   this.showPipelinesModal(cid);
+};
+
+FileListWidget.prototype.getRoute = function () {
+  return 'item/' + this.parentItem.id;
 };
 
 FileListWidget.prototype.showPipelinesModal = function (fileId) {
@@ -83,10 +91,23 @@ FileListWidget.prototype.showPipelinesModal = function (fileId) {
   });
 };
 
+FileListWidget.prototype.showLaunchModal = function () {
+    new ConfirmExecutionDialog({
+      file: this.collection.get(this.parentView.vipPipelineFileId),
+      item: this.parentItem,
+      pipelineId: this.parentView.vipPipelineId,
+      vipConfigOk : false,
+      parentView: this,
+      el: $('#g-dialog-container')
+    });
+};
+
 wrap(ItemView, 'initialize', function(initialize, settings) {
 
   this.showVipPipelines = settings.showVipPipelines || false;
+  this.showVipLaunch = settings.showVipLaunch || false;
   this.vipPipelineFileId = settings.vipPipelineFileId || false;
+  this.vipPipelineId = settings.vipPipelineId || false;
 
   // Call the parent render
   initialize.call(this, settings);

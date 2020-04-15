@@ -1,25 +1,25 @@
-- var widthModal = pipeline.parameters.length * 14 + "%";
 - var advancedArg = 0;
 
-.modal-dialog(style="width:"+widthModal)
+.modal-dialog
   .modal-content
 
     if !authorizedForVersionOne
       .alert.alert-danger(role="alert") This application can not be used in this version of Girder (More than one file)
 
     form.creatis-launch-execution-form.modal-form(role="form")
-      .modal-header
-        button.close(data-dismiss="modal", aria-hidden="true", type="button") &times;
-        h4.modal-title!= pipeline.name + "  <small>Version " + pipeline.version + "</small>"
-        if file && file.name
-          .g-dialog-subtitle
-            i.icon-doc-inv
-            span= file.name
+      if pipeline
+        .modal-header
+          button.close(data-dismiss="modal", aria-hidden="true", type="button") &times;
+          h4.modal-title!= pipeline.name + "  <small>Version " + pipeline.version + "</small>"
+          if file && file.name
+            .g-dialog-subtitle
+              i.icon-doc-inv
+              span= file.name
 
-        if filesCount && filesCount > 0
-          .g-dialog-subtitle
-            i.icon-doc-inv
-            span= filesCount + " selected files"
+          if filesCount && filesCount > 0
+            .g-dialog-subtitle
+              i.icon-doc-inv
+              span= filesCount + " selected files"
 
       .modal-body
         if folders
@@ -35,7 +35,7 @@
 
             if advancedArg
               li
-                a(data-toggle="tab", id="tab-advanced", href="#advanced") Advanced
+                a(data-toggle="tab",  id="tab-advanced", href="#advanced") Advanced
 
           .tab-content
             #general.tab-pane.fade.active.in
@@ -50,10 +50,6 @@
                   each folder, i in folders
                     option(value=i)!= folder.get("indentText") + folder.get("name")
 
-              .form-check
-                input.form-check-input#send-email(type="checkbox")
-                label.form-check-label(for="send-email") Send email
-
             each param, i in pipeline.parameters
               if param.name != "results-directory" && param.type != "File" && !param.defaultValue
                 .tab-pane.fade(id="param-" + i)
@@ -63,18 +59,18 @@
 
                   .form-group
                     label(for=param.name)= param.name
-                    input.form-control(id="param-" + i, type="text")
+                    input.form-control(id="input-param-" + i, type="text")
 
             #advanced.tab-pane.fade
-              each param in pipeline.parameters
+              each param, i in pipeline.parameters
                 if (param.name != "results-directory" && param.defaultValue)
                   .form-group
                     label(for=param.name)= param.name
                     p !{param.description}
-                    input.form-control(id="advanced-"+param.name, type="text", placeholder="Default : " + param.defaultValue)
+                    input.form-control.optional-vip-param(id="input-param-" + i, type="text", placeholder="Default : " + param.defaultValue)
 
       .modal-footer
         a.btn.btn-small.btn-default.btn-close-execution(data-dismiss="modal") Close
-        button.btn.btn-success#run-execution(disabled=true, type="submit", data-loading-text="<i class='fa fa-spinner fa-spin'></i> Execute")
+        button.btn.btn-success#run-execution(type="submit", data-loading-text="<i class='fa fa-spinner fa-spin'></i> Execute")
           i.icon-play
           |  Execute

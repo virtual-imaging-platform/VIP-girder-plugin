@@ -34,22 +34,24 @@ wrap(UserAccountView, 'render', function(render) {
 
     if (! this.vipPluginConfigChecked) {
       this.vipPluginConfigChecked = true;
-      this.checkVipPluginConfig();
+      this.checkVipPluginConfig( ! this.showOnStart);
     }
   });
   // display the tab if requested from url
   if (TAB_NAME === this.tab) {
+    this.showOnStart = true;
     tablink.tab("show");
   }
 });
 
-UserAccountView.prototype.checkVipPluginConfig = function () {
+UserAccountView.prototype.checkVipPluginConfig = function (useInternalCollection) {
 
   if (! this.$('#creatis-apikey-vip').val()) return;
 
   // Test and correct everything
   verifyApiKeysConfiguration({
-    printWarning : false
+    printWarning : false,
+    keysCollection : useInternalCollection ? this.apiKeyListWidget.collection : false
   })
   .then(isOk => {
     if (isOk) return;
@@ -78,10 +80,10 @@ UserAccountView.prototype.events['submit #ApiKeyVip-form'] = function (e) {
   })
   .then(() => saveVipApiKey(newkey))
   .then(() => {
-    getCurrentUser().set('apiKeyVip', newkey);
+    this.render()
     // reload header view to refresh the 'My execution' menu
     events.trigger('vip:vipApiKeyChanged', {apiKeyVip: newkey});
-    messageGirder("succes", "Your VIP configuration has been updated");
+    messageGirder("success", "Your VIP configuration has been updated");
   })
   .catch(error => {
     messageGirder("danger", "An error occured while changing VIP API key : " + error );

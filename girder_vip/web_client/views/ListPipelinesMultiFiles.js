@@ -130,7 +130,7 @@ var ListPipelines = View.extend({
           files: this.files,
           filesCount: Object.keys(this.files).length,
           pipeline: data,
-          foldersCollection: this.foldersCollection
+          foldersCollection: this.foldersCollection,
           parentView: this,
           el: $('#g-dialog-container')
         });

@@ -1,6 +1,8 @@
 //Import utilities
 import _ from 'underscore';
 import { restRequest } from '@girder/core/rest';
+import { handleOpen } from '@girder/core/dialog';
+import { parseQueryString, splitRoute } from '@girder/core/misc';
 import router from '@girder/core/router';
 import { cancelRestRequests } from '@girder/core/rest';
 import { getCurrentUser } from '@girder/core/auth';
@@ -27,26 +29,12 @@ var ListPipelinesWidget = View.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
-    // Get api key of VIP
-    if (! hasTheVipApiKeyConfigured()) {
-      messageGirder('danger', 'You should have a VIP key configured to launch a VIP pipeline');
-      this.$el.modal('hide');
-      return ;
-    }
-    if (! settings.file || ! settings.item) {
-      messageGirder('danger', 'Missing information to launch a VIP pipeline');
-      this.$el.modal('hide');
-      return ;
-    }
-
     this.user = getCurrentUser();
     this.file = settings.file;
     this.item = settings.item;
-    this.goingToConfirmDialog = false;
-    this.originalRoute = Backbone.history.fragment;
+    this.pipelines = settings.pipelines;
 
-    this.foldersCollection = [];
-
+    this.initRoute();
 
     this.render();
     new LoadingAnimation({
@@ -54,15 +42,26 @@ var ListPipelinesWidget = View.extend({
         parentView: this
     }).render();
 
+    // Get api key of VIP
+    if (! hasTheVipApiKeyConfigured()) {
+      messageGirder('danger', 'You should have a VIP key configured to launch a VIP pipeline');
+      this.$el.modal('hide');
+      return ;
+    }
+
+    if (! settings.file || ! settings.item) {
+      messageGirder('danger', 'Missing information to launch a VIP pipeline');
+      this.$el.modal('hide');
+      return ;
+    }
+
     verifyApiKeysConfiguration({printWarning : true})
     .then(isOk => {
       if (isOk) {
         // Get pipelines of user
         // they are sorted by name with custom ids as keys
-        return getCarminClient().listPipelines().then(pipelines => {
-          this.pipelines = sortPipelines(pipelines);
-          this.render();
-        });
+        return this.fetchPipelinesIfNecessary()
+        .then(() => this.render());
       } else {
         // warning already printed
         this.$el.modal('hide');
@@ -73,10 +72,15 @@ var ListPipelinesWidget = View.extend({
       this.$el.modal('hide');
     });
 
-
-    this.getFolderRecursively(this.user.id, 0, ""); // todo : to move
-
   },
+
+  fetchPipelinesIfNecessary: function() {
+    if (this.pipelines) return Promise.resolve();
+
+    return getCarminClient().listPipelines().then(pipelines => {
+      this.pipelines = sortPipelines(pipelines);
+    });
+  }
 
   render: function () {
 
@@ -85,6 +89,9 @@ var ListPipelinesWidget = View.extend({
       pipelines: this.pipelines,
     }));
 
+    if (this.alreadyRendered) return this;
+
+    this.alreadyRendered = true;
     this.$el.girderModal(this).on('hidden.bs.modal', () => {
       if (! this.goingToConfirmDialog) {
         // reset route to the former one
@@ -95,20 +102,29 @@ var ListPipelinesWidget = View.extend({
     return this;
   },
 
-  goToParentRoute: function () {
-
-    var currentRoute = Backbone.history.fragment;
-    if (currentRoute !== this.originalRoute) {
-      // the route has already changed (back or loading custom url)
+  initRoute: function() {
+    this.route = Backbone.history.fragment
+    var queryParams = parseQueryString(splitRoute(this.route).name);
+    if (queryParams.dialog && queryParams.dialog == 'vip-pipelines') {
+      // route already OK
       return;
     }
-    // default for folder view, remove starting from item path
-    var stopIndex = currentRoute.indexOf('/item/');
-    // but if it start by 'item', its an item view, remove starting from file path
-    if (currentRoute.startsWith('item'))
-      var stopIndex = currentRoute.indexOf('/file/');
+    var routeToAdd = '/file/' + this.file.id;
+    if ( ! this.route.indexOf('item/')) {
+      routeToAdd = '/item/' + this.item.id + '/' + route;
+    }
+    router.navigate(this.route + routeToAdd);
+    handleOpen('vip-pipelines', {replace : true});
+    this.route = Backbone.history.fragment;
 
-    router.navigate(currentRoute.substring(0, stopIndex), {replace: true});
+  },
+
+  goToParentRoute: function () {
+    var currentRoute = Backbone.history.fragment;
+    if (currentRoute === this.route) {
+      // if the route has not already changed (back or loading custom url)
+      router.navigate(this.parentView.getRoute(), {replace: true});
+    }
   },
 
   confirmPipeline: function (e) {
@@ -130,16 +146,16 @@ var ListPipelinesWidget = View.extend({
       this.goingToConfirmDialog = true;
       new ConfirmExecutionDialog({
         file: this.file,
+        item: this.item,
         pipeline: pipeline,
-        foldersCollection: this.foldersCollection,
+        pipelines: this.pipelines,
         vipConfigOk : true,
         parentView: this.parentView,
         el: $('#g-dialog-container')
       });
     })
     .catch(error => {
-      messageGirder("danger", "Unable to retrieve application informations :" + error);
-      this.render();
+      messageGirder("danger", "Unable to retrieve application informations : " + error);
     });
   }
 

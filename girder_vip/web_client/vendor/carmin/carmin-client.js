@@ -99,8 +99,13 @@ CarminClient.prototype.describePipeline = function(pipelineIdentifier) {
 }
 
 // initialize an execution of a pipeline
-CarminClient.prototype.initAndStart = function(executionName, pipelineIdentifier, inputValues) {
-  var content = {"name" : executionName,"pipelineIdentifier" : pipelineIdentifier, "inputValues" : inputValues};
+CarminClient.prototype.initAndStart = function(
+    executionName, pipelineIdentifier, resultsLocation, inputValues) {
+  var content = {
+    "name" : executionName,
+    "pipelineIdentifier" : pipelineIdentifier,
+    "resultsLocation" : resultsLocation,
+    "inputValues" : inputValues};
   var opts = {};
 
   opts.contentType = "application/json";

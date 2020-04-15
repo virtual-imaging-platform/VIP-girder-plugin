@@ -1,15 +1,18 @@
 // Import utilities
 import _ from 'underscore';
-import { restRequest, getApiRoot } from '@girder/core/rest';
-import events from '@girder/core/events';
+import moment from 'moment';
 import { getCurrentUser} from '@girder/core/auth';
-import { checkRequestError, messageGirder, getTimestamp,
-  verifyApiKeysConfiguration, fetchGirderFolders} from '../utilities/vipPluginUtils';
-import 'bootstrap/js/button';
+import { handleOpen } from '@girder/core/dialog';
+import { messageGirder, verifyApiKeysConfiguration, fetchGirderFolders, getCarminClient} from '../utilities/vipPluginUtils';
+//import 'bootstrap/js/button'; todo check if needed
+import { VIP_EXTERNAL_STORAGE_NAME } from '../constants';
 import FolderCollection from '@girder/core/collections/FolderCollection';
+import ExecutionModel from '../models/models/ExecutionModel';
 
 // Import views
 import View from '@girder/core/views/View';
+import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
+import ListPipelinesWidget from './ListPipelinesWidget';
 import '@girder/core/utilities/jquery/girderModal';
 
 // Import templates
@@ -18,15 +21,30 @@ import ConfirmExecutionDialogTemplate from '../templates/confirmExecutionDialog.
 // Modal to fill parameters and launch the pipeline
 var ConfirmExecutionDialog = View.extend({
 
+  events: {
+    'submit .creatis-launch-execution-form' : 'initExecution'
+  },
+
   initialize: function (settings) {
     this.file = settings.file;
+    this.item = settings.item;
+    this.pipelines = settings.pipelines;
     this.pipeline = settings.pipeline;
+    this.pipelineId = settings.pipelineId;
+
+    this.initRoute();
 
     this.render();
     new LoadingAnimation({
         el: this.$('.modal-body'),
         parentView: this
     }).render();
+
+    if (! this.pipeline && ! this.pipelineId) {
+      messageGirder('danger', 'Missing information to launch a VIP pipeline');
+      this.$el.modal('hide');
+      return ;
+    }
 
     (settings.vipConfigOk ?
       Promise.resolve(true)
@@ -35,11 +53,12 @@ var ConfirmExecutionDialog = View.extend({
     )
     .then((isOk) => {
       if (isOk) {
-        return fetchGirderFolders(getCurrentUser())
-        .then((userFolderGraph) => {
-          this.usersFolders = userFolderGraph;
-          this.render());
-        }
+        return fetchPipelineIfNecessary()
+        .then( () => fetchGirderFolders(getCurrentUser()))
+        .then( userFolderGraph => {
+          this.usersFolders = this.getUsersFolderWithIndent(userFolderGraph),
+          this.render();
+        });
       } else {
         // warning already printed
         this.$el.modal('hide');
@@ -51,197 +70,41 @@ var ConfirmExecutionDialog = View.extend({
     });
   },
 
-  events: {
-    'submit .creatis-launch-execution-form' : 'initExecution'
-  },
-
   render: function () {
     // Display the modal with the parameter of the pipeline selectionned
-    $('#g-dialog-container').html(ConfirmExecutionDialogTemplate({
+    this.$el.html(ConfirmExecutionDialogTemplate({
       pipeline: this.pipeline,
       file: this.file,
-      folders: getUsersFolderWithIndent(),
-      authorizedForVersionOne: this.checkParametersForVersionOne(this.currentPipeline.parameters)
-    })).girderModal(this);
+      folders: this.usersFolders ? this.usersFolders.models : false,
+      authorizedForVersionOne: this.checkParametersForVersionOne()
+    }));
 
-    // Tab of parameters
-    $('a[data-toggle="tab"]').click(function () {
-      $(this).css('background-color', 'transparent');
+    if (this.alreadyRendered) return this;
+
+    this.alreadyRendered = true;
+    this.$el.girderModal(this).on('hidden.bs.modal', () => {
+      if (! this.goingToPipelineModal) {
+        // reset route to the former one
+        this.goToParentRoute();
+      }
     });
+
 
     return this;
   },
 
-  getUsersFolderWithIndent: function() {
-    if (! this.usersFolders) return false;
-    var folders = new FolderCollection();
+  fetchPipelineIfNecessary: function() {
+    if (this.pipeline) return Promise.resolve();
 
-    var adaptFolder = (folder) => {
-      folder.model.set('indentText', "&nbsp;".repeat((folder.level - 1) * 3));
-      folders.add(folder.model);
-      _each(folder.children, child => adaptFolder(child) );
-    }
-
-    _.each(this.usersFolders.children, folder => adaptFolder(folder));
-
-    return folders;
-  },
-
-  initExecution: function (e) {
-    // Cancel the button's action
-    e.preventDefault();
-    return;
-
-
-    var nameExecution = $('#name-execution');
-    var folderGirderDestination = $('#selectFolderDestination');
-    var checkArg = 1;
-
-    if (!getApiRoot()) {
-      this.messageDialog("danger", "A problem with your session has occurred");
-    }
-
-    /*********************************/
-    /* Check the required parameters */
-    /*********************************/
-
-    // Check General paramaters
-    if (!nameExecution.val() || !folderGirderDestination.val()) {
-      $('#tab-general').css('background-color', '#e2181852');
-      checkArg = 0;
-    }
-    else {
-      $('#tab-general').css('background-color', 'transparent');
-    }
-
-    // Check pipeline parameters
-    _.each(this.currentPipeline.parameters, function(param) {
-      var e = $('#' + param.name);
-      if (e.length > 0 && !e.val()) { // If the parameter exists in the DOM but is empty
-        $('#tab-' + param.name).css('background-color', '#e2181852');
-        checkArg = 0;
-      }
-      else if (e.length > 0 && e.val()) {
-        $('#tab-' + param.name).css('background-color', 'transparent');
-      }
-    }.bind(this));
-
-    // If the required parameters are not fill
-    if (!checkArg) {
-      messageGirder("danger", "Please fill in the form in each tab", 2000);
-      return ;
-    }
-
-    // Loading animation on the button
-    messageGirder("info", "Loading...", 1000);
-    $('#run-execution').button('loading');
-
-    // If there aren't problems with the parameters
-    this.launchExecution();
-  },
-
-  // Get the parameters and launch the execution
-  launchExecution: function () {
-    var nameExecution = $('#name-execution').val();
-    var folderGirderDestination = $('#selectFolderDestination').val();
-    this.sendMail = $('#send-email').is(':checked');
-
-    // begining of the promise chain
-    // always use arrow functions to keep "this"
-    // Create result folder
-    this.createResultFolder(nameExecution, folderGirderDestination)
-    .then( folder => this.folderResultId = folder._id)
-    .then( () => createNewToken(getCurrentUser()) )
-    .then( token => {
-      this.token = token;
-
-      // Map input with application parameters
-      _.each(this.currentPipeline.parameters, param => {
-        if (param.name == "results-directory") {
-          this.parameters[param.name] = this.constructApiUri("/Currently/Unused", this.folderResultId);
-        } else if (!(param.type == "File" && !param.defaultValue) && !param.defaultValue) {
-          this.parameters[param.name] = $('#'+param.name).val();
-        } else if (param.type == "File" && !param.defaultValue) {
-          this.parameters[param.name] = this.constructApiUri("/" + this.file.name, this.file._id);
-        } else if ($('#advanced-' + param.name).val() && param.defaultValue) {
-          this.parameters[param.name] = $('#advanced-' + param.name).val();
-        } else {
-          this.parameters[param.name] = param.defaultValue;
-        }
-      });
-
-      // Launch the execution
-      return this.carmin.initAndStart(
-        nameExecution,
-        this.currentPipeline.identifier,
-        this.parameters);
-    })
-    .then(data => {
-      if (checkRequestError(data)) {
-        Promise.reject("VIP returned an error, please contact the vip admins")
-      } else {
-        return data;
-      }
-    })
-    // if it's OK, save it on girder, else show an error
-    .then(
-      // nested promise chain
-      data => { return Promise.resolve(data)
-        // need to initilize a promise chain, otherwise an error in
-        // saveExecutionOnGirder isnt' catch in this chain
-        .then(this.saveExecutionOnGirder(data))
-        .then( () => this.messageDialog("success", "The execution is launched correctly"))
-        .catch( e => {
-          console.log(e);
-          this.messageDialog("danger", "The execution is launched on VIP but we encounter a problem to fetch the informations about this execution");
-        });
-      }, e => {
-        console.log(e);
-        this.messageDialog("danger", "There was a problem launching the application");
-      }
-    );
-  },
-
-  saveExecutionOnGirder : function(data) {
-    // the execution was launched successly
-    var filesInput = $.extend({}, [this.file._id]);
-    var params = {
-      name: data.name,
-      fileId: JSON.stringify(filesInput),
-      pipelineName: this.currentPipeline.name,
-      vipExecutionId: data.identifier,
-      status: data.status.toUpperCase(),
-      idFolderResult: this.folderResultId,
-      sendMail: this.sendMail,
-      timestampFin: null
-    };
-
-    // Add this execution on Girder db
-    return restRequest({
-      method: 'POST',
-      url: 'vip_execution',
-      data: params
-    });
-  },
-
-  constructApiUri: function(filePath, fileId) {
-    // Get the server URL and protocol
-    var url = window.location.href;
-    var protocol = url.split("://");
-    protocol = protocol[0];
-
-    // create the base uri
-    return "girder:" + filePath + "?"
-          + "apiurl=" + protocol + "://" + location.host + "/" + getApiRoot()
-          + "&amp;token=" + this.token
-          + "&amp;fileId=" + fileId;
+    return getCarminClient().describePipeline(this.pipelineId);
   },
 
   // Check the number of required parameters
   // If there is only one, the application can be started
-  checkParametersForVersionOne: function (parameters) {
+  checkParametersForVersionOne: function () {
+    if (! this pipeline) return false;
     var requiredFile = 0;
-    _.each(parameters, function (param) {
+    _.each(this.pipeline.parameters, function (param) {
       if (param.type == "File" && !param.defaultValue)
         requiredFile++;
     });
@@ -249,35 +112,199 @@ var ConfirmExecutionDialog = View.extend({
     return (requiredFile <= 1) ? 1 : 0;
   },
 
-  // Create the result folder
-  createResultFolder: function (nameExecution, idParentFolder) {
-    return restRequest({
-      method: 'POST',
-      url: 'folder',
-      data: {
-        parentType: 'folder',
-        parentId: idParentFolder,
-        name: this.getResultFolderName(nameExecution)
+  // todo refator this copy/paste from ListPipelineWidget
+  initRoute: function() {
+    this.route = Backbone.history.fragment
+    var queryParams = parseQueryString(splitRoute(this.route).name);
+    if (queryParams.dialog && queryParams.dialog == 'vip-launch') {
+      // route already OK
+      return;
+    }
+    var routeToAdd = '/file/' + this.file.id;
+    if ( ! this.route.indexOf('item/')) {
+      routeToAdd = '/item/' + this.item.id + '/' + route;
+    }
+    router.navigate(this.route + routeToAdd);
+    handleOpen('vip-launch', {replace : true});
+    this.route = Backbone.history.fragment;
+
+  },
+
+  goToParentRoute: function () {
+    var currentRoute = Backbone.history.fragment;
+    if (currentRoute === this.route) {
+      // if the route has not already changed (back or loading custom url)
+      router.navigate(this.parentView.getRoute(), {replace: ! this.execSuccess});
+    }
+  },
+
+  getUsersFolderWithIndent: function(userFoldersGraph) {
+    var folders = new FolderCollection();
+
+    var adaptFolder = (folder) => {
+      folder.model.set('indentText', "&nbsp;".repeat((folder.level - 1) * 3));
+      folders.add(folder.model);
+      _.each(folder.children, child => adaptFolder(child) );
+    }
+
+    _.each(userFoldersGraph.children, folder => adaptFolder(folder));
+
+    return folders;
+  },
+
+  buildParameters: function (e) {
+    // Cancel the button's action
+    e.preventDefault();
+
+    /*********************************/
+    /* Check the required parameters */
+    /*********************************/
+
+    var allTabs = {ok : [], ko : []};
+    var insertInTab = (isOk, el) => tabsOk[isOk ? 'ok' : 'ko'].push(el);
+
+    // Check General paramaters
+    var executionName = $('#name-execution').var();
+    var girderFolderIndex = $('#selectFolderDestination').val();
+    insertInTab(executionName && girderFolderIndex, this.$('#tab-general'));
+
+    // Check pipeline parameters
+    var execParams = {};
+    var fileParam;
+    _.each(this.pipeline.parameters, (param, index) => {
+      var paramInput = this.$('#input-param-' + index);
+      if (paramInput) {
+        execParams[param.name] = paramInput.val();
+        if ( ! paramInput.hasClass( "optional-vip-param" )) {
+          insertInTab(paramInput.val(), this.$('#tab-param-' + index));
+        }
       }
+      if (param.type == "File" && !param.defaultValue) {
+        fileParam = param;
+      }
+    });
+
+    _.each(allTabs.ko, tab => {
+      this.$('#tab-general').css('background-color', '#dc3545');
+      this.$('#tab-general').css('color', '#fff');
+    });
+
+    _.each(allTabs.ok, tab => {
+      this.$('#tab-general').css('background-color', '');
+      this.$('#tab-general').css('color', '');
+    });
+
+    // If the required parameters are not fill
+    if (allTabs.ko.length) {
+      messageGirder("danger", "Missing parameter. Please fill in the form in each tab");
+      return;
+    }
+
+    // Loading animation on the button
+    messageGirder("info", "Launching execution, this could take a few seconds", 3000);
+    $('#run-execution').button('loading');
+
+    // If there aren't problems with the parameters
+    this.launchExecution(executionName, this.usersFolder.at(girderFolderIndex), fileParam, execParams);
+  },
+
+  // Get the parameters and launch the execution
+  launchExecution: function (executionName, girderFolder, fileParam, execParams) {
+
+    // Create result folder
+    this.createResultFolder(executionName, girderFolder)
+    .then( folder => {
+
+      execParams[fileParam] = VIP_EXTERNAL_STORAGE_NAME + "/" + this.file.id;
+      var resultsLocation = VIP_EXTERNAL_STORAGE_NAME + "/" + folder.id;
+
+      return getCarminClient().initAndStart(
+        nameExecution,
+        this.pipeline.identifier,
+        resultsLocation,
+        execParams
+      ).then(vipExec => {
+        vipExec.gilderResultFolder = folder;
+        return vipExec;
+      });
+    })
+    // if it's OK, save it on girder, else show an error
+    .then(vipExec => {
+      // nested promise chain to seperate in case of girder error after vip success
+      // so no return
+      saveExecutionOnGirder(vipExec, fileParam)
+      .then( () => {
+        messageGirder("success", "The execution is launched correctly");
+        this.execSuccess = true;
+        this.$el.modal('hide');
+      })
+      .catch( e => {
+        messageGirder("warning", "The execution is launched on VIP. \
+          The results will be uploaded to girder but it will not be visible in \
+          the 'My executions' menu (cause : " + error +  ")", 10000);
+        $('#run-execution').button('reset');
+      });
+    )
+    .catch(error => {
+      var msg = 'VIP error : ';
+      if (data && data.errorCode) {
+        msg += data.errorMessage + ' (code ' + data.errorCode + ')');
+      } else {
+        msg += error;
+      }
+      messageGirder("danger", msg);
+      $('#run-execution').button('reset');
     });
   },
 
-  getResultFolderName: function (nameExecution) {
-    var date = new Date();
-    var folderName = "Results - " + nameExecution + ' - ' + date.getFullYear() + '/'
-    + (date.getMonth() + 1) + '/' + date.getDate() + ' ' + date.getHours() + ':' + date.getMinutes()
-    + ':' + date.getSeconds();
+  createResultFolder: function (executionName, parentFolder) {
+    var dateString = moment().format("YYYY/MM/DD HH:mm:ss");
+    var folderName = "VIP Results - " + executionName + dateString;
 
-    return folderName;
+    var folder = new FolderModel({
+      parentType: 'folder',
+      parentId: parentFolder.id,
+      name: folderName
+    });
+    return folder.save().then(function () {return this;}.bind(folder));
   },
 
-  // For each error
+  saveExecutionOnGirder : function(vipExec, fileParam) {
+    var girderExec = new ExecutionModel({
+      name: vipExec.name,
+      fileId: JSON.stringify({fileParam : this.file.id}}),
+      pipelineName: this.pipeline.name,
+      vipExecutionId: vipExec.identifier,
+      status: vipExec.status.toUpperCase(),
+      idFolderResult: vipExec.gilderResultFolder.id,
+      sendMail: false,
+      timestampFin: null
+    });
+
+    // Add this execution on Girder db
+    return girderExec.save();
+  },
+
+  goToPipelineModal: function() {
+    this.goingToPipelineModal = true;
+
+    new ListPipelinesWidget({
+        el: $('#g-dialog-container'),
+        file: this.file,
+        item: this.item,
+        pipelines: this.pipelines,
+        parentView: this.parentView
+    });
+  }
+
+  // For each error check if needed
+  /*
   messageDialog: function(type, message) {
     $('#run-execution').button('reset');
     $('#g-dialog-container').find('a.close').click();
     messageGirder(type, message, 3000);
   },
-
+  */
 });
 
 export default ConfirmExecutionDialog;

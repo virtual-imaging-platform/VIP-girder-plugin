@@ -16,6 +16,12 @@ router.route('item/:id/file/:id', 'item-file-vip-pipelines', function (itemId, f
             showVipPipelines: true,
             vipPipelineFileId: fileId
         });
+    } else if (params.dialog === 'vip-launch' && params.dialogid) {
+        ItemView.fetchAndInit(itemId, {
+            showVipLaunch: true,
+            vipPipelineId: params.dialogid,
+            vipPipelineFileId: fileId
+        });
     } else {
         messageGirder("warning", 'Missing vip-pipelines parameter to launch a VIP pipeline');
         router.navigate('/item/' + itemId, {trigger: true});
@@ -32,6 +38,14 @@ router.route('collection/:id/folder/:id/item/:id/file/:id',
             vipPipelineItemId: itemId,
             vipPipelineFileId: fileId
         });
+    } else if (params.dialog === 'vip-launch' && params.dialogid) {
+        CollectionView.fetchAndInit(cid, {
+            folderId: folderId,
+            showVipLaunch: true,
+            vipPipelineItemId: itemId,
+            vipPipelineFileId: fileId,
+            vipPipelineId: params.dialogid
+        });
     } else {
         messageGirder("warning", 'Missing vip-pipelines parameter to launch a VIP pipeline');
         router.navigate('/collection/' + cid + '/folder/' + folderId, {trigger: true});
@@ -47,6 +61,13 @@ router.route('folder/:id/item/:id/file/:id',
             vipPipelineItemId: itemId,
             vipPipelineFileId: fileId
         });
+    } else if (params.dialog === 'vip-launch' && params.dialogid) {
+        FolderView.fetchAndInit(folderId, {
+            showVipLaunch: true,
+            vipPipelineItemId: itemId,
+            vipPipelineFileId: fileId,
+            vipPipelineId: params.dialogid
+        });
     } else {
         messageGirder("warning", 'Missing vip-pipelines parameter to launch a VIP pipeline');
         router.navigate('/folder/' + folderId, {trigger: true});
@@ -55,12 +76,5 @@ router.route('folder/:id/item/:id/file/:id',
 
 // New route #my-executions
 router.route('my-executions', 'myexecutions', function() {
-  if ( hasTheVipApiKeyConfigured()) {
    events.trigger('g:navigateTo', MyExecutions);
-  } else {
-   messageGirder("danger", "You must configure your VIP API key in \
-       'My Account > VIP API key' to use VIP features"
-     , 30000);
-   router.navigate('/', {trigger: true});
-  }
 })
