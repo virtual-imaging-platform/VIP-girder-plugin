@@ -145,7 +145,7 @@ var ConfirmExecutionDialog = View.extend({
   },
 
   getUsersFolderWithIndent: function(userFoldersGraph) {
-    var folders = new FolderCollection();
+    var folders = new (FolderCollection.extend({comparator : undefined}))();
 
     var adaptFolder = (folder) => {
       folder.model.set('indentText', "&nbsp;".repeat((folder.level - 1) * 3));
