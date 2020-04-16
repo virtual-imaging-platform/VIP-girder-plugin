@@ -30,7 +30,7 @@
               if param.name != "results-directory" && param.type != "File" && !param.defaultValue
                 li
                   a(data-toggle="tab", id="tab-param-" + i, href="#param-" + i)= param.name
-              else if param.name != "results-directory"
+              else if param.name != "results-directory" && param.defaultValue
                 - advancedArg = 1;
 
             if advancedArg

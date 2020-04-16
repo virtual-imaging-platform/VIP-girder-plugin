@@ -68,23 +68,19 @@ UserAccountView.prototype.events['submit #ApiKeyVip-form'] = function (e) {
 
   var newkey = this.$('#creatis-apikey-vip').val();
 
-  if (newkey.length === 0) {
-    saveVipApiKey(newkey).then(() => this.render());
-    return;
+  var initialPromise;
+  if (newkey) {
+    initialPromise = updateApiKeysConfiguration({
+      newKey : newkey,
+      printWarning : false,
+      keysCollection : this.apiKeyListWidget.collection
+    });
+  } else {
+    initialPromise = Promise.resolve();
   }
-  // Test and correct everything
-  updateApiKeysConfiguration({
-    newKey : newkey,
-    printWarning : false,
-    keysCollection : this.apiKeyListWidget.collection
-  })
-  .then(() => saveVipApiKey(newkey))
-  .then(() => {
-    this.render()
-    // reload header view to refresh the 'My execution' menu
-    events.trigger('vip:vipApiKeyChanged', {apiKeyVip: newkey});
-    messageGirder("success", "Your VIP configuration has been updated");
-  })
+
+  initialPromise.then( () => saveVipApiKey(newkey) )
+  .then( () => this.render() )
   .catch(error => {
     messageGirder("danger", "An error occured while changing VIP API key : " + error );
   });

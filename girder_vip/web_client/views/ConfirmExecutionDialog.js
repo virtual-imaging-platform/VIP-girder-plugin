@@ -6,14 +6,13 @@ import { handleOpen } from '@girder/core/dialog';
 import { parseQueryString, splitRoute } from '@girder/core/misc';
 import router from '@girder/core/router';
 import { messageGirder, verifyApiKeysConfiguration, fetchGirderFolders, getCarminClient} from '../utilities/vipPluginUtils';
-//import 'bootstrap/js/button'; todo check if needed
 import { VIP_EXTERNAL_STORAGE_NAME } from '../constants';
 import FolderCollection from '@girder/core/collections/FolderCollection';
 import FolderModel from '@girder/core/models/FolderModel';
 import ExecutionModel from '../models/ExecutionModel';
 
 // Import views
-import View from '@girder/core/views/View';
+import VipModal from './VipPluginModal';
 import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
 import ListPipelinesWidget from './ListPipelinesWidget';
 import '@girder/core/utilities/jquery/girderModal';
@@ -22,7 +21,7 @@ import '@girder/core/utilities/jquery/girderModal';
 import ConfirmExecutionDialogTemplate from '../templates/confirmExecutionDialog.pug';
 
 // Modal to fill parameters and launch the pipeline
-var ConfirmExecutionDialog = View.extend({
+var ConfirmExecutionDialog = VipModal.extend({
 
   events: {
     'submit .creatis-launch-execution-form' : 'buildParameters',
@@ -36,7 +35,7 @@ var ConfirmExecutionDialog = View.extend({
     this.pipeline = settings.pipeline;
     this.pipelineId = settings.pipelineId || (this.pipeline && this.pipeline.identifier );
 
-    this.initRoute();
+    this.initRoute('vip-launch', this.pipelineId);
 
     this.render();
     new LoadingAnimation({
@@ -89,7 +88,7 @@ var ConfirmExecutionDialog = View.extend({
     this.$el.girderModal(this).on('hidden.bs.modal', () => {
       if (! this.goingToPipelineModal) {
         // reset route to the former one
-        this.goToParentRoute();
+        this.goToParentRoute(! this.execSuccess);
       }
     });
 
@@ -115,33 +114,6 @@ var ConfirmExecutionDialog = View.extend({
     });
 
     return requiredFile <= 1;
-  },
-
-  // todo refator this copy/paste from ListPipelineWidget
-  initRoute: function() {
-    this.route = Backbone.history.fragment
-    var queryParams = parseQueryString(splitRoute(this.route).name);
-    if (queryParams.dialog && queryParams.dialog == 'vip-launch') {
-      // route already OK
-      return;
-    }
-    this.route = this.parentView.getRoute();
-    var routeToAdd = '/file/' + this.file.id;
-    if ( this.route.indexOf('item/') === -1) {
-      routeToAdd = '/item/' + this.item.id + routeToAdd;
-    }
-    router.navigate(this.route + routeToAdd);
-    handleOpen('vip-launch', {replace : true}, this.pipelineId);
-    this.route = Backbone.history.fragment;
-
-  },
-
-  goToParentRoute: function () {
-    var currentRoute = Backbone.history.fragment;
-    if (currentRoute === this.route) {
-      // if the route has not already changed (back or loading custom url)
-      router.navigate(this.parentView.getRoute(), {replace: ! this.execSuccess});
-    }
   },
 
   getUsersFolderWithIndent: function(userFoldersGraph) {
@@ -244,7 +216,6 @@ var ConfirmExecutionDialog = View.extend({
         messageGirder("warning", "The execution is launched on VIP. \
           The results will be uploaded to girder but it will not be visible in \
           the 'My executions' menu (cause : " + error +  ")", 10000);
-        $('#run-execution').button('reset');
       });
     })
     .catch(error => {
@@ -302,15 +273,6 @@ var ConfirmExecutionDialog = View.extend({
         parentView: this.parentView
     });
   }
-
-  // todo : check if needed
-  /*
-  messageDialog: function(type, message) {
-    $('#run-execution').button('reset');
-    $('#g-dialog-container').find('a.close').click();
-    messageGirder(type, message, 3000);
-  },
-  */
 });
 
 export default ConfirmExecutionDialog;

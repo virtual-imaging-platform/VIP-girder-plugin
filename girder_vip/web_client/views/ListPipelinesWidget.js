@@ -10,7 +10,7 @@ import * as constants from '../constants';
 import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, getCarminClient, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
 
 // Import views
-import View from '@girder/core/views/View';
+import VipModal from './VipPluginModal';
 import ConfirmExecutionDialog from './ConfirmExecutionDialog';
 import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
 import '@girder/core/utilities/jquery/girderModal';
@@ -18,9 +18,8 @@ import '@girder/core/utilities/jquery/girderModal';
 // Import templates
 import ListPipelinesTemplate from '../templates/listPipelines.pug';
 
-
 // List of pipelines allowed by the user
-var ListPipelinesWidget = View.extend({
+var ListPipelinesWidget = VipModal.extend({
 
   events: {
     'click button.confirm-pipeline' : 'confirmPipeline'
@@ -34,7 +33,7 @@ var ListPipelinesWidget = View.extend({
     this.item = settings.item;
     this.pipelines = settings.pipelines;
 
-    this.initRoute();
+    this.initRoute('vip-pipelines');
 
     this.render();
     new LoadingAnimation({
@@ -100,32 +99,6 @@ var ListPipelinesWidget = View.extend({
     });
 
     return this;
-  },
-
-  initRoute: function() {
-    this.route = Backbone.history.fragment
-    var queryParams = parseQueryString(splitRoute(this.route).name);
-    if (queryParams.dialog && queryParams.dialog == 'vip-pipelines') {
-      // route already OK
-      return;
-    }
-    this.route = this.parentView.getRoute();
-    var routeToAdd = '/file/' + this.file.id;
-    if ( this.route.indexOf('item/') === -1) {
-      routeToAdd = '/item/' + this.item.id + routeToAdd;
-    }
-    router.navigate(this.route + routeToAdd);
-    handleOpen('vip-pipelines', {replace : true});
-    this.route = Backbone.history.fragment;
-
-  },
-
-  goToParentRoute: function () {
-    var currentRoute = Backbone.history.fragment;
-    if (currentRoute === this.route) {
-      // if the route has not already changed (back or loading custom url)
-      router.navigate(this.parentView.getRoute(), {replace: true});
-    }
   },
 
   confirmPipeline: function (e) {

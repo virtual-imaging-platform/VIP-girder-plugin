@@ -1,12 +1,14 @@
 // Import utilities
 import _ from 'underscore';
+import moment from 'moment';
 import { cancelRestRequests, restRequest } from '@girder/core/rest';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip, messageGirder } from '../utilities/vipPluginUtils';
+import events from '@girder/core/events';
+import { hasTheVipApiKeyConfigured, messageGirder, getCarminClient } from '../utilities/vipPluginUtils';
 import { getCurrentUser } from '@girder/core/auth';
-import CarminClient from '../vendor/carmin/carmin-client';
 
 // Import views
+import { confirm } from '@girder/core/dialog';
 import View from '@girder/core/views/View';
 
 // Import collections
@@ -15,106 +17,109 @@ import ExecutionCollection from '../collections/ExecutionCollection';
 // Import templates
 import MyExecutionsTemplate from '../templates/myExecutions.pug';
 
-// Import stylesheets
-import '../stylesheets/myExecutions.styl';
-
 var MyExecutions = View.extend({
   initialize: function (settings) {
-    cancelRestRequests('fetch');
 
-    // Get the api key of VIP
-    var apiKeyVip = getCurrentApiKeyVip(); // to change
-    if (apiKeyVip == null) {
-      return ;
+    if ( ! hasTheVipApiKeyConfigured() ) {
+      return;
     }
 
-    this.carmin = new CarminClient(constants.CARMIN_URL, apiKeyVip);
-
-    // Get all executions
-    restRequest({
-      method: 'GET',
-      url: 'vip_execution'
-    }).then(executions => {
-      return this.updateStatus(executions);
-    }).then(executions => {
-      this.render(executions);
-    });
+    this.girderExecs = new ExecutionCollection();
+    this.girderExecs.on('g:changed', () => {
+      this.updateAllExecutions()
+      .then( () => this.render() );
+    }).fetch();
 
   },
 
   events: {
-    'click .deleteExecution' : 'deleteExecution'
+    'click .deleteExecution' : 'deleteExecution',
+    'click .see-results' : 'seeResults',
+    'click .refresh-executions' : 'refreshExecutions'
   },
 
   render: function (executions) {
-    // use ExecutionCollection to sort the executions
-    var sortedExecutions = new ExecutionCollection(executions).toJSON();
     // Display the list of executions
     this.$el.html(MyExecutionsTemplate({
-      executions: sortedExecutions,
-      status: constants.STATUSES,
-      user: getCurrentUser()
+      executions: this.getFormattedGirderExecutions(),
+      status: constants.STATUSES
     }));
 
     return this;
   },
 
   // Get the status of the executon VIP side. If the status is different from the girder side, update it.
-  updateStatus: function (executions) {
-    const promiseArray = [];
+  updateAllExecutions: function () {
 
-    // For each executions
-    for (let execution of executions) {
-      var executionStatus = execution.status;
-      if (! constants.STATUSES[executionStatus]) {
-        // the status is unknown, report an error
-        messageGirder("warning", "Unkown status : " + executionStatus);
-      } else if (constants.STATUSES[executionStatus].order < 25) {
-        // the execution wasn't finished at the last check, check again
-        promiseArray.push(
-          this.carmin.getExecution(execution.vipExecutionId)
-          .then(workflow => {
-            if (execution.status != workflow.status.toUpperCase()) {
-              execution.status = workflow.status.toUpperCase();
-              return restRequest({
-                method: 'PUT',
-                url: 'vip_execution/' + execution._id + "/status",
-                data: { 'status': execution.status }
-              })
-              // the promise must return the updated execution
-              .then(() => execution);
-            } else {
-              // nothing to do but forward the execution to be rendered
-              return execution;
-            }
-          })
-        );
-      } else {
-        // nothing to do but forward the execution to be rendered
-        promiseArray.push(execution);
+    var allPromises = this.girderExecs.chain()
+    .filter(ex => {
+      if (! constants.STATUSES[ex.get('status')]) {
+        messageGirder("warning", "Unkown status for " + ex.get('name') + ' : ' + ex.get('status'));
+        return false;
       }
-    }
+      return constants.STATUSES[ex.get('status')].order < 25
+    })
+    .map( ex => this.updateExecution(ex) )
+    .value();
 
     return Promise.all(promiseArray);
   },
 
+  getFormattedGirderExecutions: function() {
+    return this.girderExecs.each( girderExec =>_{
+      var m = moment.unix(girderExec.get('timestampCreation'));
+      girderExec.set('creationDate', m.format("YYYY/MM/DD HH:mm:ss"));
+      girderExec.set('isFinished', girderExec.get('status') == 'FINISHED');
+    };
+  },
+
+  updateExecution: function(girderExec) {
+    return getCarminClient().getExecution(execution.vipExecutionId)
+    .then(vipExec => {
+      if (girderExec.get('status') == execution.status.toUpperCase()) {
+        return;
+      }
+      girderExec.set('status', workflow.status.toUpperCase());
+      return girderExec.save();
+    };
+  },
+
   // Delete a executon of the db
   deleteExecution: function (e) {
-    var buttonDelete = $(e.currentTarget);
-    var id = buttonDelete.val();
+    var cid = $(e.currentTarget).parents('.g-execution').attr('cid');
 
-    if (id) {
-      restRequest({
-        method: 'DELETE',
-        url: 'vip_execution/' + id
-      }).done(() => {
-        var execution = buttonDelete.closest('tr.execution');
+    confirm({
+      text: 'This will delete this execution from this list, not from VIP \
+              and it wont delete any file on girder.',
+      yesText: 'Delete',
+      confirmCallback: () => {
+          this.girderExecs.get(cid).destroy().then( () => {
+              events.trigger('g:alert', {
+                  icon: 'ok',
+                  text: 'Execution deleted.',
+                  type: 'success',
+                  timeout: 3000
+              });
+              this.render();
+          });
+      }
+    });
+  },
 
-        $(execution).addClass('removed-execution').one('webkitAnimationEnd oanimationend msAnimationEnd animationend', function (e) {
-          $(execution).remove();
-        });
-      });
-    }
+  // Delete an executon of the db
+  seeResults: function (e) {
+    var cid = $(e.currentTarget).parents('.g-execution').attr('cid');
+    this.girderExecs.get(cid)
+
+    router.navigate(
+      'folder/' + this.girderExecs.get(cid).get('idFolderResult'),
+      { trigger: true }
+    );
+  },
+
+  // Delete a executon of the db
+  refreshExecutions: function (e) {
+    this.girderExecs.fetch();
   }
 
 });

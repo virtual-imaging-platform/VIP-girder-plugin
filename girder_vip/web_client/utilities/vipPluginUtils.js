@@ -38,27 +38,6 @@ function fetchGirderFolders(model, level=0) {
       children : _.sortBy(childrenWithFolders, child => child.model.get('name'))
     };
   });
-/*
-  return restRequest({
-    method: "GET",
-    url: "folder/",
-    data: {
-      parentType: opts.parentType,
-      parentId: opts.parentId
-    },
-  }).done((resp) => {
-    if (resp.length == 0) {
-      return;
-    }
-
-    _.each(resp, function(e) {
-      e.path = path.concat("/"+e.name);
-      e.indent = i;
-      e.indentText = "&nbsp;".repeat((i - 1) * 3);
-      this.foldersCollection.push(e);
-      this.getFolderRecursively(e._id, i, e.path);
-    }.bind(this));
-  });*/
 }
 
 // VIP api use in plugin
@@ -93,7 +72,11 @@ function saveVipApiKey(newkey) {
       apiKeyVip: newkey
     }
   })
-  .then(() => getCurrentUser().set('apiKeyVip', newkey));
+  .then(() => {
+    getCurrentUser().set('apiKeyVip', newkey);
+    messageGirder("success", "Your VIP configuration has been updated");
+    events.trigger('vip:vipApiKeyChanged', {apiKeyVip: newkey});
+  });
 }
 
 // key config stuff

@@ -20,7 +20,7 @@ wrap(CheckedMenuWidget, 'render', function(render) {
   render.call(this);
 
   // parentView is a HierarchyView
-  if ( ! hasTheVipApiKeyConfigured || ! ENABLE_MULTIFILES
+  if ( ! hasTheVipApiKeyConfigured() || ! ENABLE_MULTIFILES
           || ! isPluginActivatedOn(this.parentView.parentModel) ) {
     return this;
   }
