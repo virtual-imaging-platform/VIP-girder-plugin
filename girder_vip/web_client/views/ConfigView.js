@@ -1,8 +1,10 @@
 import _ from 'underscore';
-import PluginConfigBreadcrumbWidget from '@girder/core/views/widgets/PluginConfigBreadcrumbWidget';
-import View from '@girder/core/views/View';
+import events from '@girder/core/events';
 import { restRequest } from '@girder/core/rest';
 import { messageGirder} from '../utilities/vipPluginUtils';
+
+import PluginConfigBreadcrumbWidget from '@girder/core/views/widgets/PluginConfigBreadcrumbWidget';
+import View from '@girder/core/views/View';
 
 import ConfigViewTemplate from '../templates/configView.pug';
 
@@ -51,7 +53,7 @@ var ConfigView = View.extend({
           url: 'system/setting',
           data: {
             key: 'vip_plugin.settings',
-            value: this.vipConfig
+            value: JSON.stringify(this.vipConfig)
           },
           error: null
       }).done(() => {
@@ -103,7 +105,12 @@ var ConfigView = View.extend({
     },
 
     buildAndValidateCollections: function(collectionsString) {
-      var collections = collectionsString.split(/\s*[,;:]]\s*/);
+      if (collectionsString.length === 0) {
+        this.vipConfig.authorized_collections = [];
+        return true;
+      }
+
+      var collections = collectionsString.split(/\s*[,;:]\s*/);
 
       if(_.every(collections, e => /^\w+$/.test(e))) {
         this.vipConfig.authorized_collections = collections;
