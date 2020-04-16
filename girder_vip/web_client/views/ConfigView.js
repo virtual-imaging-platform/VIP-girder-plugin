@@ -19,7 +19,7 @@ var ConfigView = View.extend({
             url: 'system/setting',
             data: {key: 'vip_plugin.settings'}
         }).done((resp) => {
-            this.vipConfig = resp['vip_plugin.settings'] || [];
+            this.vipConfig = resp;
             this.render();
         });
     },
@@ -39,7 +39,7 @@ var ConfigView = View.extend({
         return this;
     },
 
-    onSubmit: function() {
+    onSubmit: function(e) {
       e.preventDefault();
 
       if (! this.buildAndValidate()) return;
@@ -52,7 +52,7 @@ var ConfigView = View.extend({
           data: {
             key: 'vip_plugin.settings',
             value: this.vipConfig
-          }
+          },
           error: null
       }).done(() => {
           events.trigger('g:alert', {
@@ -74,21 +74,21 @@ var ConfigView = View.extend({
 
       var isValid = true;
 
-      if (! vipUrlString  || ! this.isUrlValid(vipUrlString)) {
-          isValid = false;
-          messageGirder("danger", "Wrong vip url");
-      } else {
+      if (vipUrlString  && this.isUrlValid(vipUrlString)) {
         this.vipConfig.vip_url = vipUrlString;
-      }
-
-      if (! storageName  || /^\w+#/.test(storageName)) {
-          isValid = false;
-          messageGirder("danger", "Wrong girder external storage");
       } else {
-        this.vipConfig.vip_external_storage_name = storageName
+        isValid = false;
+        messageGirder("danger", "Wrong vip url");
       }
 
-      return isValid && this.buildAndValidateCollections();
+      if (storageName  && /^\w+$/.test(storageName)) {
+        this.vipConfig.vip_external_storage_name = storageName
+      } else {
+        isValid = false;
+        messageGirder("danger", "Wrong girder external storage");
+      }
+
+      return this.buildAndValidateCollections(collections) && isValid;
     },
 
     isUrlValid: function(urlString) {
@@ -105,7 +105,7 @@ var ConfigView = View.extend({
     buildAndValidateCollections: function(collectionsString) {
       var collections = collectionsString.split(/\s*[,;:]]\s*/);
 
-      if(_.every(collections, e => /^\w+#/.test(e))) {
+      if(_.every(collections, e => /^\w+$/.test(e))) {
         this.vipConfig.authorized_collections = collections;
         return true;
       }
