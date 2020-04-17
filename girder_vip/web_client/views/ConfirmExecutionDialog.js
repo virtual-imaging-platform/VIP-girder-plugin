@@ -5,8 +5,7 @@ import { getCurrentUser} from '@girder/core/auth';
 import { handleOpen } from '@girder/core/dialog';
 import { parseQueryString, splitRoute } from '@girder/core/misc';
 import router from '@girder/core/router';
-import { messageGirder, verifyApiKeysConfiguration, fetchGirderFolders, getCarminClient} from '../utilities/vipPluginUtils';
-import { VIP_EXTERNAL_STORAGE_NAME } from '../constants';
+import { messageGirder, verifyApiKeysConfiguration, fetchGirderFolders, doVipRequest, getVipConfig, useVipConfig} from '../utilities/vipPluginUtils';
 import FolderCollection from '@girder/core/collections/FolderCollection';
 import FolderModel from '@girder/core/models/FolderModel';
 import ExecutionModel from '../models/ExecutionModel';
@@ -49,12 +48,9 @@ var ConfirmExecutionDialog = VipModal.extend({
       return ;
     }
 
-    (settings.vipConfigOk ?
-      Promise.resolve(true)
-      :
+    return (settings.vipConfigOk ? Promise.resolve(true) :
       verifyApiKeysConfiguration({printWarning : true})
-    )
-    .then((isOk) => {
+    ).then((isOk) => {
       if (isOk) {
         return this.fetchPipelineIfNecessary()
         .then( () => fetchGirderFolders(getCurrentUser()))
@@ -99,7 +95,7 @@ var ConfirmExecutionDialog = VipModal.extend({
   fetchPipelineIfNecessary: function() {
     if (this.pipeline) return Promise.resolve();
 
-    return getCarminClient().describePipeline(this.pipelineId)
+    return doVipRequest('describePipeline', this.pipelineId)
     .then(pipeline => this.pipeline = pipeline);
   },
 
@@ -186,13 +182,14 @@ var ConfirmExecutionDialog = VipModal.extend({
   launchExecution: function (executionName, girderFolder, fileParam, execParams) {
 
     // Create result folder
-    this.createResultFolder(executionName, girderFolder)
-    .then( folder => {
+    var createFolderPromise = this.createResultFolder(executionName, girderFolder);
+    useVipConfig(createFolderPromise, (vipConfig, folder) => {
+      var storageName = vipConfig.vip_external_storage_name;
 
-      execParams[fileParam] = VIP_EXTERNAL_STORAGE_NAME + ":" + this.file.id;
-      var resultsLocation = VIP_EXTERNAL_STORAGE_NAME + ":" + folder.id;
+      execParams[fileParam] = storageName + ":" + this.file.id;
+      var resultsLocation = storageName + ":" + folder.id;
 
-      return getCarminClient().initAndStart(
+      return doVipRequest('initAndStart',
         executionName,
         this.pipeline.identifier,
         resultsLocation,

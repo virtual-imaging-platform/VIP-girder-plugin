@@ -6,7 +6,7 @@ import { cancelRestRequests } from '@girder/core/rest';
 import { getCurrentUser } from '@girder/core/auth';
 import events from '@girder/core/events';
 import * as constants from '../constants';
-import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, getCarminClient } from '../utilities/vipPluginUtils';
+import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, doVipRequest } from '../utilities/vipPluginUtils';
 
 // Import Model
 import FileCollection from '@girder/core/collections/FileCollection';
@@ -37,7 +37,7 @@ var ListPipelines = View.extend({
     this.user = getCurrentUser();
     this.foldersCollection = [];
 
-    var getPipelinesPromise = getCarminClient().listPipelines()
+    var getPipelinesPromise = doVipRequest('listPipelines')
     .then(pipelines => this.pipelines = sortPipelines(pipelines))
     .catch( (status) => {
       messageGirder('danger', 'Error fetching VIP pipelines' + status);
@@ -117,7 +117,7 @@ var ListPipelines = View.extend({
   confirmPipeline: function (e) {
     var pipelineIdentifier = $(e.currentTarget)[0].value;
 
-    getCarminClient().describePipeline(pipelineIdentifier).then(function (data) {
+    doVipRequest('describePipeline', pipelineIdentifier).then(function (data) {
       if (typeof data.errorCode !== 'undefined') {
         events.trigger('g:alert', {
           text: "Unable to retrieve application informations for this version",

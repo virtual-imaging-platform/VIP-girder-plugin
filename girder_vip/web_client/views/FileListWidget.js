@@ -17,35 +17,35 @@ import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';
 wrap(FileListWidget, 'render', function(render) {
   render.call(this);
 
-  if (! this.canRenderVipPlugin()) {
-    return this;
-  }
+  isPluginActivatedOn(this.parentItem)
+  .then(isPluginActivated => {
+    if (! this.canRenderVipPlugin(isPluginActivated)) return;
 
-  if (this.parentItem.get('_accessLevel') >= AccessType.READ) {
-    this.collection.each(file => {
-      this.$('li.g-file-list-entry .g-show-info[file-cid=' + file.cid + ']')
-        .after(ButtonLaunchPipeline({model: file}));
-    });
-  }
+    if (this.parentItem.get('_accessLevel') >= AccessType.READ) {
+      this.collection.each(file => {
+        this.$('li.g-file-list-entry .g-show-info[file-cid=' + file.cid + ']')
+          .after(ButtonLaunchPipeline({model: file}));
+      });
+    }
 
-  if (this.parentView.showVipPipelines) {
-    this.parentView.showVipPipelines = false;
-    this.showPipelinesModal(this.parentView.vipPipelineFileId);
-  }
+    if (this.parentView.showVipPipelines) {
+      this.parentView.showVipPipelines = false;
+      this.showPipelinesModal(this.parentView.vipPipelineFileId);
+    }
 
-  if (this.parentView.showVipLaunch) {
-    this.parentView.showVipLaunch = false;
-    this.showLaunchModal();
-  }
+    if (this.parentView.showVipLaunch) {
+      this.parentView.showVipLaunch = false;
+      this.showLaunchModal();
+    }
+  };
 
   return this;
 });
 
 // return true if render must be done
-FileListWidget.prototype.canRenderVipPlugin = function () {
+FileListWidget.prototype.canRenderVipPlugin = function (isPluginActivated) {
   var showModal = this.parentView.showVipPipelines || this.parentView.showVipLaunch;
   var isApiKeyOk = hasTheVipApiKeyConfigured();
-  var isPluginActivated = isPluginActivatedOn(this.parentItem);
 
   if (!showModal) {
     return isApiKeyOk && isPluginActivated;

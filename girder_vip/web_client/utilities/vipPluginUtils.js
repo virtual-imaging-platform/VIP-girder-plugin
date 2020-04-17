@@ -7,7 +7,7 @@ import events from '@girder/core/events';
 import ApiKeyCollection from '@girder/core/collections/ApiKeyCollection.js'
 import ApiKeyModel from '@girder/core/models/ApiKeyModel.js'
 import FolderCollection from '@girder/core/collections/FolderCollection';
-import { VIP_PLUGIN_API_KEY, COLLECTIONS_IDS, VIP_EXTERNAL_STORAGE_NAME, NEEDED_TOKEN_SCOPES, CARMIN_URL } from '../constants';
+import { VIP_PLUGIN_API_KEY, NEEDED_TOKEN_SCOPES } from '../constants';
 import CarminClient from '../vendor/carmin/carmin-client';
 
 
@@ -40,6 +40,29 @@ function fetchGirderFolders(model, level=0) {
   });
 }
 
+var vipConfig = null;
+
+function getVipConfig() {
+  if (vipConfig) return Promise.resolve(vipConfig);
+
+  return restRequest({
+    method: 'GET',
+    url: '/system/setting/vip_plugin'
+  })
+  .then(resp => {
+    vipConfig = resp;
+    return vipConfig;
+  });
+}
+
+function useVipConfig(promise, f) {
+    return Promise.all([
+      getVipConfig(),
+      promise,
+    ])
+    .then( res => f.apply(this, res) );
+}
+
 // VIP api use in plugin
 
 function hasTheVipApiKeyConfigured() {
@@ -51,17 +74,23 @@ function hasTheVipApiKeyConfigured() {
 
 function isPluginActivatedOn(model) {
   if (model.resourceName === 'user') {
-    return false;
-  } else if (model.resourceName === 'collection') {
+    return Promise.resolve(false);
+  }
+  if (model.resourceName === 'collection') {
     return isPluginActivatedOnCollection(model.id);
-  } else if (_.contains(['item', 'folder'], model.resourceName)) {
-    return model.get('baseParentType') === 'collection' &&
-      isPluginActivatedOnCollection(model.get('baseParentId'));
+  }
+  if (_.contains(['item', 'folder'], model.resourceName)) {
+    if (model.get('baseParentType') !== 'collection') {
+      return Promise.resolve(false);
+    }
+    return isPluginActivatedOnCollection(model.get('baseParentId'));
   }
 }
 
 function isPluginActivatedOnCollection(collectionId) {
-  return _.contains(COLLECTIONS_IDS, collectionId);
+  return getVipConfig(
+    vipConfig => _.contains(vipConfig.authorized_collections, collectionId)
+  );
 }
 
 function saveVipApiKey(newkey) {
@@ -105,9 +134,9 @@ const NOT_RECOVERABLE_ERRORS = [
 // if not ok and not recoverable, throw the error message
 function updateApiKeysConfiguration(opts) {
 
-    if (opts.newKey) getCarminClient(opts.newKey);
+    (opts.newKey ? getCarminClient(opts.newKey) : Promise.resolve())
     // test vip config and api key
-    return verifyVipConfig()
+    .then( () => verifyVipConfig() )
     .then( () => verifyGirderApiKey({
       onlyCheck : false,
       printWarning : opts.printWarning,
@@ -141,10 +170,10 @@ function verifyApiKeysConfiguration(opts) {
   }
 
   // test it is valid (by fetching external keys)
-  return doVipRequest('listUserExternalPlatformKeys')
+  var getKeys = doVipRequest('listUserExternalPlatformKeys')
   // test there is a girder key in there
-  .then(userVipKeys =>
-    _.findWhere(userVipKeys, {storageIdentifier : VIP_EXTERNAL_STORAGE_NAME})
+  return useVipConfig(getKeys, (vipConfig, userVipKeys)) =>
+    _.findWhere(userVipKeys, {storageIdentifier : vipConfig.vip_external_storage_name})
   )
   // verify it is ok
   .then(vipKeyForGirder => {
@@ -238,22 +267,11 @@ function verifyGirderApiKey(opts = {}) {
   );
 }
 
-function doVipRequest(vipFunction) {
-  return getCarminClient()[vipFunction]()
-  .catch(data => {
-    if (data.errorCode && data.errorCode === 40101) {
-      throw { vipPluginError : 'WRONG_VIP_API_KEY' };
-    } else {
-      throw "An error occured while using the VIP API (" + data + ")";
-    }
-  });
-}
-
 function verifyVipConfig() {
-  return doVipRequest('listExternalPlatforms')
-  .then( vipExternalPlatforms => {
-    if ( _.findWhere(vipExternalPlatforms,
-      {identifier : VIP_EXTERNAL_STORAGE_NAME})) {
+  var promise = doVipRequest('listExternalPlatforms');
+  return useVipConfig(promise, (vipConfig, externalPlatforms) => {
+    if ( _.findWhere(externalPlatforms,
+      {identifier : vipConfig.vip_external_storage_name })) {
         return true;
     } else {
       throw { vipPluginError : 'GIRDER_NOT_CONFIGURED_IN_VIP' };
@@ -286,13 +304,17 @@ function createAndPushGirderApiKey(opts = {}) {
     name: VIP_PLUGIN_API_KEY,
     tokenDuration: 1
   });
-  return opts.apikey ? Promise.resolve(apikey) : apikey.save()
-  .then( () => {
+  return opts.apikey ? Promise.resolve() : apikey.save()
+  .then( () => getVipConfig() )
+  .then( (vipConfig) => {
     if (opts.keysCollection)
       opts.keysCollection.add(apikey);
     if (opts.doPush){
-      return getCarminClient()
-        .createOrUpdateApiKey(VIP_EXTERNAL_STORAGE_NAME, apikey.get('key'))
+      return doVipRequest(
+        'createOrUpdateApiKey',
+        vipConfig.vip_external_storage_name,
+        apikey.get('key')
+      )
     }
   });
 }
@@ -334,22 +356,35 @@ function deleteApiKeys(apiKeys) {
 var carminClient = null;
 
 function getCarminClient(newApiKey) {
-  if (carminClient && ! newApiKey) {
-    return carminClient;
-  } else if (carminClient) {
-    // change api key
-    carminClient.apiKey = newApiKey;
-    return carminClient;
+  if (carminClient) {
+    if (newApiKey) {
+      carminClient.apiKey = newApiKey;
+    }
+    return Promise.resolve(carminClient);
   }
   // init carminClient
   if (! newApiKey && ! hasTheVipApiKeyConfigured()) {
     messageGirder("danger", 'Wrong VIP plugin client creation');
-    throw "Wrong VIP plugin client creation";
+    Promise.reject("Wrong VIP plugin client creation");
   } else if (! newApiKey) {
     newApiKey = getCurrentUser().get('apiKeyVip');
   }
-  carminClient = new CarminClient(CARMIN_URL, newApiKey);
-  return carminClient;
+  return getVipConfig().then(vipConfig => {
+    carminClient = new CarminClient(vipConfig.vip_url, newApiKey);
+    return carminClient;
+  });
+}
+
+function doVipRequest(vipFunction, ...requestParam) {
+  return getCarminClient()
+  .then( client => client[vipFunction](...requestParam) )
+  .catch(data => {
+    if (data.errorCode && data.errorCode === 40101) {
+      throw { vipPluginError : 'WRONG_VIP_API_KEY' };
+    } else {
+      throw "An error occured while using the VIP API (" + data + ")";
+    }
+  });
 }
 
 function sortPipelines(allPipelines) {
@@ -390,6 +425,8 @@ function sortPipelines(allPipelines) {
 export {
   messageGirder,
   fetchGirderFolders,
+  getVipConfig,
+  useVipConfig,
 
   hasTheVipApiKeyConfigured,
   isPluginActivatedOn,
@@ -398,6 +435,6 @@ export {
   updateApiKeysConfiguration,
   verifyApiKeysConfiguration,
 
-  getCarminClient,
+  doVipRequest,
   sortPipelines
 };

@@ -27,38 +27,38 @@ wrap(ItemListWidget, 'render', function(render) {
   }
 
   // parentView is a HierarchyView
-  if ( ! this.canRenderVipPlugin(this.parentView.parentModel)) {
-    return this;
-  }
+  isPluginActivatedOn(this.parentView.parentModel)
+  .then(isPluginActivated => {
+    if (! this.canRenderVipPlugin(isPluginActivated)) return;
 
-  this.collection.chain()
-  .filter(item => item.get('_accessLevel') >= AccessType.READ)
-  .each(item => {
-    var itemNameEl =
-      this.$('li.g-item-list-entry a.g-item-list-link[g-item-cid = ' + item.cid +  ']');
-    if (this._viewLinks) {
-      itemNameEl.siblings('.g-item-size')
-        .before(ButtonLaunchPipeline({model: item}));
-    } else {
-      itemNameEl.parent()
-        .append(ButtonLaunchPipeline({model: item}));
+    this.collection.chain()
+    .filter(item => item.get('_accessLevel') >= AccessType.READ)
+    .each(item => {
+      var itemNameEl =
+        this.$('li.g-item-list-entry a.g-item-list-link[g-item-cid = ' + item.cid +  ']');
+      if (this._viewLinks) {
+        itemNameEl.siblings('.g-item-size')
+          .before(ButtonLaunchPipeline({model: item}));
+      } else {
+        itemNameEl.parent()
+          .append(ButtonLaunchPipeline({model: item}));
+      }
+    });
+
+    if (this.parentView.parentView.showVipPipelines ||
+            this.parentView.parentView.showVipLaunch) {
+      var itemId = this.parentView.parentView.vipPipelineItemId;
+      this.fetchFilesForItem(this.collection.get(itemId));
     }
-  });
-
-  if (this.parentView.parentView.showVipPipelines ||
-          this.parentView.parentView.showVipLaunch) {
-    var itemId = this.parentView.parentView.vipPipelineItemId;
-    this.fetchFilesForItem(this.collection.get(itemId));
   }
 
   return this;
 });
 
 // return true if render must be done
-ItemListWidget.prototype.canRenderVipPlugin = function (model) {
+ItemListWidget.prototype.canRenderVipPlugin = function (isPluginActivated) {
   var showModal = this.parentView.parentView.showVipPipelines || this.parentView.parentView.showVipLaunch;
   var isApiKeyOk = hasTheVipApiKeyConfigured();
-  var isPluginActivated = isPluginActivatedOn(model);
 
   if (!showModal) {
     return isApiKeyOk && isPluginActivated;

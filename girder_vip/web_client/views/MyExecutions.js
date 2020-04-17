@@ -4,7 +4,7 @@ import moment from 'moment';
 import { cancelRestRequests, restRequest } from '@girder/core/rest';
 import * as constants from '../constants';
 import events from '@girder/core/events';
-import { hasTheVipApiKeyConfigured, messageGirder, getCarminClient } from '../utilities/vipPluginUtils';
+import { hasTheVipApiKeyConfigured, messageGirder, doVipRequest } from '../utilities/vipPluginUtils';
 import { getCurrentUser } from '@girder/core/auth';
 
 // Import views
@@ -74,7 +74,7 @@ var MyExecutions = View.extend({
   },
 
   updateExecution: function(girderExec) {
-    return getCarminClient().getExecution(execution.vipExecutionId)
+    return doVipRequest('getExecution', execution.vipExecutionId)
     .then(vipExec => {
       if (girderExec.get('status') == execution.status.toUpperCase()) {
         return;

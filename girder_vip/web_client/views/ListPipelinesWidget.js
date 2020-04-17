@@ -7,7 +7,7 @@ import router from '@girder/core/router';
 import { cancelRestRequests } from '@girder/core/rest';
 import { getCurrentUser } from '@girder/core/auth';
 import * as constants from '../constants';
-import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, getCarminClient, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
+import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, doVipRequest, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
 
 // Import views
 import VipModal from './VipPluginModal';
@@ -76,7 +76,7 @@ var ListPipelinesWidget = VipModal.extend({
   fetchPipelinesIfNecessary: function() {
     if (this.pipelines) return Promise.resolve();
 
-    return getCarminClient().listPipelines().then(pipelines => {
+    return doVipRequest('listPipelines').then(pipelines => {
       this.pipelines = sortPipelines(pipelines);
     });
   },
@@ -115,7 +115,7 @@ var ListPipelinesWidget = VipModal.extend({
         parentView: this
     }).render();
 
-    getCarminClient().describePipeline(pipelineVersion.identifier)
+    doVipRequest('describePipeline', pipelineVersion.identifier)
     .then(pipeline => {
       this.goingToConfirmDialog = true;
       new ConfirmExecutionDialog({

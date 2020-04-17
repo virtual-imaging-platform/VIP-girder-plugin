@@ -20,15 +20,17 @@ wrap(CheckedMenuWidget, 'render', function(render) {
   render.call(this);
 
   // parentView is a HierarchyView
-  if ( ! hasTheVipApiKeyConfigured() || ! ENABLE_MULTIFILES
-          || ! isPluginActivatedOn(this.parentView.parentModel) ) {
+  if ( ! hasTheVipApiKeyConfigured() || ! ENABLE_MULTIFILES) {
     return this;
   }
 
-  // Display the "application" button in the multifiles menu
-  this.$('.g-checked-menu-header').after(CheckedMenuTemplate({
-    'itemCount': this.itemCount
-  }));
+  isPluginActivatedOn(this.parentView.parentModel).then( isOk => {
+    if (! isOk) return;
+    // Display the "application" button in the multifiles menu
+    this.$('.g-checked-menu-header').after(CheckedMenuTemplate({
+      'itemCount': this.itemCount
+    }));
+  });
 
   return this;
 });
