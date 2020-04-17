@@ -5,7 +5,6 @@ import { handleOpen } from '@girder/core/dialog';
 import { parseQueryString, splitRoute } from '@girder/core/misc';
 import router from '@girder/core/router';
 import { cancelRestRequests } from '@girder/core/rest';
-import { getCurrentUser } from '@girder/core/auth';
 import * as constants from '../constants';
 import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, doVipRequest, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
 
@@ -28,7 +27,6 @@ var ListPipelinesWidget = VipModal.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
-    this.user = getCurrentUser();
     this.file = settings.file;
     this.item = settings.item;
     this.pipelines = settings.pipelines;

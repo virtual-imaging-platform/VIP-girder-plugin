@@ -94,7 +94,7 @@ var MyExecutions = View.extend({
 
     confirm({
       text: 'This will delete this execution from this list, not from VIP \
-              and it won't delete any file on girder.',
+              and it won\'t delete any file on girder.',
       yesText: 'Delete',
       confirmCallback: () => {
           this.girderExecs.get(cid).destroy().then( () => {

@@ -17,6 +17,14 @@ import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';
 wrap(FileListWidget, 'render', function(render) {
   render.call(this);
 
+  this.showModal = this.parentView.showVipPipelines || this.parentView.showVipLaunch;
+  if (! hasTheVipApiKeyConfigured() ){
+    if (this.showModal) {
+        this.onShowModalError('Your VIP API key is not configured in your girder account');
+    }
+    return this;
+  }
+
   isPluginActivatedOn(this.parentItem)
   .then(isPluginActivated => {
     if (! this.canRenderVipPlugin(isPluginActivated)) return;
@@ -44,18 +52,13 @@ wrap(FileListWidget, 'render', function(render) {
 
 // return true if render must be done
 FileListWidget.prototype.canRenderVipPlugin = function (isPluginActivated) {
-  var showModal = this.parentView.showVipPipelines || this.parentView.showVipLaunch;
-  var isApiKeyOk = hasTheVipApiKeyConfigured();
-
-  if (!showModal) {
-    return isApiKeyOk && isPluginActivated;
+  if (! this.showModal) {
+    return isPluginActivated;
   }
 
   // show modal requested
   var error;
-  if ( ! isApiKeyOk) {
-    error = 'Your VIP API key is not configured in your girder account';
-  } else if ( ! isPluginActivated) {
+  if ( ! isPluginActivated) {
     error = 'VIP applications cannot be used in this collection';
   } else if ( ! this.collection.get(this.parentView.vipPipelineFileId)) {
     error = 'You cannot launch a VIP pipeline on this file because it does not exist in this item';
@@ -65,12 +68,16 @@ FileListWidget.prototype.canRenderVipPlugin = function (isPluginActivated) {
   }
   // there's an error
 
+  this.onShowModalError(error);
+  return false;
+
+};
+
+FileListWidget.prototype.onShowModalError = function (error) {
   this.parentView.showVipPipelines = false;
   this.parentView.showVipLaunch = false;
   messageGirder('danger', error);
   router.navigate(this.getRoute(), {replace: true});
-  return false;
-
 };
 
 FileListWidget.prototype.events['click a.vip-launch-pipeline'] = function (e) {

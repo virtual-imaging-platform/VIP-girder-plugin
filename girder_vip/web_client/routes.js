@@ -32,7 +32,7 @@ router.route('item/:id/file/:id', 'item-file-vip-pipelines', function (itemId, f
             vipPipelineFileId: fileId
         });
     } else {
-        messageGirder("warning", 'Missing vip-pipelines parameter to launch a VIP pipeline');
+        messageGirder("warning", 'Missing parameter to launch a VIP pipeline');
         router.navigate('/item/' + itemId, {trigger: true});
     }
 });
@@ -56,7 +56,7 @@ router.route('collection/:id/folder/:id/item/:id/file/:id',
             vipPipelineId: params.dialogid
         });
     } else {
-        messageGirder("warning", 'Missing vip-pipelines parameter to launch a VIP pipeline');
+        messageGirder("warning", 'Missing parameter to launch a VIP pipeline');
         router.navigate('/collection/' + cid + '/folder/' + folderId, {trigger: true});
     }
 });
@@ -78,7 +78,7 @@ router.route('folder/:id/item/:id/file/:id',
             vipPipelineId: params.dialogid
         });
     } else {
-        messageGirder("warning", 'Missing vip-pipelines parameter to launch a VIP pipeline');
+        messageGirder("warning", 'Missing parameter to launch a VIP pipeline');
         router.navigate('/folder/' + folderId, {trigger: true});
     }
 });

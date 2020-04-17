@@ -26,6 +26,14 @@ wrap(ItemListWidget, 'render', function(render) {
     return this;
   }
 
+  this.showModal = this.parentView.parentView.showVipPipelines || this.parentView.parentView.showVipLaunch;
+  if (! hasTheVipApiKeyConfigured() ){
+    if (this.showModal) {
+        this.onShowModalError('Your VIP API key is not configured in your girder account');
+    }
+    return this;
+  }
+
   // parentView is a HierarchyView
   isPluginActivatedOn(this.parentView.parentModel)
   .then(isPluginActivated => {
@@ -57,18 +65,14 @@ wrap(ItemListWidget, 'render', function(render) {
 
 // return true if render must be done
 ItemListWidget.prototype.canRenderVipPlugin = function (isPluginActivated) {
-  var showModal = this.parentView.parentView.showVipPipelines || this.parentView.parentView.showVipLaunch;
-  var isApiKeyOk = hasTheVipApiKeyConfigured();
 
-  if (!showModal) {
-    return isApiKeyOk && isPluginActivated;
+  if (! this.showModal) {
+    return isPluginActivated;
   }
 
   // show modal requested
   var error;
-  if ( ! isApiKeyOk) {
-    error = 'Your VIP API key is not configured in your girder account';
-  } else if ( ! isPluginActivated) {
+  if ( ! isPluginActivated) {
     error = 'VIP applications cannot be used in this collection';
   } else if ( ! this.collection.get(this.parentView.parentView.vipPipelineItemId)) {
     error = 'You cannot launch a VIP pipeline on this item because it does not exist in this folder';
@@ -78,13 +82,17 @@ ItemListWidget.prototype.canRenderVipPlugin = function (isPluginActivated) {
   }
   // there's an error
 
+  this.onShowModalError(error);
+  return false;
+
+};
+
+ItemListWidget.prototype.onShowModalError = function (error) {
   this.parentView.parentView.showVipPipelines = false;
   this.parentView.parentView.showVipLaunch = false;
   messageGirder('danger', error);
   router.navigate(this.getRoute(), {replace: true});
-  return false;
-
-};
+},
 
 ItemListWidget.prototype.getRoute = function () {
   var route = 'folder/' + this.parentView.parentModel.id;
@@ -112,16 +120,14 @@ ItemListWidget.prototype.fetchFilesForItem = function (item) {
 
 ItemListWidget.prototype.onItemFilesReceived = function () {
   // is there a requested modal ?
-  if (this.parentView.parentView.showVipPipeline ||
-          this.parentView.parentView.showVipLaunch) {
+  if (this.showModal) {
     var showVipPipelines = this.parentView.parentView.showVipPipelines;
     this.parentView.parentView.showVipPipelines = false;
     this.parentView.parentView.showVipLaunch = false;
 
     var file = this.itemFiles.get(this.parentView.parentView.vipPipelineFileId);
     if ( ! file) {
-      messageGirder('danger', 'You cannot launch a VIP pipeline on this file because it does not exist in this item');
-      router.navigate(this.getRoute(), {replace: true});
+      this.onShowModalError('You cannot launch a VIP pipeline on this file because it does not exist in this item');
     } else if (showVipPipelines) {
       this.showPipelinesModal(file)
     } else {

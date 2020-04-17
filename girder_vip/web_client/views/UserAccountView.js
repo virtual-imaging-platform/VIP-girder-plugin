@@ -58,7 +58,7 @@ UserAccountView.prototype.checkVipPluginConfig = function (useInternalCollection
     messageGirder("warning", "There is a problem with your VIP configuration. Please click \"Update\"");
   })
   .catch(error => {
-    messageGirder("warning", "There is a with the VIP plugin configuration : " + error);
+    messageGirder("warning", "There is a problem with the VIP plugin configuration : " + error);
   });
 
 };
