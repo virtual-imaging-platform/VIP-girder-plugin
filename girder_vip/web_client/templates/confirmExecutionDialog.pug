@@ -72,6 +72,6 @@
       .modal-footer
         a.btn.btn-small.btn-default(data-dismiss="modal") Close
         a.btn.btn-small.btn-default#go-back-to-pipelines(data-dismiss="modal") Go Back to pipeline list
-        button.btn.btn-success#run-execution(disabled=!folders || pipeline || !authorizedForVersionOne, type="submit", data-loading-text="<i class='fa fa-spinner fa-spin'></i> Execute")
+        button.btn.btn-success#run-execution(disabled=!folders || !pipeline || !authorizedForVersionOne, type="submit", data-loading-text="<i class='fa fa-spinner fa-spin'></i> Execute")
           i.icon-play
           |  Execute

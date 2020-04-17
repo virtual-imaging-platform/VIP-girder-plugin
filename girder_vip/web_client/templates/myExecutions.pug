@@ -18,11 +18,11 @@ table.table.table-hover
         td= status[execution.get('status')].text
         td= execution.get('creationDate')
         td
-          button.btn.btn-sm.btn-primary.see-results(class=(execution.get('isFinished') ? '' : 'd-none'))
-              Results
+          button.btn.btn-sm.btn-primary.see-results(class=(execution.get('isFinished') ? '' : 'd-none')) Results
 
           button.btn.btn-sm.btn-danger.deleteExecution(title="Delete from girder")
-              i.icon-cancel Delete
+            i.icon-cancel
+            |  Delete
 
 
 button.btn.btn-sm.btn-primary.refresh-executions Refresh

@@ -88,7 +88,7 @@ function isPluginActivatedOn(model) {
 }
 
 function isPluginActivatedOnCollection(collectionId) {
-  return getVipConfig(
+  return getVipConfig().then(
     vipConfig => _.contains(vipConfig.authorized_collections, collectionId)
   );
 }
@@ -170,9 +170,9 @@ function verifyApiKeysConfiguration(opts) {
   }
 
   // test it is valid (by fetching external keys)
-  var getKeys = doVipRequest('listUserExternalPlatformKeys')
+  var getKeys = doVipRequest('listUserExternalPlatformKeys');
   // test there is a girder key in there
-  return useVipConfig(getKeys, (vipConfig, userVipKeys)) =>
+  return useVipConfig(getKeys, (vipConfig, userVipKeys) =>
     _.findWhere(userVipKeys, {storageIdentifier : vipConfig.vip_external_storage_name})
   )
   // verify it is ok

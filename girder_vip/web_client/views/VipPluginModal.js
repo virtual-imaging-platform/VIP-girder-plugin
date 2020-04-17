@@ -3,6 +3,8 @@ import { handleOpen } from '@girder/core/dialog';
 import { parseQueryString, splitRoute } from '@girder/core/misc';
 import router from '@girder/core/router';
 
+import View from '@girder/core/views/View';
+
 // Modal to fill parameters and launch the pipeline
 var VipModal = View.extend({
 

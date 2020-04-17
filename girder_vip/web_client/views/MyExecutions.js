@@ -1,7 +1,7 @@
 // Import utilities
 import _ from 'underscore';
 import moment from 'moment';
-import { cancelRestRequests, restRequest } from '@girder/core/rest';
+import router from '@girder/core/router';
 import * as constants from '../constants';
 import events from '@girder/core/events';
 import { hasTheVipApiKeyConfigured, messageGirder, doVipRequest } from '../utilities/vipPluginUtils';
@@ -62,26 +62,30 @@ var MyExecutions = View.extend({
     .map( ex => this.updateExecution(ex) )
     .value();
 
-    return Promise.all(promiseArray);
+    return Promise.all(allPromises);
   },
 
   getFormattedGirderExecutions: function() {
-    return this.girderExecs.each( girderExec =>_{
+    return this.girderExecs.each( girderExec => {
       var m = moment.unix(girderExec.get('timestampCreation'));
       girderExec.set('creationDate', m.format("YYYY/MM/DD HH:mm:ss"));
       girderExec.set('isFinished', girderExec.get('status') == 'FINISHED');
-    };
+    });
   },
 
   updateExecution: function(girderExec) {
-    return doVipRequest('getExecution', execution.vipExecutionId)
+    return doVipRequest('getExecution', girderExec.get('vipExecutionId'))
     .then(vipExec => {
-      if (girderExec.get('status') == execution.status.toUpperCase()) {
+      if (girderExec.get('status') == vipExec.status.toUpperCase()) {
         return;
       }
-      girderExec.set('status', workflow.status.toUpperCase());
-      return girderExec.save();
-    };
+      girderExec.set('status', vipExec.status.toUpperCase());
+      return girderExec.saveStatus();
+    })
+    .catch(error => {
+      messageGirder("warning", "Error updating information for execution ''\
+       " + girderExec.get('name') + '\'.');
+    });
   },
 
   // Delete a executon of the db
@@ -90,7 +94,7 @@ var MyExecutions = View.extend({
 
     confirm({
       text: 'This will delete this execution from this list, not from VIP \
-              and it wont delete any file on girder.',
+              and it won't delete any file on girder.',
       yesText: 'Delete',
       confirmCallback: () => {
           this.girderExecs.get(cid).destroy().then( () => {

@@ -37,7 +37,7 @@ wrap(FileListWidget, 'render', function(render) {
       this.parentView.showVipLaunch = false;
       this.showLaunchModal();
     }
-  };
+  });
 
   return this;
 });

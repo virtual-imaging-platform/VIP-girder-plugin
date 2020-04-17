@@ -50,7 +50,7 @@ wrap(ItemListWidget, 'render', function(render) {
       var itemId = this.parentView.parentView.vipPipelineItemId;
       this.fetchFilesForItem(this.collection.get(itemId));
     }
-  }
+  });
 
   return this;
 });
