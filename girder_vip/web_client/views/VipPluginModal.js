@@ -30,13 +30,13 @@ var VipModal = View.extend({
       dialogParam = _.map(dialogParamParts, p => encodeURIComponent(p)).join('+');
       if (dialogParam !== decodeURI(dialogParam)) {
           // unauthorized characters, use parent route
-          router.navigate(this.parentView.getRoute(), {replace : true});
+          router.navigate(this.parentView.getRoute());
           this.route = Backbone.history.fragment;
           return;
       }
       queryPart += '&dialogid=' + dialogParam;
     }
-    router.navigate(this.route + routeToAdd + queryPart, {replace : true});
+    router.navigate(this.route + routeToAdd + queryPart);
     this.route = Backbone.history.fragment;
 
   },

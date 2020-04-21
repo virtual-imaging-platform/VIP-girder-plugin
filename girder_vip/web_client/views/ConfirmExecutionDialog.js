@@ -145,7 +145,6 @@ var ConfirmExecutionDialog = VipModal.extend({
     // Check pipeline parameters
     var execParams = {};
     var fileParam;
-    var hasResultsDirectoryParam = false;
     _.each(this.pipeline.parameters, (param, index) => {
       var paramInput = this.$('#input-param-' + index);
       if (paramInput.length) {
@@ -158,9 +157,6 @@ var ConfirmExecutionDialog = VipModal.extend({
       }
       if (param.type == "File" && !param.defaultValue) {
         fileParam = param.name;
-      }
-      if (param.name == "results-directory") {
-        hasResultsDirectoryParam = true;
       }
     });
 
@@ -181,11 +177,11 @@ var ConfirmExecutionDialog = VipModal.extend({
     }
 
     // If there aren't problems with the parameters
-    this.launchExecution(executionName, this.usersFolders.at(girderFolderIndex), fileParam, execParams, hasResultsDirectoryParam);
+    this.launchExecution(executionName, this.usersFolders.at(girderFolderIndex), fileParam, execParams);
   },
 
   // Get the parameters and launch the execution
-  launchExecution: function (executionName, girderFolder, fileParam, execParams, hasResultsDirectoryParam) {
+  launchExecution: function (executionName, girderFolder, fileParam, execParams) {
 
     // Create result folder
     var createFolderPromise = this.createResultFolder(executionName, girderFolder);
@@ -195,10 +191,7 @@ var ConfirmExecutionDialog = VipModal.extend({
       if (fileParam) {
         execParams[fileParam] = storageName + ":" + this.file.id;
       }
-      var resultsLocation = null;
-      if (hasResultsDirectoryParam) {
-        resultsLocation = storageName + ":" + folder.id;
-      }
+      var resultsLocation = storageName + ":" + folder.id;
 
       return doVipRequest('initAndStart',
         executionName,
