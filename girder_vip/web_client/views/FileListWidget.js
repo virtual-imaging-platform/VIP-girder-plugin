@@ -1,6 +1,5 @@
 // Import utilities
 import { wrap } from '@girder/core/utilities/PluginUtils';
-import { AccessType } from '@girder/core/constants';
 import router from '@girder/core/router';
 import { hasTheVipApiKeyConfigured, isPluginActivatedOn, messageGirder } from '../utilities/vipPluginUtils';
 
@@ -29,12 +28,10 @@ wrap(FileListWidget, 'render', function(render) {
   .then(isPluginActivated => {
     if (! this.canRenderVipPlugin(isPluginActivated)) return;
 
-    if (this.parentItem.get('_accessLevel') >= AccessType.READ) {
-      this.collection.each(file => {
-        this.$('li.g-file-list-entry .g-show-info[file-cid=' + file.cid + ']')
-          .after(ButtonLaunchPipeline({model: file}));
-      });
-    }
+    this.collection.each(file => {
+      this.$('li.g-file-list-entry .g-show-info[file-cid=' + file.cid + ']')
+        .after(ButtonLaunchPipeline({model: file}));
+    });
 
     if (this.parentView.showVipPipelines) {
       this.parentView.showVipPipelines = false;
@@ -74,6 +71,7 @@ FileListWidget.prototype.canRenderVipPlugin = function (isPluginActivated) {
 };
 
 FileListWidget.prototype.onShowModalError = function (error) {
+  this.showModal = false;
   this.parentView.showVipPipelines = false;
   this.parentView.showVipLaunch = false;
   messageGirder('danger', error);

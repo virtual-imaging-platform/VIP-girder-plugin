@@ -1,6 +1,6 @@
 // Import utilities
 import { wrap } from '@girder/core/utilities/PluginUtils';
-import { AccessType } from '@girder/core/constants';
+
 import router from '@girder/core/router';
 import FileCollection from '@girder/core/collections/FileCollection';
 import { hasTheVipApiKeyConfigured, isPluginActivatedOn, messageGirder } from '../utilities/vipPluginUtils';
@@ -39,9 +39,7 @@ wrap(ItemListWidget, 'render', function(render) {
   .then(isPluginActivated => {
     if (! this.canRenderVipPlugin(isPluginActivated)) return;
 
-    this.collection.chain()
-    .filter(item => item.get('_accessLevel') >= AccessType.READ)
-    .each(item => {
+    this.collection.each(item => {
       var itemNameEl =
         this.$('li.g-item-list-entry a.g-item-list-link[g-item-cid = ' + item.cid +  ']');
       if (this._viewLinks) {
@@ -88,6 +86,7 @@ ItemListWidget.prototype.canRenderVipPlugin = function (isPluginActivated) {
 };
 
 ItemListWidget.prototype.onShowModalError = function (error) {
+  this.showModal = false;
   this.parentView.parentView.showVipPipelines = false;
   this.parentView.parentView.showVipLaunch = false;
   messageGirder('danger', error);
@@ -121,6 +120,7 @@ ItemListWidget.prototype.fetchFilesForItem = function (item) {
 ItemListWidget.prototype.onItemFilesReceived = function () {
   // is there a requested modal ?
   if (this.showModal) {
+    this.showModal = false;
     var showVipPipelines = this.parentView.parentView.showVipPipelines;
     this.parentView.parentView.showVipPipelines = false;
     this.parentView.parentView.showVipLaunch = false;

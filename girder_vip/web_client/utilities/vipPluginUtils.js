@@ -134,7 +134,7 @@ const NOT_RECOVERABLE_ERRORS = [
 // if not ok and not recoverable, throw the error message
 function updateApiKeysConfiguration(opts) {
 
-    (opts.newKey ? getCarminClient(opts.newKey) : Promise.resolve())
+    return (opts.newKey ? getCarminClient(opts.newKey) : Promise.resolve())
     // test vip config and api key
     .then( () => verifyVipConfig() )
     .then( () => verifyGirderApiKey({
@@ -189,7 +189,12 @@ function verifyApiKeysConfiguration(opts) {
     }
     // problem : girder non configured in vip or girder key not configured
     return verifyVipConfig()
-    .then( () => { throw { vipPluginError : 'NO_KEY_CONFIGURED_IN_VIP' }});
+    .then( () => {
+      if ( opts.printWarning) {
+        messageGirder("warning", ERRORS.NO_KEY_CONFIGURED_IN_VIP);
+      }
+      throw { vipPluginError : 'NO_KEY_CONFIGURED_IN_VIP' };
+    });
   })
   .then( () => true)
   .catch(error => {
@@ -223,7 +228,7 @@ function verifyApiKeysConfiguration(opts) {
 function verifyGirderApiKey(opts = {}) {
   var onWarningFunction = (errorCode) => {
     if (opts.printWarning) {
-      messageGirder("danger", ERRORS[errorCode]);
+      messageGirder("warning", ERRORS[errorCode]);
     }
     if (opts.onlyCheck) {
       throw { vipPluginError : errorCode };
@@ -304,7 +309,7 @@ function createAndPushGirderApiKey(opts = {}) {
     name: VIP_PLUGIN_API_KEY,
     tokenDuration: 1
   });
-  return opts.apikey ? Promise.resolve() : apikey.save()
+  return (opts.apikey ? Promise.resolve() : apikey.save())
   .then( () => getVipConfig() )
   .then( (vipConfig) => {
     if (opts.keysCollection)

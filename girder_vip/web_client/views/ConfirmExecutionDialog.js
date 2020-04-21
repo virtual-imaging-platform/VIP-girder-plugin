@@ -145,16 +145,22 @@ var ConfirmExecutionDialog = VipModal.extend({
     // Check pipeline parameters
     var execParams = {};
     var fileParam;
+    var hasResultsDirectoryParam = false;
     _.each(this.pipeline.parameters, (param, index) => {
       var paramInput = this.$('#input-param-' + index);
       if (paramInput.length) {
-        execParams[param.name] = paramInput.val();
         if ( ! paramInput.hasClass( "optional-vip-param" )) {
           insertInTab(paramInput.val(), this.$('#tab-param-' + index));
+          execParams[param.name] = paramInput.val();
+        } else if (paramInput.val()) {
+          execParams[param.name] = paramInput.val();
         }
       }
       if (param.type == "File" && !param.defaultValue) {
         fileParam = param.name;
+      }
+      if (param.name == "results-directory") {
+        hasResultsDirectoryParam = true;
       }
     });
 
@@ -175,19 +181,24 @@ var ConfirmExecutionDialog = VipModal.extend({
     }
 
     // If there aren't problems with the parameters
-    this.launchExecution(executionName, this.usersFolders.at(girderFolderIndex), fileParam, execParams);
+    this.launchExecution(executionName, this.usersFolders.at(girderFolderIndex), fileParam, execParams, hasResultsDirectoryParam);
   },
 
   // Get the parameters and launch the execution
-  launchExecution: function (executionName, girderFolder, fileParam, execParams) {
+  launchExecution: function (executionName, girderFolder, fileParam, execParams, hasResultsDirectoryParam) {
 
     // Create result folder
     var createFolderPromise = this.createResultFolder(executionName, girderFolder);
     useVipConfig(createFolderPromise, (vipConfig, folder) => {
       var storageName = vipConfig.vip_external_storage_name;
 
-      execParams[fileParam] = storageName + ":" + this.file.id;
-      var resultsLocation = storageName + ":" + folder.id;
+      if (fileParam) {
+        execParams[fileParam] = storageName + ":" + this.file.id;
+      }
+      var resultsLocation = null;
+      if (hasResultsDirectoryParam) {
+        resultsLocation = storageName + ":" + folder.id;
+      }
 
       return doVipRequest('initAndStart',
         executionName,

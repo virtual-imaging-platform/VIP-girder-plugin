@@ -92,7 +92,7 @@ var ListPipelinesWidget = VipModal.extend({
     this.$el.girderModal(this).on('hidden.bs.modal', () => {
       if (! this.goingToConfirmDialog) {
         // reset route to the former one
-        this.goToParentRoute();
+        this.goToParentRoute(true);
       }
     });
 

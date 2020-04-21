@@ -104,8 +104,10 @@ CarminClient.prototype.initAndStart = function(
   var content = {
     "name" : executionName,
     "pipelineIdentifier" : pipelineIdentifier,
-    "resultsLocation" : resultsLocation,
     "inputValues" : inputValues};
+  if (resultsLocation) {
+    content.resultsLocation = resultsLocation;
+  }
   var opts = {};
 
   opts.contentType = "application/json";
