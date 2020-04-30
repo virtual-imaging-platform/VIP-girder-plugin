@@ -1,12 +1,4 @@
 //Import utilities
-import _ from 'underscore';
-import { restRequest } from '@girder/core/rest';
-import { handleOpen } from '@girder/core/dialog';
-import { parseQueryString, splitRoute } from '@girder/core/misc';
-import router from '@girder/core/router';
-import { cancelRestRequests } from '@girder/core/rest';
-import * as constants from '../constants';
-import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, doVipRequest, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
 
 // Import views
 import View from '@girder/core/views/View';
@@ -36,4 +28,4 @@ var FileSelectorModal = View.extend({
 
 });
 
-export default ListPipelinesWidget;
+export default FileSelectorModal;
