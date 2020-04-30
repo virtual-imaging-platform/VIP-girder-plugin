@@ -9,6 +9,7 @@ import * as constants from '../constants';
 import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, doVipRequest, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
 
 // Import views
+import View from '@girder/core/views/View';
 import VipModal from './VipPluginModal';
 import ConfirmExecutionDialog from './ConfirmExecutionDialog';
 import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
@@ -18,7 +19,7 @@ import '@girder/core/utilities/jquery/girderModal';
 import ListPipelinesTemplate from '../templates/listPipelines.pug';
 
 // List of pipelines allowed by the user
-var ListPipelinesWidget = VipModal.extend({
+var ListPipelinesWidget = View.extend({
 
   events: {
     'click button.confirm-pipeline' : 'confirmPipeline'
@@ -27,11 +28,7 @@ var ListPipelinesWidget = VipModal.extend({
   initialize: function (settings) {
     cancelRestRequests('fetch');
 
-    this.file = settings.file;
-    this.item = settings.item;
-    this.pipelines = settings.pipelines;
-
-    this.initRoute('vip-pipelines');
+    this.file = settings.file || false;
 
     this.render();
     new LoadingAnimation({
@@ -39,15 +36,9 @@ var ListPipelinesWidget = VipModal.extend({
         parentView: this
     }).render();
 
-    // Get api key of VIP
+    // verify user is connected and has a vip key configured
     if (! hasTheVipApiKeyConfigured()) {
       messageGirder('danger', 'You should have a VIP key configured to launch a VIP pipeline');
-      this.$el.modal('hide');
-      return ;
-    }
-
-    if (! settings.file || ! settings.item) {
-      messageGirder('danger', 'Missing information to launch a VIP pipeline');
       this.$el.modal('hide');
       return ;
     }
@@ -57,8 +48,7 @@ var ListPipelinesWidget = VipModal.extend({
       if (isOk) {
         // Get pipelines of user
         // they are sorted by name with custom ids as keys
-        return this.fetchPipelinesIfNecessary()
-        .then(() => this.render());
+        return this.fetchPipelines().then(() => this.render());
       } else {
         // warning already printed
         this.$el.modal('hide');
@@ -71,9 +61,7 @@ var ListPipelinesWidget = VipModal.extend({
 
   },
 
-  fetchPipelinesIfNecessary: function() {
-    if (this.pipelines) return Promise.resolve();
-
+  fetchPipelines: function() {
     return doVipRequest('listPipelines').then(pipelines => {
       this.pipelines = sortPipelines(pipelines);
     });
@@ -86,15 +74,11 @@ var ListPipelinesWidget = VipModal.extend({
       pipelines: this.pipelines,
     }));
 
-    if (this.alreadyRendered) return this;
-
-    this.alreadyRendered = true;
-    this.$el.girderModal(this).on('hidden.bs.modal', () => {
-      if (! this.goingToConfirmDialog) {
-        // reset route to the former one
-        this.goToParentRoute(true);
-      }
-    });
+    // render once with loading anim, then with data
+    if ( ! this.alreadyRendered) {
+      this.$el.girderModal(this);
+      this.alreadyRendered = true;
+    }
 
     return this;
   },
@@ -118,7 +102,6 @@ var ListPipelinesWidget = VipModal.extend({
       this.goingToConfirmDialog = true;
       new ConfirmExecutionDialog({
         file: this.file,
-        item: this.item,
         pipeline: pipeline,
         pipelines: this.pipelines,
         vipConfigOk : true,
@@ -127,7 +110,7 @@ var ListPipelinesWidget = VipModal.extend({
       });
     })
     .catch(error => {
-      messageGirder("danger", "Unable to retrieve application informations : " + error);
+      messageGirder("danger", "Unable to retrieve VIP application informations : " + error);
     });
   }
 

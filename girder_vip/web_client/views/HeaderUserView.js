@@ -5,6 +5,7 @@ import events from '@girder/core/events';
 
 // Import views
 import HeaderUserView from '@girder/core/views/layout/HeaderUserView';
+import ListPipelinesWidget from './ListPipelinesWidget';
 
 // Import templates
 import HeaderUserTemplate from '../templates/headerUser.pug';
@@ -27,3 +28,11 @@ wrap(HeaderUserView, 'initialize', function(initialize, args) {
 
   this.listenTo(events, 'vip:vipApiKeyChanged', this.render);
 });
+
+HeaderUserView.prototype.events['click a.launch-pipeline'] = function (e) {
+  // todo : verify vip config
+  new ListPipelinesWidget({
+      el: $('#g-dialog-container'),
+      parentView: this
+  });
+};

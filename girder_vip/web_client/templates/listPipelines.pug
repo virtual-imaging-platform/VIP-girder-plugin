@@ -2,8 +2,9 @@
   .modal-content
     .modal-header
       button.close(data-dismiss="modal", aria-hidden="true", type="button") &times;
-      h4.modal-title VIP application
-      .g-dialog-subtitle= "Launch " + file.name() + " on :"
+      h4.modal-title Chose VIP application
+      if file
+        .g-dialog-subtitle= "To launch on " + file.name()
 
     .modal-body
       if pipelines
