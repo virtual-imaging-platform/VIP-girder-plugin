@@ -1,10 +1,9 @@
 // Import utilities
 import router from '@girder/core/router';
 import events from '@girder/core/events';
-import { hasTheVipApiKeyConfigured, messageGirder } from './utilities/vipPluginUtils';
+import { messageGirder } from './utilities/vipPluginUtils';
 
 // Import Views
-import MyExecutions from './views/MyExecutions';
 import ItemView from '@girder/core/views/body/ItemView';
 import FolderView from '@girder/core/views/body/FolderView';
 import CollectionView from '@girder/core/views/body/CollectionView';
@@ -84,6 +83,13 @@ router.route('folder/:id/item/:id/file/:id',
 });
 
 // New route #my-executions
+import MyExecutions from './views/MyExecutions';
 router.route('my-executions', 'myexecutions', function() {
    events.trigger('g:navigateTo', MyExecutions);
+})
+
+// New route #launch-vip-pipeline
+import LaunchVipPipeline from './views/LaunchVipPipeline';
+router.route('vip-pipeline/:id/:id', 'launch-vip-pipeline', function(application, version) {
+   LaunchVipPipeline.fetchAndInit(application, version);
 })
