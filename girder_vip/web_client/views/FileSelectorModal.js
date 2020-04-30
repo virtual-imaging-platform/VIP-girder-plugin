@@ -3,6 +3,7 @@
 // Import views
 import View from '@girder/core/views/View';
 import '@girder/core/utilities/jquery/girderModal';
+import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
 
 // Import templates
 import FileSelectorTemplate from '../templates/fileSelector.pug';
@@ -24,6 +25,10 @@ var FileSelectorModal = View.extend({
     this.$el.girderModal(this);
 
     return this;
+  },
+
+  _openBrowser: function () {
+      this._browserWidgetView.setElement($('#g-dialog-container')).render();
   }
 
 });
