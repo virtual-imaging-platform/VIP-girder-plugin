@@ -1,13 +1,10 @@
 // Import utilities
 import { wrap } from '@girder/core/utilities/PluginUtils';
-import router from '@girder/core/router';
-import { hasTheVipApiKeyConfigured, isPluginActivatedOn, messageGirder } from '../utilities/vipPluginUtils';
+import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities/vipPluginUtils';
 
 // Import views
 import FileListWidget from '@girder/core/views/widgets/FileListWidget';
-import ItemView from '@girder/core/views/body/ItemView';
 import ListPipelinesWidget from './ListPipelinesWidget';
-import ConfirmExecutionDialog from './ConfirmExecutionDialog';
 
 // Import about Creatis
 import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';
@@ -16,104 +13,56 @@ import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';
 wrap(FileListWidget, 'render', function(render) {
   render.call(this);
 
-  this.showModal = this.parentView.showVipPipelines || this.parentView.showVipLaunch;
   if (! hasTheVipApiKeyConfigured() ){
-    if (this.showModal) {
-        this.onShowModalError('Your VIP API key is not configured in your girder account');
-    }
     return this;
   }
 
+  this.activateSelectMode();
+
   isPluginActivatedOn(this.parentItem)
   .then(isPluginActivated => {
-    if (! this.canRenderVipPlugin(isPluginActivated)) return;
+    if (! isPluginActivated) return;
 
     this.collection.each(file => {
       this.$('li.g-file-list-entry .g-show-info[file-cid=' + file.cid + ']')
         .after(ButtonLaunchPipeline({model: file}));
     });
-
-    if (this.parentView.showVipPipelines) {
-      this.parentView.showVipPipelines = false;
-      this.showPipelinesModal(this.parentView.vipPipelineFileId);
-    }
-
-    if (this.parentView.showVipLaunch) {
-      this.parentView.showVipLaunch = false;
-      this.showLaunchModal();
-    }
   });
 
   return this;
 });
 
-// return true if render must be done
-FileListWidget.prototype.canRenderVipPlugin = function (isPluginActivated) {
-  if (! this.showModal) {
-    return isPluginActivated;
-  }
+// Ancestor : ItemView
+wrap(FileListWidget, 'initialize', function(initialize, settings) {
+  settings = settings || {};
+  this.selectMode = settings.selectMode;
+  this.onFileClick = settings.onFileClick;
+  return initialize.call(this, settings);
+});
 
-  // show modal requested
-  var error;
-  if ( ! isPluginActivated) {
-    error = 'VIP applications cannot be used in this collection';
-  } else if ( ! this.collection.get(this.parentView.vipPipelineFileId)) {
-    error = 'You cannot launch a VIP pipeline on this file because it does not exist in this item';
-  } else {
-    // OK
-    return true;
-  }
-  // there's an error
+FileListWidget.prototype.activateSelectMode = function () {
+  if ( ! this.selectMode) return;
 
-  this.onShowModalError(error);
-  return false;
-
-};
-
-FileListWidget.prototype.onShowModalError = function (error) {
-  this.showModal = false;
-  this.parentView.showVipPipelines = false;
-  this.parentView.showVipLaunch = false;
-  messageGirder('danger', error);
-  router.navigate(this.getRoute(), {replace: true});
+  this.$('.g-file-list-entry a').not('.g-file-list-link').addClass('hidden');
+  this.$('.g-file-list-entry .g-file-actions-container').addClass('hidden');
+  this.$('.g-file-list-entry a.g-file-list-link')
+    .removeAttr('target href rel')
+    .attr('title', 'Select file');
 };
 
 FileListWidget.prototype.events['click a.vip-launch-pipeline'] = function (e) {
   var cid = $(e.currentTarget).attr('model-cid');
-  this.showPipelinesModal(cid);
-};
-
-FileListWidget.prototype.getRoute = function () {
-  return 'item/' + this.parentItem.id;
-};
-
-FileListWidget.prototype.showPipelinesModal = function (fileId) {
   new ListPipelinesWidget({
       el: $('#g-dialog-container'),
-      file: this.collection.get(fileId),
+      file: this.collection.get(cid),
       item: this.parentItem,
       parentView: this
   });
 };
 
-FileListWidget.prototype.showLaunchModal = function () {
-    new ConfirmExecutionDialog({
-      file: this.collection.get(this.parentView.vipPipelineFileId),
-      item: this.parentItem,
-      pipelineId: this.parentView.vipPipelineId,
-      vipConfigOk : false,
-      parentView: this,
-      el: $('#g-dialog-container')
-    });
+FileListWidget.prototype.events['click a.g-file-list-link'] = function (e) {
+  var cid = $(e.currentTarget).attr('cid');
+  if (this.selectMode) {
+    this.onFileClick && this.onFileClick(this.collection(cid));
+  }
 };
-
-wrap(ItemView, 'initialize', function(initialize, settings) {
-
-  this.showVipPipelines = settings.showVipPipelines || false;
-  this.showVipLaunch = settings.showVipLaunch || false;
-  this.vipPipelineFileId = settings.vipPipelineFileId || false;
-  this.vipPipelineId = settings.vipPipelineId || false;
-
-  // Call the parent render
-  initialize.call(this, settings);
-});

@@ -7,7 +7,6 @@ import FileCollection from '@girder/core/collections/FileCollection';
 
 // Import views
 import View from '@girder/core/views/View';
-import HierarchyWidget from '@girder/core/views/widgets/HierarchyWidget';
 import FileListWidget from '@girder/core/views/widgets/FileListWidget';
 import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
 
@@ -43,9 +42,8 @@ var FileSelector = BrowserWidget.extend({
   render: function () {
     BrowserWidget.prototype.render.call(this);
 
-    this.$('.modal-body.g-browser-widget').after(
-      FileSelectorTemplate().addClass('hidden')
-    );
+    this.$('.modal-body.g-browser-widget').after( FileSelectorTemplate() );
+    this.$('.modal-body.vip-file-selector').toggleClass('hidden');
 
     return this;
   },
@@ -69,11 +67,13 @@ var FileSelector = BrowserWidget.extend({
     // fetch the item files to see how many there are
     // use the fileListWidget as it fetch the file and we will show it if needed
     this.fileListWidget = new FileListWidget({
-      itemId: item.id,
+      item: item,
       parentView: this,
+      selectMode: true,
+      onFileClick: this.onFileSelected.bind(this),
       el: this.$('.vip-file-selector .file-list'),
     });
-    fileListWidget.on('g:changed', () => this.onFileListReady() );
+    this.fileListWidget.on('g:changed', () => this.onFileListReady() );
   },
 
   // file list widget ready (item files received during validation process)
@@ -83,7 +83,7 @@ var FileSelector = BrowserWidget.extend({
       // use girder browser error display
       this.validate = () => Promise.reject("This item does not have any file");
       BrowserWidget.prototype._validate.call(this);
-    } else if (this.itemFiles.length === 1) {
+    } else if (itemFiles.length === 1) {
       // it's ok
       this.validate = () => Promise.resolve();
       BrowserWidget.prototype._validate.call(this);
@@ -92,7 +92,15 @@ var FileSelector = BrowserWidget.extend({
       this.toggleFileSelector();
     }
 
-  };
+  },
+
+  // file selected in the fileListWidget
+  onFileSelected: function (file) {
+    // it's ok
+    console.log('file selected : ' + file.get('name'));
+    this.validate = () => Promise.resolve();
+    BrowserWidget.prototype._validate.call(this);
+  }
 
 });
 
@@ -102,9 +110,9 @@ import HierarchyWidget from '@girder/core/views/widgets/HierarchyWidget';
 wrap(HierarchyWidget, 'initialize', function(initialize, settings) {
   settings = settings || {};
   if (this.parentView instanceof FileSelector) {
-    settings.downloadLinks = false,
-    settings.viewLinks = false,
-    this.viewVipRocket = false,
+    settings.downloadLinks = false;
+    settings.viewLinks = false;
+    this.viewVipRocket = false;
   }
   // Call the parent init
   initialize.call(this, settings);

@@ -1,4 +1,7 @@
 .modal-body.vip-file-selector
-  .alert-info
+  p.alert.alert-info
     | This item has several files, please select one
   .file-list
+  .g-selected-model.form-group
+    label.control-label(for='vip-selected-file') Selected file
+    input#vip-selected-file.form-control(type='text', readonly)
