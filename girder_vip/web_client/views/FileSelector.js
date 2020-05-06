@@ -4,6 +4,7 @@ import events from '@girder/core/events';
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import CollectionCollection from '@girder/core/collections/CollectionCollection';
 import FileCollection from '@girder/core/collections/FileCollection';
+import { useVipConfig } from '../utilities/vipPluginUtils';
 
 // Import views
 import View from '@girder/core/views/View';
@@ -19,7 +20,7 @@ import FileSelectorTemplate from '../templates/fileSelector.pug';
 
 var FileSelector = BrowserWidget.extend({
 
-  events : {
+  events : _.extend({
     'click .modal-footer a.btn-default' : function () {
             if (this.fileSelectMode) {
               toggleFileSelectMode();
@@ -27,7 +28,7 @@ var FileSelector = BrowserWidget.extend({
               this.$el.modal('hide');
             }
         }
-  },
+  }, BrowserWidget.prototype.events),
 
   // override initialise
   initialize: function (settings) {
@@ -35,9 +36,14 @@ var FileSelector = BrowserWidget.extend({
     this.selectedFile = settings.defaultSelectedFile;
     settings.defaultSelectedResource = settings.defaultSelectedItem;
 
+    getVipConfig.then(vipConfig => this.initWithVipConfig(vipConfig));
+  },
+
+  initWithVipConfig: function(vipConfig) {
     // only show configured collections
     var filteredCollections = new CollectionCollection();
-    filteredCollections.filterFunc = c => c.name === 'Collection1';
+    filteredCollections.filterFunc =
+     (c => _.contains(vipConfig.authorized_collections, c.id) );
     var rootSelectorSettings = {
       display: ['VIP Authorized Collections'],
       groups: {'VIP Authorized Collections' : filteredCollections}
@@ -52,6 +58,13 @@ var FileSelector = BrowserWidget.extend({
         submitText: 'Select',
         rootSelectorSettings: rootSelectorSettings
     }, settings) );
+
+    // this should be done in BrowserWidget, that's a bug
+    if (this.defaultSelectedResource) {
+      this._selected = this.defaultSelectedResource;
+    }
+
+    this.render();
   },
 
   // override render
@@ -79,8 +92,6 @@ var FileSelector = BrowserWidget.extend({
     this.$('.modal-footer a.btn-default').html(
       this.fileSelectMode ? 'Back' : 'Cancel'
     );
-
-    this.selectedFile = null;
   },
 
   _resetErrors: function() {
@@ -142,6 +153,11 @@ var FileSelector = BrowserWidget.extend({
       this.trigger('g:saved', this.selectedModel(), itemFiles.at(0));
     } else {
       // there are several files, show the FileListWidget
+      if (this.selectedFile && ! itemFiles.get(this.selectedFile)) {
+        // check the default file is in there
+        this.selectedFile = null;
+        this.$('#vip-selected-file').val('');
+      }
       this.toggleFileSelectMode();
     }
 
@@ -152,7 +168,7 @@ var FileSelector = BrowserWidget.extend({
     // it's ok
     this._resetErrors();
     this.selectedFile = file;
-    this.$('#g-selected-model').val(file.get('name'));
+    this.$('#vip-selected-file').val(file.get('name'));
   }
 
 });

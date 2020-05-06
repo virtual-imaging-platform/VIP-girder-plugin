@@ -33,19 +33,22 @@ var LaunchVipPipeline = View.extend({
 
   // Delete a executon of the db
   chooseFile: function (e) {
+    var settings = {
+      el: $('#g-dialog-container'),
+      parentView: this,
+    };
     if (this.selectedFile) {
-      this._fileSelector = new FileSelector({
-        parentView: this,
+      _.extend(settings, {
         defaultSelectedFile: this.selectedFile,
         defaultSelectedItem: this.selectedItem
-      })
+      });
     }
+    this._fileSelector = new FileSelector(setting);
     this._fileSelector.on('g:saved', (selectedItem, selectedFile) => {
       this.selectedItem = selectedItem;
       this.selectedFile = selectedFile;
       this.render();
     });
-    this._fileSelector.setElement($('#g-dialog-container')).render();
   },
 
   // Delete a executon of the db
