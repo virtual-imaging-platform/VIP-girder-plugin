@@ -10,9 +10,6 @@ import LaunchTemplate from '../templates/launchVipPipeline.pug';
 
 var LaunchVipPipeline = View.extend({
   initialize: function (settings) {
-    this._fileSelector = new FileSelector({
-      parentView: this
-    })
     this.render();
   },
 
@@ -43,7 +40,7 @@ var LaunchVipPipeline = View.extend({
         defaultSelectedItem: this.selectedItem
       });
     }
-    this._fileSelector = new FileSelector(setting);
+    this._fileSelector = new FileSelector(settings);
     this._fileSelector.on('g:saved', (selectedItem, selectedFile) => {
       this.selectedItem = selectedItem;
       this.selectedFile = selectedFile;

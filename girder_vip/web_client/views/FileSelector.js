@@ -23,7 +23,7 @@ var FileSelector = BrowserWidget.extend({
   events : _.extend({
     'click .modal-footer a.btn-default' : function () {
             if (this.fileSelectMode) {
-              toggleFileSelectMode();
+              this.toggleFileSelectMode();
             } else {
               this.$el.modal('hide');
             }
@@ -43,7 +43,7 @@ var FileSelector = BrowserWidget.extend({
     // only show configured collections
     var filteredCollections = new CollectionCollection();
     filteredCollections.filterFunc =
-     (c => _.contains(vipConfig.authorized_collections, c.id) );
+     (c => _.contains(vipConfig.authorized_collections, c._id) );
     var rootSelectorSettings = {
       display: ['VIP Authorized Collections'],
       groups: {'VIP Authorized Collections' : filteredCollections}
@@ -130,6 +130,11 @@ var FileSelector = BrowserWidget.extend({
     this.root = this._hierarchyView.parentModel;
     // fetch the item files to see how many there are
     // use the fileListWidget as it fetch the file and we will show it if needed
+    if (this.fileListWidget) {
+      this.stopListening(this.fileListWidget);
+      this.fileListWidget.off();
+      this.$('.vip-file-selector .file-list').empty();
+    }
     this.fileListWidget = new FileListWidget({
       item: item,
       parentView: this,
