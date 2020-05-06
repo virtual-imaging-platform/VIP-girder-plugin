@@ -132,8 +132,7 @@ var FileSelector = BrowserWidget.extend({
     // use the fileListWidget as it fetch the file and we will show it if needed
     if (this.fileListWidget) {
       this.stopListening(this.fileListWidget);
-      this.fileListWidget.off();
-      this.$('.vip-file-selector .file-list').empty();
+      this.fileListWidget.destroy();
     }
     this.fileListWidget = new FileListWidget({
       item: item,

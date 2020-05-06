@@ -6,4 +6,3 @@ import './views/ItemListWidget';
 import './views/FileListWidget';
 import './views/HeaderUserView';
 import './views/UserAccountView';
-import './views/CheckedMenuWidget';

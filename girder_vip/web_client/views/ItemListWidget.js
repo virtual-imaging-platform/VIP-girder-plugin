@@ -26,18 +26,14 @@ wrap(ItemListWidget, 'render', function(render) {
     return this;
   }
 
-  this.showModal = this.parentView.parentView.showVipPipelines || this.parentView.parentView.showVipLaunch;
-  if (! hasTheVipApiKeyConfigured() ){
-    if (this.showModal) {
-        this.onShowModalError('Your VIP API key is not configured in your girder account');
-    }
+  if ( ! this._downloadLinks || ! hasTheVipApiKeyConfigured() ){
     return this;
   }
 
   // parentView is a HierarchyView
   isPluginActivatedOn(this.parentView.parentModel)
   .then(isPluginActivated => {
-    if (! this.canRenderVipPlugin(isPluginActivated)) return;
+    if (! isPluginActivated) return;
 
     this.collection.each(item => {
       var itemNameEl =
@@ -50,56 +46,10 @@ wrap(ItemListWidget, 'render', function(render) {
           .append(ButtonLaunchPipeline({model: item}));
       }
     });
-
-    if (this.parentView.parentView.showVipPipelines ||
-            this.parentView.parentView.showVipLaunch) {
-      var itemId = this.parentView.parentView.vipPipelineItemId;
-      this.fetchFilesForItem(this.collection.get(itemId));
-    }
   });
 
   return this;
 });
-
-// return true if render must be done
-ItemListWidget.prototype.canRenderVipPlugin = function (isPluginActivated) {
-
-  if (! this.showModal) {
-    return isPluginActivated;
-  }
-
-  // show modal requested
-  var error;
-  if ( ! isPluginActivated) {
-    error = 'VIP applications cannot be used in this collection';
-  } else if ( ! this.collection.get(this.parentView.parentView.vipPipelineItemId)) {
-    error = 'You cannot launch a VIP pipeline on this item because it does not exist in this folder';
-  } else {
-    // OK but we must still check that the file requested is the only file of this item
-    return true;
-  }
-  // there's an error
-
-  this.onShowModalError(error);
-  return false;
-
-};
-
-ItemListWidget.prototype.onShowModalError = function (error) {
-  this.showModal = false;
-  this.parentView.parentView.showVipPipelines = false;
-  this.parentView.parentView.showVipLaunch = false;
-  messageGirder('danger', error);
-  router.navigate(this.getRoute(), {replace: true});
-},
-
-ItemListWidget.prototype.getRoute = function () {
-  var route = 'folder/' + this.parentView.parentModel.id;
-  if (this.parentView.parentView instanceof CollectionView) {
-    route = 'collection/' + this.parentView.parentView.model.id + '/' + route;
-  }
-  return route;
-};
 
 ItemListWidget.prototype.events['click a.vip-launch-pipeline'] = function (e) {
   var cid = $(e.currentTarget).attr('model-cid');
@@ -118,24 +68,6 @@ ItemListWidget.prototype.fetchFilesForItem = function (item) {
 };
 
 ItemListWidget.prototype.onItemFilesReceived = function () {
-  // is there a requested modal ?
-  if (this.showModal) {
-    this.showModal = false;
-    var showVipPipelines = this.parentView.parentView.showVipPipelines;
-    this.parentView.parentView.showVipPipelines = false;
-    this.parentView.parentView.showVipLaunch = false;
-
-    var file = this.itemFiles.get(this.parentView.parentView.vipPipelineFileId);
-    if ( ! file) {
-      this.onShowModalError('You cannot launch a VIP pipeline on this file because it does not exist in this item');
-    } else if (showVipPipelines) {
-      this.showPipelinesModal(file)
-    } else {
-      this.showLaunchModal(file)
-    }
-    return;
-  }
-
   if (this.itemFiles.length === 0) {
     messageGirder("warning", "VIP can not launch a pipeline on this item because it does not have any file")
   } else if (this.itemFiles.length > 1) {
@@ -144,7 +76,6 @@ ItemListWidget.prototype.onItemFilesReceived = function () {
     var file = this.itemFiles.pop();
     this.showPipelinesModal(file);
   }
-
 };
 
 ItemListWidget.prototype.showConfirmModal = function (file) {
@@ -153,7 +84,6 @@ ItemListWidget.prototype.showConfirmModal = function (file) {
     yesText: 'OK',
     yesClass: 'btn-primary',
     confirmCallback: () => router.navigate('item/' + this.itemToLaunch.id, {trigger : true})
-
   };
   confirm(params);
 };
@@ -166,39 +96,3 @@ ItemListWidget.prototype.showPipelinesModal = function (file) {
       parentView: this
   });
 };
-
-ItemListWidget.prototype.showLaunchModal = function (file) {
-  new ConfirmExecutionDialog({
-    el: $('#g-dialog-container'),
-    file: file,
-    item: this.itemToLaunch,
-    pipelineId: this.parentView.parentView.vipPipelineId,
-    vipConfigOk : false,
-    parentView: this,
-  });
-};
-
-wrap(CollectionView, 'initialize', function(initialize, settings) {
-
-  this.showVipPipelines = settings.showVipPipelines || false;
-  this.showVipLaunch = settings.showVipLaunch || false;
-  this.vipPipelineItemId = settings.vipPipelineItemId || false;
-  this.vipPipelineFileId = settings.vipPipelineFileId || false;
-  this.vipPipelineId = settings.vipPipelineId || false;
-
-  // Call the parent render
-  initialize.call(this, settings);
-});
-
-
-wrap(FolderView, 'initialize', function(initialize, settings) {
-
-  this.showVipPipelines = settings.showVipPipelines || false;
-  this.showVipLaunch = settings.showVipLaunch || false;
-  this.vipPipelineItemId = settings.vipPipelineItemId || false;
-  this.vipPipelineFileId = settings.vipPipelineFileId || false;
-  this.vipPipelineId = settings.vipPipelineId || false;
-
-  // Call the parent render
-  initialize.call(this, settings);
-});

@@ -17,11 +17,14 @@ wrap(FileListWidget, 'render', function(render) {
     return this;
   }
 
-  this.activateSelectMode();
+  if (this.selectMode)
+    this.activateSelectMode();
+    return this;
+  }
 
   isPluginActivatedOn(this.parentItem)
   .then(isPluginActivated => {
-    if (! isPluginActivated || this.selectMode) return;
+    if (! isPluginActivated) return;
 
     this.collection.each(file => {
       this.$('li.g-file-list-entry .g-show-info[file-cid=' + file.cid + ']')
@@ -41,8 +44,6 @@ wrap(FileListWidget, 'initialize', function(initialize, settings) {
 });
 
 FileListWidget.prototype.activateSelectMode = function () {
-  if ( ! this.selectMode) return;
-
   this.$('.g-file-list-entry a').not('.g-file-list-link').addClass('hidden');
   this.$('.g-file-list-entry .g-file-actions-container').addClass('hidden');
   this.$('.g-file-list-entry a.g-file-list-link')

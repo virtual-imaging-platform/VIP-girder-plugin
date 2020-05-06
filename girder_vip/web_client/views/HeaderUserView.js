@@ -16,7 +16,8 @@ wrap(HeaderUserView, 'render', function(render) {
   render.call(this);
 
   if ( hasTheVipApiKeyConfigured()) {
-    this.$('#g-user-action-menu>ul').prepend(HeaderUserTemplate({}));
+    this.$('#g-user-action-menu li>a.g-logout').parent()
+      .before(HeaderUserTemplate());
   }
 
   return this;
