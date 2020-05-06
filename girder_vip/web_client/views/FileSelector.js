@@ -4,7 +4,7 @@ import events from '@girder/core/events';
 import { wrap } from '@girder/core/utilities/PluginUtils';
 import CollectionCollection from '@girder/core/collections/CollectionCollection';
 import FileCollection from '@girder/core/collections/FileCollection';
-import { useVipConfig } from '../utilities/vipPluginUtils';
+import { getVipConfig } from '../utilities/vipPluginUtils';
 
 // Import views
 import View from '@girder/core/views/View';
@@ -36,7 +36,7 @@ var FileSelector = BrowserWidget.extend({
     this.selectedFile = settings.defaultSelectedFile;
     settings.defaultSelectedResource = settings.defaultSelectedItem;
 
-    getVipConfig.then(vipConfig => this.initWithVipConfig(vipConfig));
+    getVipConfig().then(vipConfig => this.initWithVipConfig(vipConfig));
   },
 
   initWithVipConfig: function(vipConfig) {
