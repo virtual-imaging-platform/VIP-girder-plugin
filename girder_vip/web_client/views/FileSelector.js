@@ -18,8 +18,22 @@ import FileSelectorTemplate from '../templates/fileSelector.pug';
 // - add an additionnal file selection step if the selected item has more than 1
 
 var FileSelector = BrowserWidget.extend({
+
+  events : {
+    'click .modal-footer a.btn-default' : function () {
+            if (this.fileSelectMode) {
+              toggleFileSelectMode();
+            } else {
+              this.$el.modal('hide');
+            }
+        }
+  },
+
   // override initialise
   initialize: function (settings) {
+    settings = settings || {};
+    this.selectedFile = settings.defaultSelectedFile;
+    settings.defaultSelectedResource = settings.defaultSelectedItem;
 
     // only show configured collections
     var filteredCollections = new CollectionCollection();
@@ -30,31 +44,68 @@ var FileSelector = BrowserWidget.extend({
     };
 
     // use girder browser in item mode
-    BrowserWidget.prototype.initialize.call(this, {
+    BrowserWidget.prototype.initialize.call(this, _.extend({
         showItems: true,
         selectItem: true,
+        highlightItem: true,
         removeItemInfo: true,
+        submitText: 'Select',
         rootSelectorSettings: rootSelectorSettings
-    });
+    }, settings) );
   },
 
   // override render
   render: function () {
     BrowserWidget.prototype.render.call(this);
 
-    this.$('.modal-body.g-browser-widget').after( FileSelectorTemplate() );
+    const defaultResourceFileName = (this.selectedFile
+      && this.selectedFile.get('name'));
+    this.$('.modal-body.g-browser-widget').after(
+      FileSelectorTemplate({
+        defaultSelectedFile: defaultResourceFileName
+      })
+    );
     this.$('.modal-body.vip-file-selector').toggleClass('hidden');
+    this.$('.modal-footer a.btn-default').removeAttr('data-dismiss');
+    this.fileSelectMode = false;
 
     return this;
   },
 
-  toggleFileSelector: function() {
+  toggleFileSelectMode: function() {
+    this.fileSelectMode = ! this.fileSelectMode;
     this.$('.modal-body.g-browser-widget').toggleClass('hidden');
     this.$('.modal-body.vip-file-selector').toggleClass('hidden');
+    this.$('.modal-footer a.btn-default').html(
+      this.fileSelectMode ? 'Back' : 'Cancel'
+    );
+
+    this.selectedFile = null;
+  },
+
+  _resetErrors: function() {
+    this.$('.g-validation-failed-message').addClass('hidden');
+    this.$('.g-selected-model').removeClass('has-error');
+    this.$('.g-input-element').removeClass('has-error');
+    this.$('.vip-selected-file').removeClass('has-error');
   },
 
   // override internal validate
   _validate: function () {
+    this._resetErrors();
+
+    // first deal with file select mode
+    if (this.fileSelectMode) {
+      if ( ! this.selectedFile) {
+        this.$('.vip-selected-file').addClass('has-error');
+        this.$('.vip-file-selector .g-validation-failed-message').removeClass('hidden');
+      } else {
+        this.$el.modal('hide');
+        this.trigger('g:saved', this.selectedModel(), this.selectedFile);
+      }
+      return;
+    }
+
     // fetch item files
     var item = this.selectedModel();
     if ( ! item) {
@@ -64,6 +115,8 @@ var FileSelector = BrowserWidget.extend({
       return;
     }
 
+    // save the current selected folder
+    this.root = this._hierarchyView.parentModel;
     // fetch the item files to see how many there are
     // use the fileListWidget as it fetch the file and we will show it if needed
     this.fileListWidget = new FileListWidget({
@@ -85,11 +138,11 @@ var FileSelector = BrowserWidget.extend({
       BrowserWidget.prototype._validate.call(this);
     } else if (itemFiles.length === 1) {
       // it's ok
-      this.validate = () => Promise.resolve();
-      BrowserWidget.prototype._validate.call(this);
+      this.$el.modal('hide');
+      this.trigger('g:saved', this.selectedModel(), itemFiles.at(0));
     } else {
       // there are several files, show the FileListWidget
-      this.toggleFileSelector();
+      this.toggleFileSelectMode();
     }
 
   },
@@ -97,9 +150,9 @@ var FileSelector = BrowserWidget.extend({
   // file selected in the fileListWidget
   onFileSelected: function (file) {
     // it's ok
-    console.log('file selected : ' + file.get('name'));
-    this.validate = () => Promise.resolve();
-    BrowserWidget.prototype._validate.call(this);
+    this._resetErrors();
+    this.selectedFile = file;
+    this.$('#g-selected-model').val(file.get('name'));
   }
 
 });

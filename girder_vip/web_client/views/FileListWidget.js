@@ -21,7 +21,7 @@ wrap(FileListWidget, 'render', function(render) {
 
   isPluginActivatedOn(this.parentItem)
   .then(isPluginActivated => {
-    if (! isPluginActivated) return;
+    if (! isPluginActivated || this.selectMode) return;
 
     this.collection.each(file => {
       this.$('li.g-file-list-entry .g-show-info[file-cid=' + file.cid + ']')
@@ -63,6 +63,6 @@ FileListWidget.prototype.events['click a.vip-launch-pipeline'] = function (e) {
 FileListWidget.prototype.events['click a.g-file-list-link'] = function (e) {
   var cid = $(e.currentTarget).attr('cid');
   if (this.selectMode) {
-    this.onFileClick && this.onFileClick(this.collection(cid));
+    this.onFileClick && this.onFileClick(this.collection.get(cid));
   }
 };
