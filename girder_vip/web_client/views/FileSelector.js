@@ -36,10 +36,10 @@ var FileSelector = BrowserWidget.extend({
     this.selectedFile = settings.defaultSelectedFile;
     settings.defaultSelectedResource = settings.defaultSelectedItem;
 
-    getVipConfig().then(vipConfig => this.initWithVipConfig(vipConfig));
+    getVipConfig().then(vipConfig => this.initWithVipConfig(vipConfig, settings));
   },
 
-  initWithVipConfig: function(vipConfig) {
+  initWithVipConfig: function(vipConfig, settings) {
     // only show configured collections
     var filteredCollections = new CollectionCollection();
     filteredCollections.filterFunc =
