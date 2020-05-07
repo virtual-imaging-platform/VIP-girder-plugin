@@ -7,3 +7,37 @@ button.btn.btn-sm.btn-primary.reset-girder-file Reset File
 
 if selectedItem
   p= selectedItem.get('name') + ' / ' + selectedFile.get('name')
+
+
+
+
+form.vip-launch-pipeline-form(role="form")
+  .vip-launch-form-container
+    h4 General parameters
+    .form-group
+      label(for="vip-launch-execution-name") Name of execution
+      input#vip-launch-execution-name.form-control(type="text")
+      small.help-block.text-muted Useful to monitor the execution later
+    .form-group
+      label(for="vip-launch-result-dir") Result directory
+      .input-group
+        .input-group-prepend
+          button.btn.btn-primary(type="button") Select Folder
+        input#vip-launch-result-dir.form-control(type="text", readonly)
+      small.help-block.text-muted Girder directory where the results will be saved
+
+
+
+  #vip-launch-pipeline-advanced-accordion.panel-group
+    .panel.panel-default
+      .panel-heading(data-toggle="collapse",
+          data-parent="#vip-launch-pipeline-advanced-accordion",
+          data-target="#vip-launch-pipeline-advanced-tab")
+        .panel-title
+          a
+            b Optionnal parameters
+      #vip-launch-pipeline-advanced-tab.panel-collapse.collapse
+        .panel-body
+          .form-group
+            label Test
+            input.form-control(type="text", placeholder='Test test')
