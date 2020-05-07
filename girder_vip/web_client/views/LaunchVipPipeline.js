@@ -19,8 +19,12 @@ import '@girder/core/stylesheets/body/systemConfig.styl';
 var LaunchVipPipeline = View.extend({
 
   events: {
-    'click .vip-launch-file-btn': 'onRequiredFileBtnClick',
-    'click .vip-launch-optional-file-btn': 'onOptionalFileBtnClick',
+    'click .vip-launch-file-btn': function(e) {
+      this.onFileBtnClick(e, true));
+    },
+    'click .vip-launch-optional-file-btn': function(e) {
+      this.onFileBtnClick(e, false));
+    },
     'click #vip-launch-result-dir-btn': function() {
       this.resultFolderBrowser.setElement($('#g-dialog-container')).render();
     }
@@ -88,29 +92,9 @@ var LaunchVipPipeline = View.extend({
     this.listenTo(this.resultFolderBrowser, 'g:saved', function (folder) {
         this.resultFolderId = folder.id;
         this.$('#vip-launch-result-dir').val(folder.id);
-        getRessourcePath(folder).then((result) => {
+        this.getResourcePath(folder).then((result) => {
           this.$('#vip-launch-result-dir').val(`${result}`);
         });
-    });
-  },
-
-  onRequiredFileBtnClick: function (e) {
-    var paramIndex = $(e.currentTarget).attr("param-index");
-    var settings = {
-      el: $('#g-dialog-container'),
-      parentView: this,
-    };
-    if (this.selectedFile) {
-      _.extend(settings, {
-        defaultSelectedFile: this.selectedFile,
-        defaultSelectedItem: this.selectedItem
-      });
-    }
-    this._fileSelector = new FileSelector(settings);
-    this._fileSelector.on('g:saved', (selectedItem, selectedFile) => {
-      this.selectedItem = selectedItem;
-      this.selectedFile = selectedFile;
-      this.render();
     });
   },
 
@@ -139,7 +123,7 @@ var LaunchVipPipeline = View.extend({
         item: item,
         file: file
       };
-      getRessourcePath(file).then((result) => {
+      this.getResourcePath(file).then((result) => {
         var elementId = required ?
           '#vip-launch-file' + paramIndex :
           '#vip-launch-optional-file' + paramIndex;
@@ -148,7 +132,7 @@ var LaunchVipPipeline = View.extend({
     });
   },
 
-  getRessourcePath: function(resource) {
+  getResourcePath: function(resource) {
     restRequest({
         url: `resource/${resource.id}/path`,
         method: 'GET',
