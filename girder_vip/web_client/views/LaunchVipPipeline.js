@@ -16,7 +16,10 @@ var LaunchVipPipeline = View.extend({
 
   events: {
     'click .select-girder-file' : 'chooseFile',
-    'click .reset-girder-file' : 'resetFile'
+    'click .reset-girder-file' : 'resetFile',
+    'click #vip-launch-result-dir-btn': function() {
+      this.resultFolderBrowser.setElement($('#g-dialog-container')).render();
+    }
   },
 
   initialize: function (settings) {

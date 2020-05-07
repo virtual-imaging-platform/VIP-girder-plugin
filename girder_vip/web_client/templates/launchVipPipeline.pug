@@ -22,11 +22,11 @@ form.vip-launch-pipeline-form(role="form")
       label(for="vip-launch-result-dir") Result folder
       .input-group
         .input-group-btn
-          button.btn.btn-primary(type="button") Select folder
+          button#vip-launch-result-dir-btn.btn.btn-sm.btn-primary(type="button") Select folder
         input#vip-launch-result-dir.form-control.input-sm(type="text", readonly)
       small.help-block Girder folder where the results will be saved
 
- .g-settings-form-container
+  .vip-launch-form-container.g-settings-form-container
    .form-group
      label Test
      input.form-control.input-sm(type="text", placeholder='Test test')
