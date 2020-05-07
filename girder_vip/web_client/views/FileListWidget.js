@@ -17,7 +17,7 @@ wrap(FileListWidget, 'render', function(render) {
     return this;
   }
 
-  if (this.selectMode)
+  if (this.selectMode) {
     this.activateSelectMode();
     return this;
   }

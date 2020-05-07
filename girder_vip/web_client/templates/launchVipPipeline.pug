@@ -12,21 +12,24 @@ if selectedItem
 
 
 form.vip-launch-pipeline-form(role="form")
-  .vip-launch-form-container
+  .vip-launch-form-container.g-settings-form-container
     h4 General parameters
     .form-group
       label(for="vip-launch-execution-name") Name of execution
-      input#vip-launch-execution-name.form-control(type="text")
-      small.help-block.text-muted Useful to monitor the execution later
+      input#vip-launch-execution-name.form-control.input-sm(type="text")
+      small.help-block Useful to monitor the execution later
     .form-group
-      label(for="vip-launch-result-dir") Result directory
+      label(for="vip-launch-result-dir") Result folder
       .input-group
-        .input-group-prepend
-          button.btn.btn-primary(type="button") Select Folder
-        input#vip-launch-result-dir.form-control(type="text", readonly)
-      small.help-block.text-muted Girder directory where the results will be saved
+        .input-group-btn
+          button.btn.btn-primary(type="button") Select folder
+        input#vip-launch-result-dir.form-control.input-sm(type="text", readonly)
+      small.help-block Girder folder where the results will be saved
 
-
+ .g-settings-form-container
+   .form-group
+     label Test
+     input.form-control.input-sm(type="text", placeholder='Test test')
 
   #vip-launch-pipeline-advanced-accordion.panel-group
     .panel.panel-default
@@ -35,9 +38,9 @@ form.vip-launch-pipeline-form(role="form")
           data-target="#vip-launch-pipeline-advanced-tab")
         .panel-title
           a
-            b Optionnal parameters
+            b Optional parameters
       #vip-launch-pipeline-advanced-tab.panel-collapse.collapse
         .panel-body
           .form-group
             label Test
-            input.form-control(type="text", placeholder='Test test')
+            input.form-control.input-sm(type="text", placeholder='Test test')
