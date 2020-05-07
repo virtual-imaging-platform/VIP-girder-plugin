@@ -3,7 +3,7 @@ import events from '@girder/core/events';
 import router from '@girder/core/router';
 import { getCurrentUser } from '@girder/core/auth';
 import { restRequest } from '@girder/core/rest';
-import { messageGirder } from '../utilities/vipPluginUtils';
+import { messageGirder, doVipRequest } from '../utilities/vipPluginUtils';
 
 // Import views
 import View from '@girder/core/views/View';
@@ -19,8 +19,8 @@ import '@girder/core/stylesheets/body/systemConfig.styl';
 var LaunchVipPipeline = View.extend({
 
   events: {
-    'click .select-girder-file' : 'chooseFile',
-    'click .reset-girder-file' : 'resetFile',
+    'click .vip-launch-file-btn': 'onRequiredFileBtnClick',
+    'click .vip-launch-optional-file-btn': 'onOptionalFileBtnClick',
     'click #vip-launch-result-dir-btn': function() {
       this.resultFolderBrowser.setElement($('#g-dialog-container')).render();
     }
@@ -31,9 +31,43 @@ var LaunchVipPipeline = View.extend({
       messageGirder('danger', 'VIP execution page called without a pipeline');
       router.navigate('/', {trigger: true});
     }
-
+    this.pipeline = settings.pipeline;
+    this.sortParameters();
     this.configureResultDirBrowser();
+    this.paramValues = {};
     this.render();
+  },
+
+  render: function () {
+    // Display the list of executions
+    this.$el.html( LaunchTemplate({
+      pipeline: this.pipeline,
+      parameters: this.parameters
+    }) );
+
+    return this;
+  },
+
+  sortParameters: function() {
+    var parameters = {
+      file: [],
+      required: [],
+      optionalFile: [],
+      optional: []
+    };
+    _.each(this.pipeline.parameters, function (param) {
+      if (param.name === 'results-directory') return;
+      if (param.type == "File" && !param.defaultValue) {
+        parameters.file.push(param);
+      } else if (!param.defaultValue) {
+        parameters.required.push(param);
+      } else if (param.type == "File") {
+        parameters.optionalFile.push(param);
+      } else {
+        parameters.optional.push(param);
+      }
+    });
+    this.parameters = parameters;
   },
 
   configureResultDirBrowser: function() {
@@ -54,27 +88,14 @@ var LaunchVipPipeline = View.extend({
     this.listenTo(this.resultFolderBrowser, 'g:saved', function (folder) {
         this.resultFolderId = folder.id;
         this.$('#vip-launch-result-dir').val(folder.id);
-        restRequest({
-            url: `resource/${folder.id}/path`,
-            method: 'GET',
-            data: { type: 'folder' }
-        }).done((result) => {
+        getRessourcePath(folder).then((result) => {
           this.$('#vip-launch-result-dir').val(`${result}`);
         });
     });
   },
 
-  render: function () {
-    // Display the list of executions
-    this.$el.html( LaunchTemplate({
-      selectedFile: this.selectedFile,
-      selectedItem: this.selectedItem
-    }) );
-
-    return this;
-  },
-
-  chooseFile: function (e) {
+  onRequiredFileBtnClick: function (e) {
+    var paramIndex = $(e.currentTarget).attr("param-index");
     var settings = {
       el: $('#g-dialog-container'),
       parentView: this,
@@ -93,10 +114,46 @@ var LaunchVipPipeline = View.extend({
     });
   },
 
-  resetFile: function (e) {
-      this.selectedItem = null;
-      this.selectedFile = null;
-      this.render();
+  onFileBtnClick: function (e, required) {
+    var paramIndex = $(e.currentTarget).attr("param-index");
+    var param = this.parameters[ required ? 'file' : 'optionalFile'][paramIndex];
+
+    var settings = {
+      el: $('#g-dialog-container'),
+      parentView: this,
+    };
+    if (this.paramValues[param.name]) {
+      var paramData = this.paramValues[param.name];
+      _.extend(settings, {
+        defaultSelectedFile: paramData.file,
+        defaultSelectedItem: paramData.item
+      });
+    }
+    if (this.fileSelector) {
+      this.stopListening(this.fileSelector);
+      this.fileSelector.destroy();
+    }
+    this.fileSelector = new FileSelector(settings);
+    this.fileSelector.on('g:saved', (item, file) => {
+      this.paramValues[param.name] = {
+        item: item,
+        file: file
+      };
+      getRessourcePath(file).then((result) => {
+        var elementId = required ?
+          '#vip-launch-file' + paramIndex :
+          '#vip-launch-optional-file' + paramIndex;
+        this.$(elementId).val(`${result}`);
+      });
+    });
+  },
+
+  getRessourcePath: function(resource) {
+    restRequest({
+        url: `resource/${resource.id}/path`,
+        method: 'GET',
+        data: { type: resource.get('_modelType') }
+    })
   }
 
 }, {
@@ -106,11 +163,12 @@ var LaunchVipPipeline = View.extend({
         events.trigger('g:navigateTo', LaunchVipPipeline, {
           pipeline: pipeline
         });
-      }
+      })
       .catch(error => {
         messageGirder('danger', 'Wrong VIP pipeline (' + error + ')');
         router.navigate('/', {trigger: true});
       });
+    }
 });
 
 export default LaunchVipPipeline;

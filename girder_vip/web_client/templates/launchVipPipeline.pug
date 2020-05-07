@@ -1,15 +1,8 @@
 .creatis-launch-vip-pipeline-header
   .g-body-title Launch a VIP Pipeline
-  .g-body-subtitle PIPELINE NAME TO PUT
+  .g-body-subtitle= pipeline.name + '(version'+ pipeline.version + ')'
 
-button.btn.btn-sm.btn-primary.select-girder-file Choose File
-button.btn.btn-sm.btn-primary.reset-girder-file Reset File
-
-if selectedItem
-  p= selectedItem.get('name') + ' / ' + selectedFile.get('name')
-
-
-
+p= pipeline.description
 
 form.vip-launch-pipeline-form(role="form")
   .vip-launch-form-container.g-settings-form-container
@@ -26,22 +19,47 @@ form.vip-launch-pipeline-form(role="form")
         input#vip-launch-result-dir.form-control.input-sm(type="text", readonly)
       small.help-block Girder folder where the results will be saved
 
-  .vip-launch-form-container.g-settings-form-container
-    h4 File parameters
-   .form-group
-     label Test
-     input.form-control.input-sm(type="text", placeholder='Test test')
+  if parameters.file
+    .vip-launch-form-container.g-settings-form-container
+      h4 File parameters
+      each param, i in parameters.file
+        label(for="vip-launch-file-" + i)= param.name
+        .input-group
+          .input-group-btn
+            button.vip-launch-file-btn.btn.btn-sm.btn-primary(param-index=i, type="button") Select file
+          input.form-control.input-sm(id="vip-launch-file-" + i,type="text", readonly)
+        small.help-block= param.description
 
-  #vip-launch-pipeline-advanced-accordion.panel-group
-    .panel.panel-default
-      .panel-heading(data-toggle="collapse",
-          data-parent="#vip-launch-pipeline-advanced-accordion",
-          data-target="#vip-launch-pipeline-advanced-tab")
-        .panel-title
-          a
-            b Optional parameters
-      #vip-launch-pipeline-advanced-tab.panel-collapse.collapse
-        .panel-body
-          .form-group
-            label Test
-            input.form-control.input-sm(type="text", placeholder='Test test')
+  if parameters.required
+    .vip-launch-form-container.g-settings-form-container
+      h4 Other parameters
+      each param, i in parameters.required
+        label(for="vip-launch-required-" + i)= param.name
+        input.form-control.input-sm(id="vip-launch-required-" + i,type="text")
+        small.help-block= param.description
+
+  if parameters.optionalFile || parameters.optional
+    #vip-launch-pipeline-advanced-accordion.panel-group
+      .panel.panel-default
+        .panel-heading(data-toggle="collapse",
+            data-parent="#vip-launch-pipeline-advanced-accordion",
+            data-target="#vip-launch-pipeline-advanced-tab")
+          .panel-title
+            a
+              b Optional parameters
+        #vip-launch-pipeline-advanced-tab.panel-collapse.collapse
+          .panel-body
+            if parameters.optionalFile
+              each param, i in parameters.optionalFile
+                label(for="vip-launch-optional-file-" + i)= param.name
+                .input-group
+                  .input-group-btn
+                    button.vip-launch-optional-file-btn.btn.btn-sm.btn-primary(param-index=i, type="button") Select file
+                  input.form-control.input-sm(id="vip-launch-optional-file-" + i,type="text", readonly, placeholder="Default : " + param.defaultValue)
+                small.help-block= param.description
+
+            if parameters.optional
+              each param, i in parameters.optional
+                label(for="vip-launch-optional-" + i)= param.name
+                input.form-control.input-sm(id="vip-launch-optional-" + i,type="text", placeholder="Default : " + param.defaultValue)
+                small.help-block= param.description
