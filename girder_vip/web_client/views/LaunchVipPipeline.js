@@ -20,10 +20,10 @@ var LaunchVipPipeline = View.extend({
 
   events: {
     'click .vip-launch-file-btn': function(e) {
-      this.onFileBtnClick(e, true));
+      this.onFileBtnClick(e, true);
     },
     'click .vip-launch-optional-file-btn': function(e) {
-      this.onFileBtnClick(e, false));
+      this.onFileBtnClick(e, false);
     },
     'click #vip-launch-result-dir-btn': function() {
       this.resultFolderBrowser.setElement($('#g-dialog-container')).render();
@@ -125,15 +125,15 @@ var LaunchVipPipeline = View.extend({
       };
       this.getResourcePath(file).then((result) => {
         var elementId = required ?
-          '#vip-launch-file' + paramIndex :
-          '#vip-launch-optional-file' + paramIndex;
+          '#vip-launch-file-' + paramIndex :
+          '#vip-launch-optional-file-' + paramIndex;
         this.$(elementId).val(`${result}`);
       });
     });
   },
 
   getResourcePath: function(resource) {
-    restRequest({
+    return restRequest({
         url: `resource/${resource.id}/path`,
         method: 'GET',
         data: { type: resource.get('_modelType') }
