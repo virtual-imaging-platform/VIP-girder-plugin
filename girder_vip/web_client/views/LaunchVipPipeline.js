@@ -1,5 +1,9 @@
 // Import utilities
 import events from '@girder/core/events';
+import router from '@girder/core/router';
+import { getCurrentUser } from '@girder/core/auth';
+import { restRequest } from '@girder/core/rest';
+import { messageGirder } from '../utilities/vipPluginUtils';
 
 // Import views
 import View from '@girder/core/views/View';
@@ -23,6 +27,11 @@ var LaunchVipPipeline = View.extend({
   },
 
   initialize: function (settings) {
+    if ( ! settings.pipeline) {
+      messageGirder('danger', 'VIP execution page called without a pipeline');
+      router.navigate('/', {trigger: true});
+    }
+
     this.configureResultDirBrowser();
     this.render();
   },
@@ -34,6 +43,7 @@ var LaunchVipPipeline = View.extend({
       helpText: 'Browse to a folder to select it as the destination.',
       submitText: 'Select folder',
       rootSelectorSettings: { display: ['Home'] },
+      root: getCurrentUser(),
       validate: function (model) {
         if (!model) {
           return Promise.reject('Please select a folder.');
@@ -49,7 +59,7 @@ var LaunchVipPipeline = View.extend({
             method: 'GET',
             data: { type: 'folder' }
         }).done((result) => {
-          this.$('#vip-launch-result-dir').val(`${folder.id} (${result})`);
+          this.$('#vip-launch-result-dir').val(`${result}`);
         });
     });
   },
@@ -64,7 +74,6 @@ var LaunchVipPipeline = View.extend({
     return this;
   },
 
-  // Delete a executon of the db
   chooseFile: function (e) {
     var settings = {
       el: $('#g-dialog-container'),
@@ -84,7 +93,6 @@ var LaunchVipPipeline = View.extend({
     });
   },
 
-  // Delete a executon of the db
   resetFile: function (e) {
       this.selectedItem = null;
       this.selectedFile = null;
@@ -93,8 +101,16 @@ var LaunchVipPipeline = View.extend({
 
 }, {
     fetchAndInit: function (application, version) {
-      events.trigger('g:navigateTo', LaunchVipPipeline);
-    }
+      doVipRequest('describePipeline', `${application}/${version}`)
+      .then(pipeline => {
+        events.trigger('g:navigateTo', LaunchVipPipeline, {
+          pipeline: pipeline
+        });
+      }
+      .catch(error => {
+        messageGirder('danger', 'Wrong VIP pipeline (' + error + ')');
+        router.navigate('/', {trigger: true});
+      });
 });
 
 export default LaunchVipPipeline;
