@@ -23,7 +23,7 @@ var LaunchVipPipeline = View.extend({
     'click #vip-launch-result-dir-btn': function() {
       this.resultFolderBrowser.setElement($('#g-dialog-container')).render();
     },
-    'submit .creatis-launch-execution-form' : 'submit',
+    'submit .vip-launch-pipeline-form' : 'submit',
   },
 
   initialize: function (settings) {
@@ -134,7 +134,9 @@ var LaunchVipPipeline = View.extend({
     })
   },
 
-  submit: function() {
+  submit: function(e) {
+    // Cancel the button's action
+    e.preventDefault();
     // get values
     // we already have all the files / folder in this.paramValues
     // fetch the text ones
@@ -146,16 +148,16 @@ var LaunchVipPipeline = View.extend({
       this.paramValues[p.pid] = this.$('#vip-launch-' + p.pid).val();
     });
     // now validate
-    this.$('vip-launch-form-group').removeClass('has-success has-error');
+    this.$('.vip-launch-form-group').removeClass('has-success has-error');
     var isOk = true;
-    isOk = isOk && this.validateParam('execution-name', this.executionName);
-    isOk = isOk && this.validateParam('result-dir', this.resultFolderId);
+    isOk = this.validateParam('execution-name', this.executionName) && isOk;
+    isOk = this.validateParam('result-dir', this.resultFolderId) && isOk;
 
     var requiredParams = [].concat(
       this.sortedParameters.file,
       this.sortedParameters.required );
     _.each(requiredParams, p => {
-      isOk = isOk && this.validateParam(p.pid);
+      isOk = this.validateParam(p.pid) && isOk;
     });
 
     if (isOk) {
@@ -165,11 +167,11 @@ var LaunchVipPipeline = View.extend({
     }
   },
 
-  validateParam: fuction(paramId, paramValue) {
+  validateParam: function(paramId, paramValue) {
     paramValue = paramValue || this.paramValues[paramId];
     var isSuccess = !! paramValue;
-    this.$('input#vip-launch-' + paramId).parents('vip-launch-form-group')
-      addClass(isSuccess ? 'has-success' : 'has-error');
+    this.$('input#vip-launch-' + paramId).parents('.vip-launch-form-group')
+      .addClass(isSuccess ? 'has-success' : 'has-error');
     return isSuccess;
   }
 
