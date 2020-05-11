@@ -19,15 +19,11 @@ import '@girder/core/stylesheets/body/systemConfig.styl';
 var LaunchVipPipeline = View.extend({
 
   events: {
-    'click .vip-launch-file-btn': function(e) {
-      this.onFileBtnClick(e, true);
-    },
-    'click .vip-launch-optional-file-btn': function(e) {
-      this.onFileBtnClick(e, false);
-    },
+    'click .vip-launch-file-btn': 'onFileBtnClick',
     'click #vip-launch-result-dir-btn': function() {
       this.resultFolderBrowser.setElement($('#g-dialog-container')).render();
-    }
+    },
+    'submit .creatis-launch-execution-form' : 'submit',
   },
 
   initialize: function (settings) {
@@ -46,32 +42,33 @@ var LaunchVipPipeline = View.extend({
     // Display the list of executions
     this.$el.html( LaunchTemplate({
       pipeline: this.pipeline,
-      parameters: this.parameters
+      parameters: this.sortedParameters
     }) );
 
     return this;
   },
 
   sortParameters: function() {
-    var parameters = {
+    var sortedParameters = {
       file: [],
       required: [],
       optionalFile: [],
       optional: []
     };
-    _.each(this.pipeline.parameters, function (param) {
+    _.each(this.pipeline.parameters, (param, pid) => {
+      param.pid = pid;
       if (param.name === 'results-directory') return;
       if (param.type == "File" && !param.defaultValue) {
-        parameters.file.push(param);
+        sortedParameters.file.push(param);
       } else if (!param.defaultValue) {
-        parameters.required.push(param);
+        sortedParameters.required.push(param);
       } else if (param.type == "File") {
-        parameters.optionalFile.push(param);
+        sortedParameters.optionalFile.push(param);
       } else {
-        parameters.optional.push(param);
+        sortedParameters.optional.push(param);
       }
     });
-    this.parameters = parameters;
+    this.sortedParameters = sortedParameters
   },
 
   configureResultDirBrowser: function() {
@@ -98,16 +95,16 @@ var LaunchVipPipeline = View.extend({
     });
   },
 
-  onFileBtnClick: function (e, required) {
-    var paramIndex = $(e.currentTarget).attr("param-index");
-    var param = this.parameters[ required ? 'file' : 'optionalFile'][paramIndex];
+  onFileBtnClick: function (e) {
+    var pid = $(e.currentTarget).attr("pid");
+    var param = this.pipeline.parameters[pid];
 
     var settings = {
       el: $('#g-dialog-container'),
       parentView: this,
     };
-    if (this.paramValues[param.name]) {
-      var paramData = this.paramValues[param.name];
+    if (this.paramValues[pid]) {
+      var paramData = this.paramValues[pid];
       _.extend(settings, {
         defaultSelectedFile: paramData.file,
         defaultSelectedItem: paramData.item
@@ -119,15 +116,12 @@ var LaunchVipPipeline = View.extend({
     }
     this.fileSelector = new FileSelector(settings);
     this.fileSelector.on('g:saved', (item, file) => {
-      this.paramValues[param.name] = {
+      this.paramValues[pid] = {
         item: item,
         file: file
       };
       this.getResourcePath(file).then((result) => {
-        var elementId = required ?
-          '#vip-launch-file-' + paramIndex :
-          '#vip-launch-optional-file-' + paramIndex;
-        this.$(elementId).val(`${result}`);
+        this.$('#vip-launch-' + pid).val(`${result}`);
       });
     });
   },
@@ -138,6 +132,45 @@ var LaunchVipPipeline = View.extend({
         method: 'GET',
         data: { type: resource.get('_modelType') }
     })
+  },
+
+  submit: function() {
+    // get values
+    // we already have all the files / folder in this.paramValues
+    // fetch the text ones
+    this.executionName = this.$('#vip-launch-execution-name').val();
+    var textParams = [].concat(
+      this.sortedParameters.required,
+      this.sortedParameters.optional );
+    _.each(textParams, p => {
+      this.paramValues[p.pid] = this.$('#vip-launch-' + p.pid).val();
+    });
+    // now validate
+    this.$('vip-launch-form-group').removeClass('has-success has-error');
+    var isOk = true;
+    isOk = isOk && this.validateParam('execution-name', this.executionName);
+    isOk = isOk && this.validateParam('result-dir', this.resultFolderId);
+
+    var requiredParams = [].concat(
+      this.sortedParameters.file,
+      this.sortedParameters.required );
+    _.each(requiredParams, p => {
+      isOk = isOk && this.validateParam(p.pid);
+    });
+
+    if (isOk) {
+      messageGirder('success', 'YES !!');
+    } else {
+      messageGirder('danger', 'Missing parameter to launch this execution on VIP');
+    }
+  },
+
+  validateParam: fuction(paramId, paramValue) {
+    paramValue = paramValue || this.paramValues[paramId];
+    var isSuccess = !! paramValue;
+    this.$('input#vip-launch-' + paramId).parents('vip-launch-form-group')
+      addClass(isSuccess ? 'has-success' : 'has-error');
+    return isSuccess;
   }
 
 }, {

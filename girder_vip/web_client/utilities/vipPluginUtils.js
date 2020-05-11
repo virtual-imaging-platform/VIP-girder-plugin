@@ -384,8 +384,11 @@ function doVipRequest(vipFunction, ...requestParam) {
   return getCarminClient()
   .then( client => client[vipFunction](...requestParam) )
   .catch(data => {
-    if (data.errorCode && data.errorCode === 40101) {
+    if (data.errorCode && (data.errorCode === 40101 || data.errorCode === 8002)) { // bad credentials error code changed
       throw { vipPluginError : 'WRONG_VIP_API_KEY' };
+    } else if (data.errorCode && data.errorMessage) {
+      throw "An error occured while using the VIP API "
+        + " (" + data.errorMessage + " -- " + data.errorCode + ")";
     } else {
       throw "An error occured while using the VIP API (" + data + ")";
     }
