@@ -3,15 +3,17 @@ import events from '@girder/core/events';
 import router from '@girder/core/router';
 import { getCurrentUser } from '@girder/core/auth';
 import { restRequest } from '@girder/core/rest';
-import { messageGirder, doVipRequest } from '../utilities/vipPluginUtils';
+import { messageGirder, doVipRequest, hasTheVipApiKeyConfigured, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
 
 // Import views
 import View from '@girder/core/views/View';
 import FileSelector from './FileSelector';
 import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
+import { confirm } from '@girder/core/dialog';
 
 // Import templates
 import LaunchTemplate from '../templates/launchVipPipeline.pug';
+import SuccessDialog from '../templates/executionSuccessDialog.pug';
 
 // reuse system config style to separate input sections
 import '@girder/core/stylesheets/body/systemConfig.styl';
@@ -28,14 +30,51 @@ var LaunchVipPipeline = View.extend({
 
   initialize: function (settings) {
     if ( ! settings.pipeline) {
-      messageGirder('danger', 'VIP execution page called without a pipeline');
-      router.navigate('/', {trigger: true});
+      this.exitOnError('VIP execution page called without a pipeline');
+      return ;
     }
+
+    if (! hasTheVipApiKeyConfigured()) {
+      this.exitOnError('You should have a VIP key configured to launch a VIP pipeline');
+      return ;
+    }
+
     this.pipeline = settings.pipeline;
+    this.initFile = settings.file;
+    this.initItem = settings.item;
+
+    if (settings.vipConfigOk) {
+      this.initInternal();
+      return;
+    }
+
+    verifyApiKeysConfiguration({printWarning : true})
+    .then(isOk => {
+      if (isOk) {
+        this.initInternal();
+      } else {
+        // warning already printed
+        this.exitOnError('Configuration error, you cannot launch a VIP \
+        execution. Please check your VIP API key configuration in your \
+        girder account');
+      }
+    })
+    .catch(error => {
+      this.exitOnError('Cannot launch a VIP execution : ' + error);
+    });
+  },
+
+  initInternal: function() {
     this.sortParameters();
     this.configureResultDirBrowser();
     this.paramValues = {};
     this.render();
+    this.initChosenFile();
+  },
+
+  exitOnError: function(message) {
+    messageGirder('danger', message);
+    router.navigate('/', {trigger: true});
   },
 
   render: function () {
@@ -46,6 +85,25 @@ var LaunchVipPipeline = View.extend({
     }) );
 
     return this;
+  },
+
+  initChosenFile: function() {
+    if ( ! this.initFile || ! this.initItem) return;
+
+    this.getResourcePath(this.initFile).then((result) => {
+      _.each(this.sortedParameters.file, p => {
+        this.paramValues[p.pid] = {
+          item: item,
+          file: file
+        };
+        this.$('#vip-launch-' + p.pid).val(`${result}`);
+      });
+
+      if (this.sortedParameters.file.length > 1) {
+        this.$('.multiple-file-warning').removeClass('hidden');
+      }
+    });
+
   },
 
   sortParameters: function() {
@@ -87,7 +145,7 @@ var LaunchVipPipeline = View.extend({
       }
     });
     this.listenTo(this.resultFolderBrowser, 'g:saved', function (folder) {
-        this.resultFolderId = folder.id;
+        this.resultFolder = folder;
         this.$('#vip-launch-result-dir').val(folder.id);
         this.getResourcePath(folder).then((result) => {
           this.$('#vip-launch-result-dir').val(`${result}`);
@@ -116,13 +174,17 @@ var LaunchVipPipeline = View.extend({
     }
     this.fileSelector = new FileSelector(settings);
     this.fileSelector.on('g:saved', (item, file) => {
-      this.paramValues[pid] = {
-        item: item,
-        file: file
-      };
-      this.getResourcePath(file).then((result) => {
-        this.$('#vip-launch-' + pid).val(`${result}`);
-      });
+      this.onFileSelected(pid, item, file);
+    });
+  },
+
+  onFileSelected: function(pid, item, file) {
+    this.paramValues[pid] = {
+      item: item,
+      file: file
+    };
+    return this.getResourcePath(file).then((result) => {
+      this.$('#vip-launch-' + pid).val(`${result}`);
     });
   },
 
@@ -148,10 +210,20 @@ var LaunchVipPipeline = View.extend({
       this.paramValues[p.pid] = this.$('#vip-launch-' + p.pid).val();
     });
     // now validate
+    var isOk = this.validate();
+
+    if (isOk) {
+      this.launchExecution();
+    } else {
+      messageGirder('danger', 'Missing parameter(s) to launch this execution on VIP');
+    }
+  },
+
+  validate: function() {
     this.$('.vip-launch-form-group').removeClass('has-success has-error');
     var isOk = true;
     isOk = this.validateParam('execution-name', this.executionName) && isOk;
-    isOk = this.validateParam('result-dir', this.resultFolderId) && isOk;
+    isOk = this.validateParam('result-dir', this.resultFolder) && isOk;
 
     var requiredParams = [].concat(
       this.sortedParameters.file,
@@ -159,12 +231,7 @@ var LaunchVipPipeline = View.extend({
     _.each(requiredParams, p => {
       isOk = this.validateParam(p.pid) && isOk;
     });
-
-    if (isOk) {
-      messageGirder('success', 'YES !!');
-    } else {
-      messageGirder('danger', 'Missing parameter to launch this execution on VIP');
-    }
+    return isOk;
   },
 
   validateParam: function(paramId, paramValue) {
@@ -173,7 +240,107 @@ var LaunchVipPipeline = View.extend({
     this.$('input#vip-launch-' + paramId).parents('.vip-launch-form-group')
       .addClass(isSuccess ? 'has-success' : 'has-error');
     return isSuccess;
-  }
+  },
+
+  launchExecution: function () {
+    // Create result folder
+    var createFolderPromise = this.createResultFolder(executionName, this.resultFolder);
+    useVipConfig(createFolderPromise, (vipConfig, folder) => {
+      var storageName = vipConfig.vip_external_storage_name;
+
+      var execParams = this.buildVipParams(storageName);
+      var resultsLocation = storageName + ":" + folder.id;
+
+      return doVipRequest('initAndStart',
+        this.executionName,
+        this.pipeline.identifier,
+        resultsLocation,
+        execParams
+      ).then(vipExec => {
+        vipExec.gilderResultFolder = folder;
+        return vipExec;
+      });
+    })
+    // if it's OK, save it on girder, else show an error
+    .then(vipExec => {
+      // nested promise chain to seperate in case of girder error after vip success
+      // so no return
+      this.saveExecutionOnGirder(vipExec, fileParam)
+      .then( () => {
+        // todo show modal and direct to my execution
+        $('#g-dialog-container').html(SuccessDialog()).girderModal(false).one('hidden.bs.modal', function () {
+          router.navigate('/my-executions', {trigger: true});
+        });
+        var params = {
+          text: 'This item has several files. Do you want to see the file list to launch a VIP pipeline on any of them ?',
+          yesText: 'OK',
+          yesClass: 'btn-primary',
+          confirmCallback: () => router.navigate('item/' + this.itemToLaunch.id, {trigger : true})
+        };
+        confirm(params);
+      })
+      .catch( e => {
+        messageGirder("warning", "The execution is launched on VIP. \
+          The results will be uploaded to girder but it will not be visible in \
+          the 'My executions' menu (cause : " + e +  ")", 10000);
+      });
+    })
+    .catch(error => {
+      var msg = 'VIP error : ';
+      if (error && error.errorCode) {
+        msg += error.errorMessage + ' (code ' + error.errorCode + ')';
+      } else {
+        msg += error;
+      }
+      messageGirder("danger", msg);
+      $('#run-execution').button('reset');
+    });
+
+    // Loading animation on the button
+    messageGirder("info", "Launching execution, this could take a few seconds", 3000);
+    $('#run-execution').button('loading');
+  },
+
+  createResultFolder: function (executionName, parentFolder) {
+    var dateString = moment().format("YYYY/MM/DD HH:mm:ss");
+    var folderName = "VIP Results - " + executionName + ' - ' + dateString;
+
+    var folder = new FolderModel({
+      parentType: 'folder',
+      parentId: parentFolder.id,
+      name: folderName
+    });
+    return folder.save().then(function () {return this;}.bind(folder));
+  },
+
+  buildVipParams: function(storageName) {
+    var execParams = {};
+    _.each(this.paramValues, (val, index) => {
+      var param = this.pipeline.parameters[index];
+      if (param.type == "File") {
+        this.execParams[param.name] = storageName + ":" + val.file.id;
+      } else {
+        this.execParams[param.name] = val;
+      }
+    });
+    return execParams;
+  },
+
+  saveExecutionOnGirder : function(vipExec, fileParam) {
+    var girderExec = new ExecutionModel({
+      name: vipExec.name,
+      fileId: JSON.stringify({fileParam : this.file.id}),
+      pipelineName: this.pipeline.name,
+      vipExecutionId: vipExec.identifier,
+      status: vipExec.status.toUpperCase(),
+      idFolderResult: vipExec.gilderResultFolder.id,
+      sendMail: false,
+      timestampFin: null
+    });
+
+    // Add this execution on Girder db
+    return girderExec.save();
+  },
 
 }, {
     fetchAndInit: function (application, version) {

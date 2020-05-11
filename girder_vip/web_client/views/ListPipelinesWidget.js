@@ -1,5 +1,6 @@
 //Import utilities
 import _ from 'underscore';
+import events from '@girder/core/events';
 import { restRequest } from '@girder/core/rest';
 import { handleOpen } from '@girder/core/dialog';
 import { parseQueryString, splitRoute } from '@girder/core/misc';
@@ -11,7 +12,7 @@ import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, doVipRequest, 
 // Import views
 import View from '@girder/core/views/View';
 import VipModal from './VipPluginModal';
-import ConfirmExecutionDialog from './ConfirmExecutionDialog';
+import LaunchVipPipeline from './LaunchVipPipeline';
 import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
 import '@girder/core/utilities/jquery/girderModal';
 
@@ -51,6 +52,9 @@ var ListPipelinesWidget = View.extend({
         return this.fetchPipelines().then(() => this.render());
       } else {
         // warning already printed
+        messageGirder('danger', 'Configuration error, you cannot launch a VIP \
+          execution. Please check your VIP API key configuration in your \
+          girder account');
         this.$el.modal('hide');
       }
     })
@@ -99,14 +103,10 @@ var ListPipelinesWidget = View.extend({
 
     doVipRequest('describePipeline', pipelineVersion.identifier)
     .then(pipeline => {
-      this.goingToConfirmDialog = true;
-      new ConfirmExecutionDialog({
+       events.trigger('g:navigateTo', LaunchVipPipeline, {
         file: this.file,
         pipeline: pipeline,
-        pipelines: this.pipelines,
-        vipConfigOk : true,
-        parentView: this.parentView,
-        el: $('#g-dialog-container')
+        vipConfigOk : true
       });
     })
     .catch(error => {
