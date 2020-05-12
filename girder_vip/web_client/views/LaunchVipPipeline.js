@@ -276,13 +276,6 @@ var LaunchVipPipeline = View.extend({
         $('#g-dialog-container').html(SuccessDialog()).girderModal(false).one('hidden.bs.modal', function () {
           router.navigate('/my-executions', {trigger: true});
         });
-        var params = {
-          text: 'This item has several files. Do you want to see the file list to launch a VIP pipeline on any of them ?',
-          yesText: 'OK',
-          yesClass: 'btn-primary',
-          confirmCallback: () => router.navigate('item/' + this.itemToLaunch.id, {trigger : true})
-        };
-        confirm(params);
       })
       .catch( e => {
         messageGirder("warning", "The execution is launched on VIP. \
