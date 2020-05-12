@@ -141,7 +141,8 @@ var FileSelector = BrowserWidget.extend({
       onFileClick: this.onFileSelected.bind(this),
       el: this.$('.vip-file-selector .file-list'),
     });
-    this.fileListWidget.on('g:changed', () => this.onFileListReady() );
+    // only listen once, because fetching more pages will trigger the same event
+    this.fileListWidget.once('g:changed', () => this.onFileListReady() );
   },
 
   // file list widget ready (item files received during validation process)

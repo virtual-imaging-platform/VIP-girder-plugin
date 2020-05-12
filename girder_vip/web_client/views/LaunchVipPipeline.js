@@ -3,13 +3,16 @@ import events from '@girder/core/events';
 import router from '@girder/core/router';
 import { getCurrentUser } from '@girder/core/auth';
 import { restRequest } from '@girder/core/rest';
-import { messageGirder, doVipRequest, hasTheVipApiKeyConfigured, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
+import FolderModel from '@girder/core/models/FolderModel';
+import ExecutionModel from '../models/ExecutionModel';
+import { messageGirder, doVipRequest, useVipConfig, hasTheVipApiKeyConfigured, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
 
 // Import views
 import View from '@girder/core/views/View';
 import FileSelector from './FileSelector';
 import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
 import { confirm } from '@girder/core/dialog';
+import 'bootstrap/js/button';
 
 // Import templates
 import LaunchTemplate from '../templates/launchVipPipeline.pug';
@@ -244,7 +247,7 @@ var LaunchVipPipeline = View.extend({
 
   launchExecution: function () {
     // Create result folder
-    var createFolderPromise = this.createResultFolder(executionName, this.resultFolder);
+    var createFolderPromise = this.createResultFolder(this.executionName, this.resultFolder);
     useVipConfig(createFolderPromise, (vipConfig, folder) => {
       var storageName = vipConfig.vip_external_storage_name;
 
@@ -257,7 +260,9 @@ var LaunchVipPipeline = View.extend({
         resultsLocation,
         execParams
       ).then(vipExec => {
-        vipExec.gilderResultFolder = folder;
+        // enrich to save in girder later
+        vipExec.girderResultFolder = folder;
+        vipExec.execParams = execParams;
         return vipExec;
       });
     })
@@ -265,7 +270,7 @@ var LaunchVipPipeline = View.extend({
     .then(vipExec => {
       // nested promise chain to seperate in case of girder error after vip success
       // so no return
-      this.saveExecutionOnGirder(vipExec, fileParam)
+      this.saveExecutionOnGirder(vipExec)
       .then( () => {
         // todo show modal and direct to my execution
         $('#g-dialog-container').html(SuccessDialog()).girderModal(false).one('hidden.bs.modal', function () {
@@ -282,7 +287,7 @@ var LaunchVipPipeline = View.extend({
       .catch( e => {
         messageGirder("warning", "The execution is launched on VIP. \
           The results will be uploaded to girder but it will not be visible in \
-          the 'My executions' menu (cause : " + e +  ")", 10000);
+          the 'My executions' menu (cause : " + e +  ")", 20000);
       });
     })
     .catch(error => {
@@ -297,7 +302,7 @@ var LaunchVipPipeline = View.extend({
     });
 
     // Loading animation on the button
-    messageGirder("info", "Launching execution, this could take a few seconds", 3000);
+    messageGirder("info", "Launching execution, this could take a few seconds", 10000);
     $('#run-execution').button('loading');
   },
 
@@ -318,22 +323,22 @@ var LaunchVipPipeline = View.extend({
     _.each(this.paramValues, (val, index) => {
       var param = this.pipeline.parameters[index];
       if (param.type == "File") {
-        this.execParams[param.name] = storageName + ":" + val.file.id;
+        execParams[param.name] = storageName + ":" + val.file.id;
       } else {
-        this.execParams[param.name] = val;
+        execParams[param.name] = val;
       }
     });
     return execParams;
   },
 
-  saveExecutionOnGirder : function(vipExec, fileParam) {
+  saveExecutionOnGirder : function(vipExec) {
     var girderExec = new ExecutionModel({
       name: vipExec.name,
-      fileId: JSON.stringify({fileParam : this.file.id}),
+      fileId: JSON.stringify(vipExec.execParams),
       pipelineName: this.pipeline.name,
       vipExecutionId: vipExec.identifier,
       status: vipExec.status.toUpperCase(),
-      idFolderResult: vipExec.gilderResultFolder.id,
+      idFolderResult: vipExec.girderResultFolder.id,
       sendMail: false,
       timestampFin: null
     });

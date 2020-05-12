@@ -23,13 +23,12 @@ form.vip-launch-pipeline-form(role="form")
     .vip-launch-form-container.g-settings-form-container
       h4 File parameters
 
-
-    .alert.multiple-file-warning.hidden.alert-warning.alert-dismissible(role="alert")
-      button.close(type="button", data-dismiss="alert", aria-label="Close"
-        span(aria-hidden="true") &times;
-      | This VIP application has several input files. The file you selected has
-      | been entered for all the parameters, you should verify it is what you
-      | want.
+      .alert.multiple-file-warning.hidden.alert-warning.alert-dismissible(role="alert")
+        button.close(type="button", data-dismiss="alert", aria-label="Close")
+          span(aria-hidden="true") &times;
+        | This VIP application has several input files. The file you selected has
+        | been entered for all the parameters, you should verify it is what you
+        | want.
 
       each param in parameters.file
         .form-group.vip-launch-form-group
@@ -77,6 +76,6 @@ form.vip-launch-pipeline-form(role="form")
                   input.form-control.input-sm(id="vip-launch-" + param.pid,type="text", placeholder="Default : " + param.defaultValue)
                   small.help-block= param.description
 
-  button.btn.btn-success#run-execution(type="submit", data-loading-text="<i class='fa fa-spinner fa-spin'></i> Execute")
+  button.btn.btn-success#run-execution(type="submit", data-loading-text="<i class='animate-spin icon-spin6'></i> Execute")
     i.icon-play
     |  Execute

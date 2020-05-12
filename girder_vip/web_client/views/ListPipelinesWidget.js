@@ -103,7 +103,9 @@ var ListPipelinesWidget = View.extend({
 
     doVipRequest('describePipeline', pipelineVersion.identifier)
     .then(pipeline => {
-       events.trigger('g:navigateTo', LaunchVipPipeline, {
+      router.navigate('/vip-pipeline/' + pipeline.identifier);
+      this.$el.modal('hide');
+      events.trigger('g:navigateTo', LaunchVipPipeline, {
         file: this.file,
         pipeline: pipeline,
         vipConfigOk : true
