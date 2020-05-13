@@ -105,7 +105,7 @@ var ListPipelinesWidget = View.extend({
     doVipRequest('describePipeline', pipelineVersion.identifier)
     .then(pipeline => {
       this.navigateIfPossible(pipeline);
-      this.$el.modal('hide');
+      this.destroy();
       events.trigger('g:navigateTo', LaunchVipPipeline, {
         file: this.file,
         item: this.item,
