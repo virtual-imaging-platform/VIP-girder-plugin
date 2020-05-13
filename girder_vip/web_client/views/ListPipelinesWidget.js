@@ -30,6 +30,7 @@ var ListPipelinesWidget = View.extend({
     cancelRestRequests('fetch');
 
     this.file = settings.file || false;
+    this.item = settings.item || false;
 
     this.render();
     new LoadingAnimation({
@@ -104,9 +105,9 @@ var ListPipelinesWidget = View.extend({
     doVipRequest('describePipeline', pipelineVersion.identifier)
     .then(pipeline => {
       router.navigate('/vip-pipeline/' + pipeline.identifier);
-      this.$el.modal('hide');
       events.trigger('g:navigateTo', LaunchVipPipeline, {
         file: this.file,
+        item: this.item,
         pipeline: pipeline,
         vipConfigOk : true
       });

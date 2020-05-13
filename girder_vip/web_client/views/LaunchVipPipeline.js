@@ -96,8 +96,8 @@ var LaunchVipPipeline = View.extend({
     this.getResourcePath(this.initFile).then((result) => {
       _.each(this.sortedParameters.file, p => {
         this.paramValues[p.pid] = {
-          item: item,
-          file: file
+          item: this.initItem,
+          file: this.initFile
         };
         this.$('#vip-launch-' + p.pid).val(`${result}`);
       });
