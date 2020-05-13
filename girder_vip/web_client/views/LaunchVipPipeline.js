@@ -77,7 +77,7 @@ var LaunchVipPipeline = View.extend({
 
   exitOnError: function(message) {
     messageGirder('danger', message);
-    router.navigate('/', {trigger: true});
+    router.navigate('', {trigger: true});
   },
 
   render: function () {
@@ -342,6 +342,10 @@ var LaunchVipPipeline = View.extend({
 
 }, {
     fetchAndInit: function (application, version) {
+      if ( ! hasTheVipApiKeyConfigured()) {
+        router.navigate('', {trigger: true});
+        return;
+      }
       doVipRequest('describePipeline', `${application}/${version}`)
       .then(pipeline => {
         events.trigger('g:navigateTo', LaunchVipPipeline, {
@@ -350,7 +354,7 @@ var LaunchVipPipeline = View.extend({
       })
       .catch(error => {
         messageGirder('danger', 'Wrong VIP pipeline (' + error + ')');
-        router.navigate('/', {trigger: true});
+        router.navigate('', {trigger: true});
       });
     }
 });
