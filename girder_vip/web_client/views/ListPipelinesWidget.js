@@ -104,7 +104,8 @@ var ListPipelinesWidget = View.extend({
 
     doVipRequest('describePipeline', pipelineVersion.identifier)
     .then(pipeline => {
-      router.navigate('/vip-pipeline/' + pipeline.identifier);
+      this.navigateIfPossible(pipeline);
+      this.$el.modal('hide');
       events.trigger('g:navigateTo', LaunchVipPipeline, {
         file: this.file,
         item: this.item,
@@ -115,6 +116,28 @@ var ListPipelinesWidget = View.extend({
     .catch(error => {
       messageGirder("danger", "Unable to retrieve VIP application informations : " + error);
     });
+  },
+
+  navigateIfPossible: function(pipeline) {
+    // there is a bug in backbone routing, all reserved uri characters (space,
+    // slash etc) cause a page refresh that break things
+    // so we replace space by '+' that are well handled by backbone and vip
+    var encodedIdendifier = _.chain(pipeline.identifier.split('/'))
+    .map(part => part.split(' '))
+    .map(partSplitted => _.map(partSplitted, p => encodeURIComponent(p))) // encode other characters
+    .map(partSplitted => partSplitted.join('+'))
+    .join('/')
+    .value();
+
+    // test if backbone will detect a change
+    if (encodedIdendifier === decodeURI(encodedIdendifier)) {
+      // its ok : change router
+      router.navigate('/vip-pipeline/' + encodedIdendifier);
+    }
+    // do not change route otherwise, i've not solution but this should only
+    // happen if there are strange characters in pipeline identifier
+    // (and its not important if the route does not change, it just prevent
+    // from using F5)
   }
 
 });
