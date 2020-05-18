@@ -210,7 +210,10 @@ var LaunchVipPipeline = View.extend({
       this.sortedParameters.required,
       this.sortedParameters.optional );
     _.each(textParams, p => {
-      this.paramValues[p.pid] = this.$('#vip-launch-' + p.pid).val();
+      var val = this.$('#vip-launch-' + p.pid).val();
+      if (val) {
+        this.paramValues[p.pid] = val;
+      }
     });
     // now validate
     var isOk = this.validate();
