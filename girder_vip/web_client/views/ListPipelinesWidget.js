@@ -11,7 +11,6 @@ import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, doVipRequest, 
 
 // Import views
 import View from '@girder/core/views/View';
-import VipModal from './VipPluginModal';
 import LaunchVipPipeline from './LaunchVipPipeline';
 import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
 import '@girder/core/utilities/jquery/girderModal';
