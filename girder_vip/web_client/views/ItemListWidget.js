@@ -11,7 +11,6 @@ import ItemListWidget from '@girder/core/views/widgets/ItemListWidget';
 import ListPipelinesWidget from './ListPipelinesWidget';
 import FolderView from '@girder/core/views/body/FolderView';
 import CollectionView from '@girder/core/views/body/CollectionView';
-import ConfirmExecutionDialog from './ConfirmExecutionDialog';
 
 // Import Templates
 import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';
