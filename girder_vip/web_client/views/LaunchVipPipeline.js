@@ -210,10 +210,7 @@ var LaunchVipPipeline = View.extend({
       this.sortedParameters.required,
       this.sortedParameters.optional );
     _.each(textParams, p => {
-      var val = this.$('#vip-launch-' + p.pid).val();
-      if (val) {
-        this.paramValues[p.pid] = val;
-      }
+      this.paramValues[p.pid] = this.$('#vip-launch-' + p.pid).val();
     });
     // now validate
     var isOk = this.validate();
@@ -320,7 +317,7 @@ var LaunchVipPipeline = View.extend({
       var param = this.pipeline.parameters[index];
       if (param.type == "File") {
         execParams[param.name] = storageName + ":" + val.file.id;
-      } else {
+      } else if (val) {
         execParams[param.name] = val;
       }
     });
