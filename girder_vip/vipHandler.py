@@ -4,6 +4,9 @@ from girder.api.describe import Description, autoDescribeRoute
 from girder.models.user import User
 from girder.constants import AccessType
 from girder.models.user import User as UserModel
+from girder.models.setting import Setting
+
+from .vipSettings import VipPluginSettings
 
 VIP_FIELD = 'apiKeyVip'
 class VipHandler(object):
@@ -36,3 +39,11 @@ class VipHandler(object):
         if VIP_FIELD not in user:
             return ''
         return user[VIP_FIELD]
+
+
+    @access.user
+    @autoDescribeRoute(
+        Description('Get the plugin api conf')
+    )
+    def getVipPluginConf(self):
+        return Setting().get(VipPluginSettings.SETTING_KEY)

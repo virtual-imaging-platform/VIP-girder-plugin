@@ -1,0 +1,81 @@
+.creatis-launch-vip-pipeline-header
+  .g-body-title Launch a VIP Pipeline
+  .g-body-subtitle= pipeline.name + ' (version'+ pipeline.version + ')'
+
+p= pipeline.description
+
+form.vip-launch-pipeline-form(role="form")
+  .vip-launch-form-container.g-settings-form-container
+    h4 General parameters
+    .form-group.vip-launch-form-group
+      label.control-label(for="vip-launch-execution-name") Name of execution
+      input#vip-launch-execution-name.form-control.input-sm(type="text")
+      small.help-block Useful to monitor the execution later
+    .form-group.vip-launch-form-group
+      label.control-label(for="vip-launch-result-dir") Result folder
+      .input-group.input-group-sm
+        .input-group-btn
+          button#vip-launch-result-dir-btn.btn.btn-primary(type="button") Select folder
+        input#vip-launch-result-dir.form-control(type="text", readonly)
+      small.help-block Girder folder where the results will be saved
+
+  if parameters.file.length
+    .vip-launch-form-container.g-settings-form-container
+      h4 File parameters
+
+      .alert.multiple-file-warning.hidden.alert-warning.alert-dismissible(role="alert")
+        button.close(type="button", data-dismiss="alert", aria-label="Close")
+          span(aria-hidden="true") &times;
+        | This VIP application has several input files. The file you selected has
+        | been entered for all the parameters, you should verify it is what you
+        | want.
+
+      each param in parameters.file
+        .form-group.vip-launch-form-group
+          label.control-label(for="vip-launch-" + param.pid)= param.name
+          .input-group.input-group-sm
+            .input-group-btn
+              button.vip-launch-file-btn.btn.btn-primary(pid=param.pid, type="button") Select file
+            input.form-control(id="vip-launch-" + param.pid, type="text", readonly)
+          small.help-block= param.description
+
+  if parameters.required.length
+    .vip-launch-form-container.g-settings-form-container
+      h4 Other parameters
+      each param in parameters.required
+        .form-group.vip-launch-form-group
+          label.control-label(for="vip-launch-" + param.pid)= param.name
+          input.form-control.input-sm(id="vip-launch-" + param.pid,type="text")
+          small.help-block= param.description
+
+  if parameters.optionalFile.length || parameters.optional.length
+    #vip-launch-pipeline-advanced-accordion.panel-group
+      .panel.panel-default
+        .panel-heading(data-toggle="collapse",
+            data-parent="#vip-launch-pipeline-advanced-accordion",
+            data-target="#vip-launch-pipeline-advanced-tab")
+          .panel-title
+            a
+              b Optional parameters
+        #vip-launch-pipeline-advanced-tab.panel-collapse.collapse
+          .panel-body
+            if parameters.optionalFile.length
+              each param in parameters.optionalFile
+                .form-group.vip-launch-form-group
+                  label.control-label(for="vip-launch-" + param.pid)= param.name
+                  .input-group.input-group-sm
+                    .input-group-btn
+                      button.vip-launch-file-btn.btn.btn-primary(pid=param.pid, type="button") Select file
+                    input.form-control(id="vip-launch-" + param.pid,type="text", readonly, placeholder="Default : " + param.defaultValue)
+                  small.help-block= param.description
+
+            if parameters.optional.length
+              each param in parameters.optional
+                .form-group.vip-launch-form-group
+                  label.control-label(for="vip-launch-" + param.pid)= param.name
+                  input.form-control.input-sm(id="vip-launch-" + param.pid,type="text", placeholder="Default : " + param.defaultValue)
+                  small.help-block= param.description
+
+  button.btn.btn-success#run-execution(type="submit", data-loading-text="<i class='animate-spin icon-spin6'></i> Execute")
+    i.icon-play
+    |  Execute

@@ -34,8 +34,11 @@ CarminClient.prototype.doRequest = function(path, method, opts) {
 
           resolve(response);
         }
-        else
+        else if (isJson(xmlHttp.responseText)) {
+          reject(JSON.parse(xmlHttp.responseText));
+        } else {
           reject(xmlHttp.status);
+        }
       }
     }.bind(this);
 
@@ -96,8 +99,15 @@ CarminClient.prototype.describePipeline = function(pipelineIdentifier) {
 }
 
 // initialize an execution of a pipeline
-CarminClient.prototype.initAndStart = function(executionName, pipelineIdentifier, inputValues) {
-  var content = {"name" : executionName,"pipelineIdentifier" : pipelineIdentifier, "inputValues" : inputValues};
+CarminClient.prototype.initAndStart = function(
+    executionName, pipelineIdentifier, resultsLocation, inputValues) {
+  var content = {
+    "name" : executionName,
+    "pipelineIdentifier" : pipelineIdentifier,
+    "inputValues" : inputValues};
+  if (resultsLocation) {
+    content.resultsLocation = resultsLocation;
+  }
   var opts = {};
 
   opts.contentType = "application/json";
@@ -171,6 +181,31 @@ CarminClient.prototype.fileExists = function(completePath) {
   opts.contentType = "application/json";
   opts.async = true;
   return this.doRequest("path" + completePath + "?action=exists", "GET", opts);
+}
+
+CarminClient.prototype.listExternalPlatforms = function() {
+  var opts = {};
+  opts.contentType = "application/json";
+  opts.async = true;
+  return this.doRequest("externalPlatforms", "GET", opts);
+}
+
+// create or update an external platform key
+CarminClient.prototype.createOrUpdateApiKey = function(platformIdentifier, apiKey) {
+  var content = {"storageIdentifier" : platformIdentifier, "apiKey" : apiKey};
+  var opts = {};
+
+  opts.contentType = "application/json";
+  opts.async = true;
+  return this.doRequestBody("user/externalKeys", "PUT", content, opts);
+}
+
+CarminClient.prototype.listUserExternalPlatformKeys = function() {
+  var opts = {};
+
+  opts.contentType = "application/json";
+  opts.async = true;
+  return this.doRequestBody("user/externalKeys", "GET", opts);
 }
 
 export default CarminClient;

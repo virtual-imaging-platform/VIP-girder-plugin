@@ -1,12 +1,10 @@
 // Import utilities
 import { wrap } from '@girder/core/utilities/PluginUtils';
-import { restRequest } from '@girder/core/rest'
 import { getCurrentUser } from '@girder/core/auth';
+import {saveVipApiKey, messageGirder, updateApiKeysConfiguration, verifyApiKeysConfiguration} from '../utilities/vipPluginUtils';
 import router from '@girder/core/router';
 import events from '@girder/core/events';
-import CarminClient from '../vendor/carmin/carmin-client';
 import * as constants from '../constants';
-import { getCurrentApiKeyVip } from '../utilities';
 
 // Import views
 import UserAccountView from '@girder/core/views/body/UserAccountView';
@@ -19,67 +17,71 @@ import UserAccountVIP from '../templates/userAccountVIP.pug';
 wrap(UserAccountView, 'render', function(render) {
   render.call(this);
 
-  // Get API key of VIP
-  restRequest({
-    method: 'GET',
-    url: '/user/' + getCurrentUser().id + '/apiKeyVip'
-  }).done((resp) => {
+  var apiKeyVip = getCurrentUser().get('apiKeyVip');
+  if (! apiKeyVip) apiKeyVip = '';
 
-    // Display tab and pane
-    $(this.el).find('ul.g-account-tabs.nav.nav-tabs').append(UserAccountTab);
-    $(this.el).find('.tab-content').append(UserAccountVIP({apiKeyVip: resp}));
+  const TAB_NAME = "vip";
+  // Display tab and pane
+  $(this.el).find('ul.g-account-tabs.nav.nav-tabs').append(UserAccountTab);
+  $(this.el).find('.tab-content').append(UserAccountVIP({apiKeyVip: apiKeyVip}));
 
-    // Change the route
-    $(this.el).find('a[name="vip"]').on('shown.bs.tab', (e) => {
-      var tab = $(e.currentTarget).attr('name');
-      router.navigate('useraccount/' + this.model.id + '/' + tab);
-    });
+  // Configure new vip tab
+  var tablink = $(this.el).find('a[name=' + TAB_NAME + ']');
+  // display the tab content on click
+  tablink.on('shown.bs.tab', (e) => {
+    this.tab = $(e.currentTarget).attr('name');
+    router.navigate('useraccount/' + this.model.id + '/' + this.tab);
 
-    // Event click on button (submit)
-    $('#sendApiKeyVip').click(function (e) {
-      e.preventDefault();
-
-      var errorMessage = $(this.el).find('#creatis-vip-error-msg');
-      var key = $(this.el).find('#creatis-apikey-vip').val();
-      var carmin = new CarminClient(constants.carminURL, key);
-
-      errorMessage.empty();
-
-      // Test API key on VIP
-      carmin.listPipelines().then((data) => {
-        // Update User table
-        restRequest({
-          method: 'PUT',
-          url: '/user/' + getCurrentUser().id + '/apiKeyVip',
-          data: {
-            apiKeyVip: key
-          }
-        }).done((resp) => {
-          events.trigger('g:alert', {
-            text: "API key of VIP has changed with success.",
-            type: "success",
-            duration: 3000
-          });
-          // Reload the page to get apiKeyVip with the function 'getCurrentUser'
-          setTimeout(function() {
-            document.location.reload(true);
-          }, 1000);
-        }).fail(() => {
-          events.trigger('g:alert', {
-            text: "An error occured while processing your request",
-            type: "danger",
-            duration: 3000
-          });
-        });
-      }, (data) => {
-        // Wrong API
-        if (data == 401) {
-          errorMessage.text("This API key is wrong");
-          return ;
-        }
-      });
-
-    }.bind(this));
-
+    if (! this.vipPluginConfigChecked) {
+      this.vipPluginConfigChecked = true;
+      this.checkVipPluginConfig( ! this.showOnStart);
+    }
   });
+  // display the tab if requested from url
+  if (TAB_NAME === this.tab) {
+    this.showOnStart = true;
+    tablink.tab("show");
+  }
 });
+
+UserAccountView.prototype.checkVipPluginConfig = function (useInternalCollection) {
+
+  if (! this.$('#creatis-apikey-vip').val()) return;
+
+  // Test and correct everything
+  verifyApiKeysConfiguration({
+    printWarning : false,
+    keysCollection : useInternalCollection ? this.apiKeyListWidget.collection : false
+  })
+  .then(isOk => {
+    if (isOk) return;
+    messageGirder("warning", "There is a problem with your VIP configuration. Please click \"Update\"");
+  })
+  .catch(error => {
+    messageGirder("warning", "There is a problem with the VIP plugin configuration : " + error);
+  });
+
+};
+
+UserAccountView.prototype.events['submit #ApiKeyVip-form'] = function (e) {
+  e.preventDefault();
+
+  var newkey = this.$('#creatis-apikey-vip').val();
+
+  var initialPromise;
+  if (newkey) {
+    initialPromise = updateApiKeysConfiguration({
+      newKey : newkey,
+      printWarning : false,
+      keysCollection : this.apiKeyListWidget.collection
+    });
+  } else {
+    initialPromise = Promise.resolve();
+  }
+
+  initialPromise.then( () => saveVipApiKey(newkey) )
+  .then( () => this.render() )
+  .catch(error => {
+    messageGirder("danger", "An error occured while changing VIP API key : " + error );
+  });
+};

@@ -1,5 +1,3 @@
-- var i = 1;
-
 .creatis-list-executions-header
   .g-body-title My executions
   .g-body-subtitle Executions history
@@ -8,24 +6,23 @@ table.table.table-hover
   tbody
     thead
       tr
-        th #
         th Name
         th Application
         th Status
-        th Start
-          small    JJ/MM/YYYY
+        th Start date
         th Actions
     each execution in executions
-      - var date = new Date(execution.timestampCreation * 1000);
-      - var hideResult = (execution.status == 'FINISHED') ? '' : 'hidden';
-      tr.execution
-        td= i++
-        td= execution.name
-        td= execution.pipelineName
-        td.status= status[execution.status].text
-        td= date.getDate() + "/" + (date.getMonth()+1) + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
+      tr.g-execution(cid=execution.cid)
+        td= execution.get('name')
+        td= execution.get('pipelineName')
+        td= status[execution.get('status')].text
+        td= execution.get('creationDate')
         td
-          a(href="#user/" + user.id + "/folder/" + execution.idFolderResult, target='_blank', style="visibility:" + hideResult)
-            button.btn.btn-small.btn-primary Results
+          button.btn.btn-sm.btn-primary.see-results(class=(execution.get('isFinished') ? '' : 'hidden')) Results
 
-          button.btn.btn-small.btn-danger.deleteExecution(value=execution.id) Delete
+          button.btn.btn-sm.btn-danger.deleteExecution(title="Delete from girder")
+            i.icon-cancel
+            |  Delete
+
+
+button.btn.btn-sm.btn-primary.refresh-executions Refresh

@@ -1,0 +1,17 @@
+.g-config-breadcrumb-container
+
+.g-vip-container
+  form#vip-plugin-config-form(role="form")
+    .form-group
+      label(for="vip-config-url") VIP URL
+      input#vip-config-url.input-sm.form-control(type="text", value=vipConfig.vip_url)
+
+    .form-group
+      label(for="vip-config-storage-name") Girder external storage name on VIP
+      input#vip-config-storage-name.input-sm.form-control(type="text", value=vipConfig.vip_external_storage_name)
+
+    .form-group
+      label(for="vip-config-collections") Authorized girder collections (separated by ',' or ';' )
+      input#vip-config-collections.input-sm.form-control(type="text", value=authorized_collections_string)
+
+    button.btn.btn-default.btn-sm.btm-primary(type="submit") Save Changes

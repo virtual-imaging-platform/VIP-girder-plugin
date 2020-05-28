@@ -1,10 +1,11 @@
 // Import utilities
 import { wrap } from '@girder/core/utilities/PluginUtils';
-import { getCurrentUser } from '@girder/core/auth';
-import { AccessType } from '@girder/core/constants';
+import { hasTheVipApiKeyConfigured } from '../utilities/vipPluginUtils';
+import events from '@girder/core/events';
 
 // Import views
 import HeaderUserView from '@girder/core/views/layout/HeaderUserView';
+import ListPipelinesWidget from './ListPipelinesWidget';
 
 // Import templates
 import HeaderUserTemplate from '../templates/headerUser.pug';
@@ -14,12 +15,25 @@ wrap(HeaderUserView, 'render', function(render) {
   // Call the parent render
   render.call(this);
 
-  var currentUser = getCurrentUser();
-
-  // If the user is connected
-  if (currentUser) {
-    this.$('#g-user-action-menu>ul').prepend(HeaderUserTemplate({}));
+  if ( hasTheVipApiKeyConfigured()) {
+    this.$('#g-user-action-menu li>a.g-logout').parent()
+      .before(HeaderUserTemplate());
   }
 
   return this;
 });
+
+wrap(HeaderUserView, 'initialize', function(initialize, args) {
+  // Call the parent render
+  initialize.call(this, args);
+
+  this.listenTo(events, 'vip:vipApiKeyChanged', this.render);
+});
+
+HeaderUserView.prototype.events['click a.launch-pipeline'] = function (e) {
+  // todo : verify vip config
+  new ListPipelinesWidget({
+      el: $('#g-dialog-container'),
+      parentView: this
+  });
+};

@@ -1,10 +1,8 @@
-const carminURL = "https://vip.creatis.insa-lyon.fr/rest";
-//const carminURL = "http://vip.creatis.insa-lyon.fr/vip-portal-1.23/rest";
-//const carminURL = "http://vip.creatis.insa-lyon.fr:4040/rest";
-//const carminURL = "http://newk.grid.creatis.insa-lyon.fr:4040/cors/rest";
-//const carminURL = "http://newk.grid.creatis.insa-lyon.fr:4040/rest";
+const VIP_PLUGIN_API_KEY = "vipPluginApiKey";
+// Set this variable to 'true' to access to multi files menu
+const ENABLE_MULTIFILES = false;
 
-const Status = {
+const STATUSES = {
   INITIALIZING: { order : 0, text: "Initializing"},
   READY:  { order : 10, text: "Ready"},
   RUNNING:  { order : 20, text: "Running"},
@@ -15,14 +13,11 @@ const Status = {
   KILLED:  { order : 70, text: "Killed"}
 };
 
-// Set this variable to 'true' to access to multi files menu
-const EnabledMultiFiles = false;
-
-const GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP = "vipPluginApiKey";
+const NEEDED_TOKEN_SCOPES = ['core.data.read', 'core.data.write'];
 
 export {
-  carminURL,
-  Status,
-  EnabledMultiFiles,
-  GIRDER_API_KEY_NAME_TO_BE_USED_FROM_VIP
+  STATUSES,
+  ENABLE_MULTIFILES,
+  VIP_PLUGIN_API_KEY,
+  NEEDED_TOKEN_SCOPES
 };
