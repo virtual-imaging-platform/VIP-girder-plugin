@@ -5,7 +5,6 @@ import router from '@girder/core/router';
 import * as constants from '../constants';
 import events from '@girder/core/events';
 import { hasTheVipApiKeyConfigured, messageGirder, doVipRequest } from '../utilities/vipPluginUtils';
-import { getCurrentUser } from '@girder/core/auth';
 
 // Import views
 import { confirm } from '@girder/core/dialog';

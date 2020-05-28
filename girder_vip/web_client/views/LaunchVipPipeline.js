@@ -43,8 +43,8 @@ var LaunchVipPipeline = View.extend({
     }
 
     this.pipeline = settings.pipeline;
-    this.initFile = settings.file;
-    this.initItem = settings.item;
+    this.lastFile = settings.file;
+    this.lastItem = settings.item;
 
     if (settings.vipConfigOk) {
       this.initInternal();
@@ -91,20 +91,19 @@ var LaunchVipPipeline = View.extend({
   },
 
   initChosenFile: function() {
-    if ( ! this.initFile || ! this.initItem) return;
+    if ( ! this.lastFile || ! this.lastItem) return;
 
+    if (this.sortedParameters.file.length != 1) {
+      // only preselect a file if there is exactly one
+      return;
+    }
     this.getResourcePath(this.initFile).then((result) => {
-      _.each(this.sortedParameters.file, p => {
-        this.paramValues[p.pid] = {
-          item: this.initItem,
-          file: this.initFile
-        };
-        this.$('#vip-launch-' + p.pid).val(`${result}`);
-      });
-
-      if (this.sortedParameters.file.length > 1) {
-        this.$('.multiple-file-warning').removeClass('hidden');
-      }
+      var param = this.sortedParameters.file[0];
+      this.paramValues[param.pid] = {
+        item: this.lastFile,
+        file: this.lastFile
+      };
+      this.$('#vip-launch-' + param.pid).val(`${result}`);
     });
 
   },
@@ -170,6 +169,11 @@ var LaunchVipPipeline = View.extend({
         defaultSelectedFile: paramData.file,
         defaultSelectedItem: paramData.item
       });
+    } else if ( this.lastFile && this.lastItem) {
+      _.extend(settings, {
+        defaultSelectedFile: this.lastFile,
+        defaultSelectedItem: this.lastItem
+      });
     }
     if (this.fileSelector) {
       this.stopListening(this.fileSelector);
@@ -186,6 +190,8 @@ var LaunchVipPipeline = View.extend({
       item: item,
       file: file
     };
+    this.lastItem = item;
+    this.lastFile = file;
     return this.getResourcePath(file).then((result) => {
       this.$('#vip-launch-' + pid).val(`${result}`);
     });

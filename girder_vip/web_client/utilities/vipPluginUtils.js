@@ -4,6 +4,7 @@ import { getCurrentUser } from '@girder/core/auth';
 import { restRequest, cancelRestRequests } from '@girder/core/rest';
 import compareVersions from 'compare-versions';
 import events from '@girder/core/events';
+import FolderModel from '@girder/core/models/FolderModel';
 import ApiKeyCollection from '@girder/core/collections/ApiKeyCollection.js'
 import ApiKeyModel from '@girder/core/models/ApiKeyModel.js'
 import FolderCollection from '@girder/core/collections/FolderCollection';
@@ -80,11 +81,26 @@ function isPluginActivatedOn(model) {
     return isPluginActivatedOnCollection(model.id);
   }
   if (_.contains(['item', 'folder'], model.resourceName)) {
-    if (model.get('baseParentType') !== 'collection') {
+    if (model.get('baseParentType') === 'user') {
+      return isPluginActivatedOnUserModel(model.get('baseParentId'), model);
+    } else if (model.get('baseParentType') !== 'collection') {
       return Promise.resolve(false);
     }
     return isPluginActivatedOnCollection(model.get('baseParentId'));
   }
+}
+
+function isPluginActivatedOnUserModel(userId, model) {
+  if (userId !== getCurrentUser()) return Promise.resolve(false);
+  if (model.resourceName === 'folder') {
+    return Promise.resolve( ! model.get('public'));
+  }
+  if (model.resourceName === 'item') {
+    var folder = new FolderModel({ _id: model.get('folderId') });
+    return folder.fetch().then(() => ! folder.get('public'));
+  }
+  // what is it ???
+  return Promise.resolve(false);
 }
 
 function isPluginActivatedOnCollection(collectionId) {

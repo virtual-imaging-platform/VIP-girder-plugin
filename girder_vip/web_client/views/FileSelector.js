@@ -5,6 +5,7 @@ import { wrap } from '@girder/core/utilities/PluginUtils';
 import CollectionCollection from '@girder/core/collections/CollectionCollection';
 import FileCollection from '@girder/core/collections/FileCollection';
 import { getVipConfig } from '../utilities/vipPluginUtils';
+import { getCurrentUser } from '@girder/core/auth';
 
 // Import views
 import View from '@girder/core/views/View';
@@ -44,8 +45,9 @@ var FileSelector = BrowserWidget.extend({
     var filteredCollections = new CollectionCollection();
     filteredCollections.filterFunc =
      (c => _.contains(vipConfig.authorized_collections, c._id) );
+
     var rootSelectorSettings = {
-      display: ['VIP Authorized Collections'],
+      display: ['Home', 'VIP Authorized Collections'],
       groups: {'VIP Authorized Collections' : filteredCollections}
     };
 
@@ -187,7 +189,14 @@ wrap(HierarchyWidget, 'initialize', function(initialize, settings) {
     settings.downloadLinks = false;
     settings.viewLinks = false;
     this.viewVipRocket = false;
+    // if we are exploring the user home, only show root private folders
+    settings.itemFilter = (m) => {
+      return m.baseParentType !== 'user'
+        || m.baseParentId !== getCurrentUser().id
+        || ! m.public)
+    };
   }
+
   // Call the parent init
   initialize.call(this, settings);
 });
