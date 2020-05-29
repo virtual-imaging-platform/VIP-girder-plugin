@@ -97,7 +97,7 @@ var LaunchVipPipeline = View.extend({
       // only preselect a file if there is exactly one
       return;
     }
-    this.getResourcePath(this.initFile).then((result) => {
+    this.getResourcePath(this.lastFile).then((result) => {
       var param = this.sortedParameters.file[0];
       this.paramValues[param.pid] = {
         item: this.lastFile,

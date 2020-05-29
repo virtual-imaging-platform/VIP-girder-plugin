@@ -91,7 +91,7 @@ function isPluginActivatedOn(model) {
 }
 
 function isPluginActivatedOnUserModel(userId, model) {
-  if (userId !== getCurrentUser()) return Promise.resolve(false);
+  if (userId !== getCurrentUser().id) return Promise.resolve(false);
   if (model.resourceName === 'folder') {
     return Promise.resolve( ! model.get('public'));
   }
