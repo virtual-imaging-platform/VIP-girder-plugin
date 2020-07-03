@@ -193,7 +193,7 @@ wrap(HierarchyWidget, 'initialize', function(initialize, settings) {
     settings.itemFilter = (m) => {
       return m.baseParentType !== 'user'
         || m.baseParentId !== getCurrentUser().id
-        || ! m.public)
+        || ! m.public
     };
   }
 
