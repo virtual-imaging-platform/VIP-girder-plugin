@@ -1,0 +1,28 @@
+.creatis-list-executions-header
+  .g-body-title My executions
+  .g-body-subtitle Executions history
+
+table.table.table-hover
+  tbody
+    thead
+      tr
+        th Name
+        th Application
+        th Status
+        th Start date
+        th Actions
+    each execution in executions
+      tr.g-execution(cid=execution.cid)
+        td= execution.get('name')
+        td= execution.get('pipelineName')
+        td= status[execution.get('status')].text
+        td= execution.get('creationDate')
+        td
+          button.btn.btn-sm.btn-primary.see-results(class=(execution.get('isFinished') ? '' : 'hidden')) Results
+
+          button.btn.btn-sm.btn-danger.deleteExecution(title="Delete from girder")
+            i.icon-cancel
+            |  Delete
+
+
+button.btn.btn-sm.btn-primary.refresh-executions Refresh

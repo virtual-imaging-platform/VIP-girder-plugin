@@ -1,0 +1,20 @@
+#creatis-account-tab-apikey-vip.tab-pane
+  .creatis-apikey-vip.g-user-settings-container
+    .alert.alert-info.
+      Attention : VIP applications will only be available on the files from some collections.
+      Please contact your administrators to know which collections are eligible.
+    if !apiKeyVip
+      ul
+        li To use VIP applications on gilder files, it is necessary to have an
+          a.creatis-vip-link(href='https://vip.creatis.insa-lyon.fr/', target='_blank')  VIP account
+        li.
+          Then generate your API key in VIP > My Account > API key, and copy/paste it here
+
+    form#ApiKeyVip-form(role="form")
+      .form-group
+        label(for="creatis-apikey-vip") VIP - API key
+        input#creatis-apikey-vip.input-sm.form-control(type="text", value=apiKeyVip)
+
+      button.btn.btn-default.btn-sm.btm-primary(type="submit")
+        i.icon-lock
+        | Update
