@@ -18,12 +18,8 @@ const Status = {
 
 const ChunkSize = 10000000;
 
-// Set this variable to 'true' to access to multi files menu
-const EnabledMultiFiles = false;
-
 export {
   carminURL,
   Status,
-  ChunkSize,
-  EnabledMultiFiles
+  ChunkSize
 };

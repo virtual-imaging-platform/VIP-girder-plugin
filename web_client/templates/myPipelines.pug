@@ -13,7 +13,7 @@ table.table.table-hover
         th Application
         th Status
         th Start
-          small    JJ/MM/YYYY
+          small    MM/JJ/YYYY
         th Actions
     each pipeline in pipelines
       - var date = new Date(pipeline.get('timestampCreation') * 1000);
@@ -23,7 +23,7 @@ table.table.table-hover
         td= pipeline.name()
         td= pipeline.get('pipelineName')
         td.status= status[pipeline.get('status')]
-        td= date.getDate() + "/" + (date.getMonth()+1) + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
+        td= date.getMonth()+1 + "/" + date.getDate() + "/" + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
         td#pipeline-action
           a(href="#user/" + user.id + "/folder/" + pipeline.get('childFolderResult'), target='_blank', style="visibility:" + hideResult)
             button.btn.btn-small.btn-primary Results
