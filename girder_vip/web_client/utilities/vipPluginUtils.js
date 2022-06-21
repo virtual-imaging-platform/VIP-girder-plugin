@@ -431,7 +431,8 @@ function sortPipelines(allPipelines) {
   // Cette variable 'versionClean' est la version sans superflux (on garde que les chiffres et les points)
   // cad: v0.1.2(experimental) -> 0.1.2
   .each(pipeline =>  {
-    pipeline["versionClean"] = pipeline["version"].replace(/[^0-9\.]/g, '');
+    pipeline["versionClean"] = pipeline["version"].replace(/[^0-9\.]/g, '')
+      .replace(/\.+/g, '.').replace(/^\./, '').replace(/\.$/, ''); // also remove multiple dots and begining/endind dots
     pipeline["versionId"] = (cid++).toString();
   })
   .groupBy('name') // Regroupe toutes les pipelines par leur nom
