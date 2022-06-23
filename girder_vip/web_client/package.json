@@ -1,14 +1,11 @@
 {
         "name": "@girder/vip",
-        "version": "3.0.1",
+        "version": "3.0.2",
         "description": "Use of VIP applications",
         "homepage": "gitlab",
         "bugs" : {},
         "peerDependencies" :{
           "@girder/core": "*"
-        },
-        "dependencies": {
-          "compare-versions": "3.2.1"
         },
         "girderPlugin": {
                 "name" : "vip",
