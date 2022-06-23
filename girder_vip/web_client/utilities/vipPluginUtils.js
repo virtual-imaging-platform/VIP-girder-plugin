@@ -496,7 +496,7 @@ function validate(version) {
   }
 }
 
-return function compareVersions(v1, v2) {
+function compareVersions(v1, v2) {
   [v1, v2].forEach(validate);
 
   var s1 = split(v1);
