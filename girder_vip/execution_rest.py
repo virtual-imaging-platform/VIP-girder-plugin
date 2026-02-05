@@ -19,15 +19,16 @@ class Execution(Resource):
         self.route('PUT', (':id', 'status'), self.setStatus)
         self.route('DELETE', (':id',), self.deleteProcess)
 
-    @access.public
+    @access.user
     @autoDescribeRoute(
-	Description("Get all process")
+	Description("Get user executions")
     )
     def get(self):
+        currentUserId = str(self.getCurrentUser()['_id'])
         list = []
         for execution in self.model.get():
-            list.append(execution)
-
+            if execution.get('userId') == currentUserId:
+                list.append(execution)
         return list
 
     @access.public
