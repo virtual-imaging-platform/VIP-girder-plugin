@@ -112,26 +112,30 @@ var LaunchVipPipeline = View.extend({
   },
 
   sortParameters: function() {
-    var sortedParameters = {
+    const sortedParameters = {
       file: [],
       required: [],
       optionalFile: [],
       optional: []
     };
+
     _.each(this.pipeline.parameters, (param, pid) => {
       param.pid = pid;
-      if (param.name === 'results-directory') return;
-      if (param.type == "File" && !param.defaultValue) {
-        sortedParameters.file.push(param);
-      } else if (!param.defaultValue) {
-        sortedParameters.required.push(param);
-      } else if (param.type == "File") {
-        sortedParameters.optionalFile.push(param);
-      } else {
-        sortedParameters.optional.push(param);
-      }
+      this.sortParameter(param, sortedParameters);
     });
-    this.sortedParameters = sortedParameters
+
+    this.sortedParameters = sortedParameters;
+  },
+
+  sortParameter: function(param, sortedParameters) {
+    if (param.name === 'results-directory') return;
+
+    const isOptional = param.isOptional || param.defaultValue;
+    if (param.type === "File") {
+      isOptional ? sortedParameters.optionalFile.push(param) : sortedParameters.file.push(param);
+    } else {
+      isOptional ? sortedParameters.optional.push(param) : sortedParameters.required.push(param);
+    }
   },
 
   configureResultDirBrowser: function() {
