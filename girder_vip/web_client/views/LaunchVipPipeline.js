@@ -368,10 +368,11 @@ var LaunchVipPipeline = View.extend({
     var folderName = "VIP Results - " + executionName + ' - ' + dateString;
 
     var folder = new FolderModel({
-      parentType: 'folder',
+      parentType: parentFolder.get('_modelType'),
       parentId: parentFolder.id,
       name: folderName
     });
+
     return folder.save().then(function () {return this;}.bind(folder));
   },
 
