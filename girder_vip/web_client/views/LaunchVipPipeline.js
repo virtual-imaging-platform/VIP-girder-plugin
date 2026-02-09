@@ -10,6 +10,7 @@ import { messageGirder, doVipRequest, useVipConfig, hasTheVipApiKeyConfigured, v
 // Import views
 import View from '@girder/core/views/View';
 import FileSelector from './FileSelector';
+import FolderSelector from './FolderSelector';
 import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
 import { confirm } from '@girder/core/dialog';
 import 'bootstrap/js/button';
@@ -25,10 +26,12 @@ var LaunchVipPipeline = View.extend({
 
   events: {
     'click .vip-launch-file-btn': 'onFileBtnClick',
+    'click .vip-launch-folder-btn': 'onFolderBtnClick',
     'click #vip-launch-result-dir-btn': function() {
       this.resultFolderBrowser.setElement($('#g-dialog-container')).render();
     },
     'submit .vip-launch-pipeline-form' : 'submit',
+    'change .vip-folder-selector-checkbox': 'onFolderSelectorToggle',
   },
 
   initialize: function (settings) {
@@ -197,6 +200,57 @@ var LaunchVipPipeline = View.extend({
     });
   },
 
+  onFolderSelectorToggle: function(e) {
+    const pid = $(e.currentTarget).attr('pid');
+    const fileBtn = this.$('.vip-launch-file-btn[pid=' + pid + ']');
+    const folderBtn = this.$('.vip-launch-folder-btn[pid=' + pid + ']');
+    const isChecked = this.$('.vip-folder-selector-checkbox[pid=' + pid + ']').is(':checked');
+    // Reset form values
+    this.$('#vip-launch-' + pid).val('');
+    this.paramValues[pid] = null;
+    fileBtn.toggleClass('hidden', isChecked)
+    folderBtn.toggleClass('hidden', !isChecked);
+  },
+
+  onFolderBtnClick: function(e) {
+    const pid = $(e.currentTarget).attr("pid");
+    const settings = {
+      el: $('#g-dialog-container'),
+      parentView: this,
+    };
+
+    if (this.paramValues[pid]) {
+      _.extend(settings, {
+        defaultSelectedFolder: this.paramValues[pid].folder
+      });
+    } else if (this.lastFolder) {
+      _.extend(settings, {
+        defaultSelectedFolder: this.lastFolder
+      });
+    }
+
+    if (this.folderSelector) {
+      this.stopListening(this.folderSelector);
+      this.folderSelector.destroy();
+    }
+
+    this.folderSelector = new FolderSelector(settings);
+    this.folderSelector.on('g:saved', (folder) => {
+      this.onFolderSelected(pid, folder);
+    });
+  },
+
+  onFolderSelected: function(pid, folder) {
+    this.paramValues[pid] = {
+      folder : folder
+    };
+
+    this.lastFolder = folder;
+    return this.getResourcePath(folder).then((result) => {
+      this.$('#vip-launch-' + pid).val(`${result}`);
+    });
+  },
+
   getResourcePath: function(resource) {
     return restRequest({
         url: `resource/${resource.id}/path`,
@@ -322,7 +376,8 @@ var LaunchVipPipeline = View.extend({
     _.each(this.paramValues, (val, index) => {
       var param = this.pipeline.parameters[index];
       if (param.type == "File") {
-        execParams[param.name] = storageName + ":" + val.file.id;
+        const id = val.folder ? val.folder.id : val.file.id;
+        execParams[param.name] = storageName + ":" + id;
       } else if (val) {
         execParams[param.name] = val;
       }
