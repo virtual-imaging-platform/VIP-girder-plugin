@@ -183,9 +183,10 @@ var FileSelector = BrowserWidget.extend({
 // remove the download and view (and rocket link) next to the items
 // (only on this file selection use)
 import HierarchyWidget from '@girder/core/views/widgets/HierarchyWidget';
+import FolderSelector from "./FolderSelector";
 wrap(HierarchyWidget, 'initialize', function(initialize, settings) {
   settings = settings || {};
-  if (this.parentView instanceof FileSelector) {
+  if (this.parentView instanceof FileSelector || this.parentView instanceof FolderSelector) {
     settings.downloadLinks = false;
     settings.viewLinks = false;
     this.viewVipRocket = false;
