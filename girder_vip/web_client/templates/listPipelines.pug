@@ -12,12 +12,16 @@
           tbody
             thead
               tr
+                th
                 th Application
                 th Version
                 th Execution
             each pipeline, pid in pipelines
-              tr
-                td= pipeline[0].name
+              tr.pipeline-row(name=pipeline[0].name)
+                td(style="vertical-align: middle; text-align: center")
+                  .i.icon-star-empty.toggle-favorite(name=pipeline[0].name, style="font-size: initial")
+                td(style="vertical-align: middle;")
+                  =pipeline[0].name
                 td
                   select.form-control.select-version-pipeline(pid=pid)
                     each pipelinesVersion in pipeline
@@ -26,4 +30,8 @@
                   button.btn.btn-small.btn-primary.confirm-pipeline(pid=pid) Run it
 
     .modal-footer
+      .checkbox.pull-left
+        label
+          input.show-only-favorites-checkbox(type='checkbox')
+          span Show only favorites
       a.btn.btn-small.btn-default(data-dismiss="modal") Cancel

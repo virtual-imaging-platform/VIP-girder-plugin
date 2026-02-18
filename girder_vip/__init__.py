@@ -16,6 +16,7 @@ from girder.constants import AccessType
 
 # Local imports
 from . import execution_rest
+from . import favorite_pipeline_rest
 from .vipHandler import VipHandler
 
 
@@ -27,6 +28,9 @@ class VipPlugin(GirderPlugin):
         vipHandler = VipHandler()
         # Model PipelineExecution
         info['apiRoot'].vip_execution = execution_rest.Execution()
+
+        # Model FavoritePipeline
+        info['apiRoot'].favorite_pipeline = favorite_pipeline_rest.FavoritePipeline()
 
         # Model User - extend user/
         UserModel().exposeFields(level=AccessType.READ, fields={'apiKeyVip'})

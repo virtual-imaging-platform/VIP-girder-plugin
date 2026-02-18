@@ -1,13 +1,12 @@
-//Import utilities
+// Import utilities
 import _ from 'underscore';
 import events from '@girder/core/events';
-import { restRequest } from '@girder/core/rest';
-import { handleOpen } from '@girder/core/dialog';
-import { parseQueryString, splitRoute } from '@girder/core/misc';
 import router from '@girder/core/router';
 import { cancelRestRequests } from '@girder/core/rest';
-import * as constants from '../constants';
 import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, doVipRequest, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
+
+// Import collections
+import FavoritePipelineCollection from "../collections/FavoritePipelineCollection";
 
 // Import views
 import View from '@girder/core/views/View';
@@ -22,7 +21,11 @@ import ListPipelinesTemplate from '../templates/listPipelines.pug';
 var ListPipelinesWidget = View.extend({
 
   events: {
-    'click button.confirm-pipeline' : 'confirmPipeline'
+    'click button.confirm-pipeline' : 'confirmPipeline',
+    'click .toggle-favorite' : 'toggleFavorite',
+    'mouseenter .toggle-favorite': 'onStarHover',
+    'mouseleave .toggle-favorite': 'onStarLeave',
+    'change .show-only-favorites-checkbox': 'onShowOnlyFavToggle'
   },
 
   initialize: function (settings) {
@@ -47,9 +50,10 @@ var ListPipelinesWidget = View.extend({
     verifyApiKeysConfiguration({printWarning : true})
     .then(isOk => {
       if (isOk) {
+        this.pipelinesFavCollection = new FavoritePipelineCollection();
         // Get pipelines of user
         // they are sorted by name with custom ids as keys
-        return this.fetchPipelines().then(() => this.render());
+        this.fetchPipelines();
       } else {
         // warning already printed
         messageGirder('danger', 'Configuration error, you cannot launch a VIP \
@@ -66,8 +70,23 @@ var ListPipelinesWidget = View.extend({
   },
 
   fetchPipelines: function() {
-    return doVipRequest('listPipelines').then(pipelines => {
+    Promise.all([
+      doVipRequest('listPipelines'),
+      this.pipelinesFavCollection.fetch()
+    ]).then(([pipelines]) => {
       this.pipelines = sortPipelines(pipelines);
+      this.render();
+      _.each(this.pipelinesFavCollection.models, favorite => {
+        const pipelineName = favorite.get('pipelineName');
+        // Check and delete rogue pipelines, removed on VIP but still in Girder db
+        if (!_.some(pipelines, {name: pipelineName})) {
+          favorite.destroy();
+          return;
+        }
+        // Update favorites icons
+        const favBtn = this.$('.toggle-favorite[name="' + pipelineName + '"]');
+        favBtn.removeClass('icon-star-empty').addClass('icon-star').addClass('text-warning');
+      });
     });
   },
 
@@ -82,6 +101,12 @@ var ListPipelinesWidget = View.extend({
     if ( ! this.alreadyRendered) {
       this.$el.girderModal(this);
       this.alreadyRendered = true;
+    }
+    // Check and update only favorites checkbox state from persistent storage
+    const showOnlyFavorites = window.localStorage.getItem('showOnlyFavorites') === 'true';
+    this.$('.show-only-favorites-checkbox').prop('checked', showOnlyFavorites);
+    if (this.pipelinesFavCollection && showOnlyFavorites) {
+      this.onShowOnlyFavToggle({currentTarget: this.$('.show-only-favorites-checkbox')});
     }
 
     return this;
@@ -137,8 +162,62 @@ var ListPipelinesWidget = View.extend({
     // happen if there are strange characters in pipeline identifier
     // (and its not important if the route does not change, it just prevent
     // from using F5)
-  }
+  },
 
+  toggleFavorite: function(e) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const favBtn = $(e.currentTarget);
+    const pipelineName = favBtn.attr("name");
+    const favorite = _.find(this.pipelinesFavCollection.models, obj => obj.get('pipelineName') === pipelineName);
+    // Delete model from favorite collection if it exists
+    if (favorite) {
+      favorite.destroy()
+          .then(() => {
+            favBtn.removeClass('icon-star').addClass('icon-star-empty');
+            // If showing only favorites, hide the row
+            const showOnlyFavorites = this.$('.show-only-favorites-checkbox').is(':checked');
+            if (showOnlyFavorites) {
+              this.$('.pipeline-row[name="'+ pipelineName + '"]').hide();
+            }
+        });
+    } else {
+      this.pipelinesFavCollection.addFavoritePipeline(pipelineName)
+          .then(() => {
+            favBtn.removeClass('icon-star-empty').addClass('icon-star');
+          });
+    }
+  },
+
+  onShowOnlyFavToggle: function(e) {
+    const showOnlyFavorites = $(e.currentTarget).is(':checked');
+    // Update persistent storage
+    window.localStorage.setItem('showOnlyFavorites', showOnlyFavorites);
+    // Hide non-favorites and show favorites pipelines
+    if (showOnlyFavorites) {
+      this.$('tr.pipeline-row').hide();
+      _.each(this.pipelinesFavCollection.models, fav => {
+        this.$('tr.pipeline-row[name="' + fav.get('pipelineName') + '"]').show();
+      });
+    } else {
+      this.$('tr.pipeline-row').show();
+    }
+  },
+
+  onStarHover: function(e) {
+    const favBtn = $(e.currentTarget);
+    favBtn.addClass('text-warning').css('transform', 'scale(1.2)');
+  },
+
+  onStarLeave: function(e) {
+    const favBtn = $(e.currentTarget)
+    const isFav = favBtn.hasClass('icon-star');
+    favBtn.css('transform', '');
+    if (!isFav) {
+      favBtn.removeClass('text-warning')
+    }
+  }
 });
 
 export default ListPipelinesWidget;
