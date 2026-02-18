@@ -3,9 +3,12 @@ import events from '@girder/core/events';
 import router from '@girder/core/router';
 import { getCurrentUser } from '@girder/core/auth';
 import { restRequest } from '@girder/core/rest';
+import { messageGirder, doVipRequest, useVipConfig, hasTheVipApiKeyConfigured, verifyApiKeysConfiguration, getVipConfig } from '../utilities/vipPluginUtils';
+import CollectionCollection from '@girder/core/collections/CollectionCollection';
+
+// Import models
 import FolderModel from '@girder/core/models/FolderModel';
 import ExecutionModel from '../models/ExecutionModel';
-import { messageGirder, doVipRequest, useVipConfig, hasTheVipApiKeyConfigured, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
 
 // Import views
 import View from '@girder/core/views/View';
@@ -72,7 +75,7 @@ var LaunchVipPipeline = View.extend({
 
   initInternal: function() {
     this.sortParameters();
-    this.configureResultDirBrowser();
+    getVipConfig().then(vipConfig => this.configureResultDirBrowser(vipConfig));
     this.paramValues = {};
     this.render();
     this.initChosenFile();
@@ -138,13 +141,22 @@ var LaunchVipPipeline = View.extend({
     }
   },
 
-  configureResultDirBrowser: function() {
+  configureResultDirBrowser: function(vipConfig) {
+    const filteredCollections = new CollectionCollection();
+    filteredCollections.filterFunc =
+        (c => _.contains(vipConfig.authorized_collections, c._id) );
+
+    const rootSelectorSettings = {
+      display: ['Home', 'VIP Authorized Collections'],
+      groups: {'VIP Authorized Collections' : filteredCollections}
+    };
+
     this.resultFolderBrowser = new BrowserWidget({
       parentView: this,
       titleText: 'Vip execution result folder',
       helpText: 'Browse to a folder to select it as the destination.',
       submitText: 'Select folder',
-      rootSelectorSettings: { display: ['Home'] },
+      rootSelectorSettings: rootSelectorSettings,
       root: getCurrentUser(),
       validate: function (model) {
         if (!model) {
