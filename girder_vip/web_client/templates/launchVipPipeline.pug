@@ -36,7 +36,12 @@ form.vip-launch-pipeline-form(role="form")
           .input-group.input-group-sm
             .input-group-btn
               button.vip-launch-file-btn.btn.btn-primary(pid=param.pid, type="button") Select file
+              button.vip-launch-folder-btn.hidden.btn.btn-primary(pid=param.pid, type="button") Select folder
             input.form-control(id="vip-launch-" + param.pid, type="text", readonly)
+          .checkbox
+            label
+              input.vip-folder-selector-checkbox(pid=param.pid, type='checkbox')
+              span Folder selection
           small.help-block= param.description
 
   if parameters.required.length
@@ -66,7 +71,12 @@ form.vip-launch-pipeline-form(role="form")
                   .input-group.input-group-sm
                     .input-group-btn
                       button.vip-launch-file-btn.btn.btn-primary(pid=param.pid, type="button") Select file
+                      button.vip-launch-folder-btn.hidden.btn.btn-primary(pid=param.pid, type="button") Select folder
                     input.form-control(id="vip-launch-" + param.pid,type="text", readonly, placeholder="Default : " + param.defaultValue)
+                  .checkbox
+                    label
+                      input.vip-folder-selector-checkbox(pid=param.pid, type='checkbox')
+                      span Folder selection
                   small.help-block= param.description
 
             if parameters.optional.length
