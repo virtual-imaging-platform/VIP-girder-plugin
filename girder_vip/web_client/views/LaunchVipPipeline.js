@@ -1,29 +1,25 @@
 // Import utilities
-import events from '@girder/core/events';
-import router from '@girder/core/router';
-import { getCurrentUser } from '@girder/core/auth';
-import { restRequest } from '@girder/core/rest';
+const events = girder.events;
+const router = girder.router;
+const { getCurrentUser } = girder.auth;
+const { restRequest } = girder.rest;
 import { messageGirder, doVipRequest, useVipConfig, hasTheVipApiKeyConfigured, verifyApiKeysConfiguration, getVipConfig } from '../utilities/vipPluginUtils';
-import CollectionCollection from '@girder/core/collections/CollectionCollection';
+const CollectionCollection = girder.collections.CollectionCollection;
 
 // Import models
-import FolderModel from '@girder/core/models/FolderModel';
+const FolderModel = girder.models.FolderModel;
 import ExecutionModel from '../models/ExecutionModel';
 
 // Import views
-import View from '@girder/core/views/View';
+const View = girder.views.View;
 import FileSelector from './FileSelector';
 import FolderSelector from './FolderSelector';
-import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
-import { confirm } from '@girder/core/dialog';
-import 'bootstrap/js/button';
+const BrowserWidget = girder.views.widgets.BrowserWidget;
+const { confirm } = girder.dialog;
 
 // Import templates
 import LaunchTemplate from '../templates/launchVipPipeline.pug';
 import SuccessDialog from '../templates/executionSuccessDialog.pug';
-
-// reuse system config style to separate input sections
-import '@girder/core/stylesheets/body/systemConfig.styl';
 
 var LaunchVipPipeline = View.extend({
 
@@ -367,12 +363,12 @@ var LaunchVipPipeline = View.extend({
         msg += error;
       }
       messageGirder("danger", msg);
-      $('#run-execution').button('reset');
+      $('#run-execution').prop('disabled', false).html("<i class='icon-play'></i> Execute");
     });
 
     // Loading animation on the button
     messageGirder("info", "Launching execution, this could take a few seconds", 10000);
-    $('#run-execution').button('loading');
+    $('#run-execution').prop('disabled', true).html("<i class='animate-spin icon-spin6'></i> Execute");
   },
 
   createResultFolder: function (executionName, parentFolder) {

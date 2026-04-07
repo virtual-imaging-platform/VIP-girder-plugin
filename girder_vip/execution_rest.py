@@ -1,5 +1,5 @@
 from girder.api.rest import Resource, filtermodel
-from girder import logger
+from girder.utility import logger
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
 from girder.constants import AccessType

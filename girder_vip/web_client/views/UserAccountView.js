@@ -1,13 +1,13 @@
 // Import utilities
-import { wrap } from '@girder/core/utilities/PluginUtils';
-import { getCurrentUser } from '@girder/core/auth';
+const { wrap } = girder.utilities.PluginUtils;
+const { getCurrentUser } = girder.auth;
 import {saveVipApiKey, messageGirder, updateApiKeysConfiguration, verifyApiKeysConfiguration} from '../utilities/vipPluginUtils';
-import router from '@girder/core/router';
-import events from '@girder/core/events';
+const router = girder.router;
+const events = girder.events;
 import * as constants from '../constants';
 
 // Import views
-import UserAccountView from '@girder/core/views/body/UserAccountView';
+const UserAccountView = girder.views.body.UserAccountView;
 
 // Import templates
 import UserAccountTab from '../templates/userAccountTab.pug';

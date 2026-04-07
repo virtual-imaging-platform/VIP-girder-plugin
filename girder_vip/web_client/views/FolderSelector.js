@@ -1,9 +1,9 @@
 // Import utilities
-import CollectionCollection from '@girder/core/collections/CollectionCollection';
+const CollectionCollection = girder.collections.CollectionCollection;
 import { getVipConfig } from '../utilities/vipPluginUtils';
 
 // Import views
-import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
+const BrowserWidget = girder.views.widgets.BrowserWidget;
 
 var FolderSelector = BrowserWidget.extend({
     initialize: function (settings) {

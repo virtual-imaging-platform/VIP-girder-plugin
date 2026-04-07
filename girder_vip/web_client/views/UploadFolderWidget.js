@@ -1,10 +1,10 @@
 // Import utilities
-import { wrap } from '@girder/core/utilities/PluginUtils';
-import { formatSize } from "@girder/core/misc";
-import FolderModel from '@girder/core/models/FolderModel'
+const { wrap } = girder.utilities.PluginUtils;
+const { formatSize } = girder.misc;
+const FolderModel = girder.models.FolderModel;
 
 // Import views
-import UploadWidget from "@girder/core/views/widgets/UploadWidget";
+const UploadWidget = girder.views.widgets.UploadWidget;
 
 // Import templates
 import UploadFolderCheckboxTemplate from '../templates/uploadFolderCheckbox.pug';

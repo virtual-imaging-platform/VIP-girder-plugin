@@ -1,16 +1,15 @@
 // Import utilities
-import _ from 'underscore';
-import events from '@girder/core/events';
-import { wrap } from '@girder/core/utilities/PluginUtils';
-import CollectionCollection from '@girder/core/collections/CollectionCollection';
-import FileCollection from '@girder/core/collections/FileCollection';
+const events = girder.events;
+const { wrap } = girder.utilities.PluginUtils;
+const CollectionCollection = girder.collections.CollectionCollection;
+const FileCollection = girder.collections.FileCollection;
 import { getVipConfig } from '../utilities/vipPluginUtils';
-import { getCurrentUser } from '@girder/core/auth';
+const { getCurrentUser } = girder.auth;
 
 // Import views
-import View from '@girder/core/views/View';
-import FileListWidget from '@girder/core/views/widgets/FileListWidget';
-import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
+const View = girder.views.View;
+const FileListWidget = girder.views.widgets.FileListWidget;
+const BrowserWidget = girder.views.widgets.BrowserWidget;
 
 // import template
 import FileSelectorTemplate from '../templates/fileSelector.pug';
@@ -182,7 +181,7 @@ var FileSelector = BrowserWidget.extend({
 
 // remove the download and view (and rocket link) next to the items
 // (only on this file selection use)
-import HierarchyWidget from '@girder/core/views/widgets/HierarchyWidget';
+const HierarchyWidget = girder.views.widgets.HierarchyWidget;
 import FolderSelector from "./FolderSelector";
 wrap(HierarchyWidget, 'initialize', function(initialize, settings) {
   settings = settings || {};

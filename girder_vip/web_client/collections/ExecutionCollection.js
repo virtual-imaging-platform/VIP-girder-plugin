@@ -1,7 +1,7 @@
 // Import utilities
-import { SORT_DESC } from '@girder/core/constants';
+const { SORT_DESC } = girder.constants;
 
-import Collection from '@girder/core/collections/Collection';
+const Collection = girder.collections.Collection;
 
 import ExecutionModel from '../models/ExecutionModel';
 

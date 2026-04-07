@@ -1,10 +1,10 @@
 // Import utilities
-import { wrap } from '@girder/core/utilities/PluginUtils';
+const { wrap } = girder.utilities.PluginUtils;
 import { hasTheVipApiKeyConfigured } from '../utilities/vipPluginUtils';
-import events from '@girder/core/events';
+const events = girder.events;
 
 // Import views
-import HeaderUserView from '@girder/core/views/layout/HeaderUserView';
+const HeaderUserView = girder.views.layout.HeaderUserView;
 import ListPipelinesWidget from './ListPipelinesWidget';
 
 // Import templates

@@ -7,10 +7,10 @@
 # Copyright (C) 2018
 # -----------------------------------------------------------------------------
 
-import os
+from pathlib import Path
 
 # from Girder
-from girder.plugin import GirderPlugin
+from girder.plugin import GirderPlugin, registerPluginStaticContent
 from girder.models.user import User as UserModel
 from girder.constants import AccessType
 
@@ -22,9 +22,15 @@ from .vipHandler import VipHandler
 
 class VipPlugin(GirderPlugin):
     DISPLAY_NAME = 'VIP applications'
-    CLIENT_SOURCE_PATH = 'web_client'
 
     def load(self, info):
+        registerPluginStaticContent(
+            plugin = 'vip',
+            js=['/vip-plugin.umd.js'],
+            css=[],
+            staticDir=Path(__file__).parent / 'web_client' / 'dist',
+            tree=info['serverRoot'],
+        )
         vipHandler = VipHandler()
         # Model PipelineExecution
         info['apiRoot'].vip_execution = execution_rest.Execution()

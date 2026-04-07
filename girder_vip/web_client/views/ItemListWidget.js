@@ -1,16 +1,16 @@
 // Import utilities
-import { wrap } from '@girder/core/utilities/PluginUtils';
+const { wrap } = girder.utilities.PluginUtils;
 
-import router from '@girder/core/router';
-import FileCollection from '@girder/core/collections/FileCollection';
+const router = girder.router;
+const FileCollection = girder.collections.FileCollection;
 import { hasTheVipApiKeyConfigured, isPluginActivatedOn, messageGirder } from '../utilities/vipPluginUtils';
-import { confirm } from '@girder/core/dialog';
+const { confirm } = girder.dialog;
 
 // Import views
-import ItemListWidget from '@girder/core/views/widgets/ItemListWidget';
+const ItemListWidget = girder.views.widgets.ItemListWidget;
 import ListPipelinesWidget from './ListPipelinesWidget';
-import FolderView from '@girder/core/views/body/FolderView';
-import CollectionView from '@girder/core/views/body/CollectionView';
+const FolderView = girder.views.body.FolderView;
+const CollectionView = girder.views.body.CollectionView;
 
 // Import Templates
 import ButtonLaunchPipeline from '../templates/buttonLaunchPipeline.pug';

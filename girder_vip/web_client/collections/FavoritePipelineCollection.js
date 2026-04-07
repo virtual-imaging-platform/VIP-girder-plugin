@@ -1,6 +1,6 @@
 // Import utilities
-import Collection from '@girder/core/collections/Collection';
-import { restRequest } from '@girder/core/rest';
+const Collection = girder.collections.Collection;
+const { restRequest } = girder.rest;
 
 // Import models
 import FavoritePipelineModel from '../models/FavoritePipelineModel';

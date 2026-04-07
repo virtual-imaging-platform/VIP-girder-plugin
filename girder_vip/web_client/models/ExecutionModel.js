@@ -1,5 +1,5 @@
-import Model from '@girder/core/models/Model';
-import { restRequest } from '@girder/core/rest';
+const Model = girder.models.Model;
+const { restRequest } = girder.rest;
 
 var ExecutionModel = Model.extend({
     resourceName: "vip_execution",
