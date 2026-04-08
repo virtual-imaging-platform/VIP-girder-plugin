@@ -6,7 +6,8 @@ setup(
     include_package_data=True,
     packages=find_packages(exclude=['plugin_tests']),
     zip_safe=False,
-    install_requires=['girder>=5'],      # Add any plugin dependencies here
+    install_requires=['girder==5.0.1'],      # Add any plugin dependencies here
+    setup_requires=['setuptools-git'],
     entry_points={
       'girder.plugin': [              # Register the plugin with girder.  The next line registers
                                       # our plugin under the name "example".  The name here must be

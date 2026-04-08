@@ -20,29 +20,30 @@ This plugins allows to :
 - npm >= 10
 - python >= 3.10
 - redis service installed and active ([installation guide](https://redis.io/docs/latest/operate/oss_and_stack/install/archive/install-redis/))
+- mongod service installed and active ([installation guide](https://www.mongodb.com/docs/manual/installation/))
 
 ## Installation
 
 The girder prod server is installed in a virtual env in the `$GIRDER_ENV` folder
 
-1. Activate the virtualenv : `. $GIRDER_ENV/bin/activate`
+1. Activate the virtualenv : \
+`. $GIRDER_ENV/bin/activate`
 1. Stop girder with a `kill $pid` (if already running)
-1.  Uninstall plugin (if already installed)
-   1. `pip uninstall girder_vip`
-   1. `rm -rf $GIRDER_ENV/lib/pythonX/site-packages/girder_vip`
-1. `pip install git+https://github.com/virtual-imaging-platform/VIP-girder-plugin.git@master`
+1.  Uninstall plugin (if already installed) \
+`pip uninstall girder_vip` \
+`rm -rf $GIRDER_ENV/lib/pythonX/site-packages/girder_vip`
+1. Run `npm install` and `npm run build` in the `girder_vip/web_client` folder
+2. `pip install git+https://github.com/virtual-imaging-platform/VIP-girder-plugin.git@master`
 2. Install Girder 5.x necessary dependencies : \
 `pip install girder-plugin-worker`
 3. Kill previous Girder workers (if already running) : \
 `pkill -f 'celery -A girder_worker.app worker'`
 4. Set necessary environment variables : \
 `export GIRDER_WORKER_BROKER=redis://127.0.0.1:6379/0` \
-`export GIRDER_WORKER_BACKEND=redis://127.0.0.1:6379/1`\
-`export CELERY_BROKER_URL=redis://127.0.0.1:6379/0`
+`export GIRDER_WORKER_BACKEND=redis://127.0.0.1:6379/1`
 3. Launch background girder worker : \
 `celery -A girder_worker.app worker -Q local --detach
 --logfile=/tmp/girder-celery.log --pidfile=/tmp/girder-celery.pid`
-2. Run `npm install` and `npm run build` in the `girder_vip/web_client` folder
 1. `nohup girder serve &`
 
 ## Administrator configuration
