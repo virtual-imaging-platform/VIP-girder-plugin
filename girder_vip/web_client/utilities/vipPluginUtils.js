@@ -1,12 +1,11 @@
 // Import utilities
-import _ from 'underscore';
-import { getCurrentUser } from '@girder/core/auth';
-import { restRequest, cancelRestRequests } from '@girder/core/rest';
-import events from '@girder/core/events';
-import FolderModel from '@girder/core/models/FolderModel';
-import ApiKeyCollection from '@girder/core/collections/ApiKeyCollection.js'
-import ApiKeyModel from '@girder/core/models/ApiKeyModel.js'
-import FolderCollection from '@girder/core/collections/FolderCollection';
+const { getCurrentUser } = girder.auth;
+const { restRequest, cancelRestRequests } = girder.rest;
+const events = girder.events;
+const FolderModel = girder.models.FolderModel;
+const ApiKeyCollection = girder.collections.ApiKeyCollection;
+const ApiKeyModel = girder.models.ApiKeyModel;
+const FolderCollection = girder.collections.FolderCollection;
 import { VIP_PLUGIN_API_KEY, NEEDED_TOKEN_SCOPES } from '../constants';
 import CarminClient from '../vendor/carmin/carmin-client';
 

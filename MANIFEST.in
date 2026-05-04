@@ -1,0 +1,1 @@
+recursive-include girder_vip/web_client/dist *

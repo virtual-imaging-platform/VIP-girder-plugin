@@ -1,8 +1,8 @@
 // Import utilities
-import router from '@girder/core/router';
-import events from '@girder/core/events';
+const router = girder.router;
+const events = girder.events;
 
-import { exposePluginConfig } from '@girder/core/utilities/PluginUtils';
+const { exposePluginConfig } = girder.utilities.PluginUtils;
 
 exposePluginConfig('vip', 'plugins/vip/config');
 

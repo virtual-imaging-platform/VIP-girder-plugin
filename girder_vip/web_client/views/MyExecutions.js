@@ -1,14 +1,12 @@
 // Import utilities
-import _ from 'underscore';
-import moment from 'moment';
-import router from '@girder/core/router';
+const router = girder.router;
 import * as constants from '../constants';
-import events from '@girder/core/events';
+const events = girder.events;
 import { hasTheVipApiKeyConfigured, messageGirder, doVipRequest } from '../utilities/vipPluginUtils';
 
 // Import views
-import { confirm } from '@girder/core/dialog';
-import View from '@girder/core/views/View';
+const { confirm } = girder.dialog;
+const View = girder.views.View;
 
 // Import collections
 import ExecutionCollection from '../collections/ExecutionCollection';

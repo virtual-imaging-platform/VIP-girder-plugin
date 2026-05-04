@@ -1,7 +1,5 @@
-from girder import logprint
 from girder.api import access
 from girder.api.describe import Description, autoDescribeRoute
-from girder.models.user import User
 from girder.constants import AccessType
 from girder.models.user import User as UserModel
 from girder.models.setting import Setting
@@ -15,8 +13,6 @@ class VipHandler(object):
     def __init__(self):
         super(VipHandler, self).__init__()
         self._model = UserModel()
-        self.__users = User()
-
 
     @access.user
     @autoDescribeRoute(

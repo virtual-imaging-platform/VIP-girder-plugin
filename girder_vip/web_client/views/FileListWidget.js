@@ -1,9 +1,9 @@
 // Import utilities
-import { wrap } from '@girder/core/utilities/PluginUtils';
+const { wrap } = girder.utilities.PluginUtils;
 import { hasTheVipApiKeyConfigured, isPluginActivatedOn } from '../utilities/vipPluginUtils';
 
 // Import views
-import FileListWidget from '@girder/core/views/widgets/FileListWidget';
+const FileListWidget = girder.views.widgets.FileListWidget;
 import ListPipelinesWidget from './ListPipelinesWidget';
 
 // Import about Creatis

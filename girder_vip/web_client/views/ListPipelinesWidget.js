@@ -1,18 +1,16 @@
 // Import utilities
-import _ from 'underscore';
-import events from '@girder/core/events';
-import router from '@girder/core/router';
-import { cancelRestRequests } from '@girder/core/rest';
+const events = girder.events;
+const router = girder.router;
+const { cancelRestRequests } = girder.rest;
 import { hasTheVipApiKeyConfigured, sortPipelines, messageGirder, doVipRequest, verifyApiKeysConfiguration } from '../utilities/vipPluginUtils';
 
 // Import collections
 import FavoritePipelineCollection from "../collections/FavoritePipelineCollection";
 
 // Import views
-import View from '@girder/core/views/View';
+const View = girder.views.View;
 import LaunchVipPipeline from './LaunchVipPipeline';
-import LoadingAnimation from '@girder/core/views/widgets/LoadingAnimation';
-import '@girder/core/utilities/jquery/girderModal';
+const LoadingAnimation = girder.views.widgets.LoadingAnimation;
 
 // Import templates
 import ListPipelinesTemplate from '../templates/listPipelines.pug';
